@@ -1,5 +1,7 @@
 // Cloudflare Pages Function
 // Endpoint: POST /api/contact
+import { verifyTurnstile } from "../_shared/turnstile.js";
+
 export async function onRequestPost(context) {
   const { request, env } = context;
 
@@ -21,28 +23,9 @@ export async function onRequestPost(context) {
     }
 
     // ----- Verify Cloudflare Turnstile token -----
-    if (!env.TURNSTILE_SECRET_KEY) {
-      return json({ ok: false, error: "turnstile_not_configured" }, 500);
-    }
-    if (!turnstileToken) {
-      return json({ ok: false, error: "turnstile_missing" }, 400);
-    }
-
-    const ip = request.headers.get("CF-Connecting-IP") || "";
-    const verifyForm = new FormData();
-    verifyForm.append("secret", env.TURNSTILE_SECRET_KEY);
-    verifyForm.append("response", turnstileToken);
-    if (ip) verifyForm.append("remoteip", ip);
-
-    const verifyRes = await fetch(
-      "https://challenges.cloudflare.com/turnstile/v0/siteverify",
-      { method: "POST", body: verifyForm }
-    );
-    const verifyData = await verifyRes.json();
-
-    if (!verifyData.success) {
-      console.error("Turnstile failed:", verifyData["error-codes"]);
-      return json({ ok: false, error: "turnstile_failed" }, 403);
+    const turnstileResult = await verifyTurnstile(env, turnstileToken, request);
+    if (!turnstileResult.ok) {
+      return json({ ok: false, error: turnstileResult.error }, turnstileResult.status);
     }
     // ------------------------------------------------
 

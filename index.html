@@ -4401,6 +4401,8 @@
               class="req">*</span></label><input type="email" id="om-email"></div>
         <div class="field"><label><span data-jp>ご住所</span><span data-en>Address</span> <span
               class="req">*</span></label><textarea id="om-address" style="min-height:80px"></textarea></div>
+        <div id="om-turnstile" class="cf-turnstile" data-sitekey="0x4AAAAAAD8H_SMh5X5eLg1u"
+          data-theme="light" style="margin-top:16px;"></div>
         <button type="button" class="btn btn-primary" style="width:100%;justify-content:center"
           onclick="submitOrderForm()"><span data-jp>お支払いへ進む →</span><span data-en>Continue to payment
             →</span></button>
@@ -4453,6 +4455,9 @@
         document.getElementById('om-phone').value = '';
         document.getElementById('om-email').value = '';
         document.getElementById('om-address').value = '';
+        if (typeof turnstile !== 'undefined') {
+          try { turnstile.reset('#om-turnstile'); } catch (e) { /* not yet rendered on first open */ }
+        }
         document.getElementById('paypal-button-container').innerHTML =
           '<paypal-button hidden></paypal-button>' +
           '<p id="paypal-init-msg" style="font-size:13px;text-align:center;opacity:.6;margin:0">' +
@@ -4493,6 +4498,12 @@
           return;
         }
 
+        var turnstileToken = (typeof turnstile !== 'undefined') ? turnstile.getResponse('#om-turnstile') : '';
+        if (!turnstileToken) {
+          alert('ロボットではないことの確認を行ってください。 / Please complete the verification check.');
+          return;
+        }
+
         document.getElementById('om-step-form').style.display = 'none';
         document.getElementById('om-step-pay').style.display = '';
 
@@ -4508,16 +4519,19 @@
         var buyer = { name: name, phone: phone, email: email, address: address };
         var planId = currentPlan;
 
-        initPayPalV6(buyer, planId);
+        initPayPalV6(buyer, planId, turnstileToken);
       };
 
-      async function initPayPalV6(buyer, planId) {
+      async function initPayPalV6(buyer, planId, turnstileToken) {
         var msgEl = document.getElementById('paypal-init-msg');
         var btnEl = document.querySelector('#paypal-button-container paypal-button');
 
         function showError() {
           document.getElementById('om-step-pay').style.display = 'none';
           document.getElementById('om-error').classList.add('show');
+          if (typeof turnstile !== 'undefined') {
+            try { turnstile.reset('#om-turnstile'); } catch (e) { /* ignore */ }
+          }
         }
 
         try {
@@ -4572,7 +4586,7 @@
                 fetch('/api/paypal-create-order', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ planId: planId, buyer: buyer })
+                  body: JSON.stringify({ planId: planId, buyer: buyer, turnstileToken: turnstileToken })
                 }).then(function (res) { return res.json(); })
                   .then(function (data) {
                     if (!data.id) throw new Error('create order failed');

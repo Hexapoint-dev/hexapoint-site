@@ -6,12 +6,14 @@
 // later in paypal-capture-order.js and paypal-webhook.js to send the confirmation email.
 
 import { PLANS, paypalApiBase, getAccessToken, jsonResponse } from "../_shared/paypal.js";
+import { verifyTurnstile } from "../_shared/turnstile.js";
 
 export async function onRequestPost({ request, env }) {
   try {
     const body = await request.json();
     const planId = (body.planId || "").toString();
     const buyerRaw = body.buyer || {};
+    const turnstileToken = (body.turnstileToken || "").toString();
 
     const plan = PLANS[planId];
     if (!plan) return jsonResponse({ ok: false, error: "invalid_plan" }, 400);
@@ -34,6 +36,13 @@ export async function onRequestPost({ request, env }) {
     if (!env.ORDERS_KV) {
       return jsonResponse({ ok: false, error: "kv_not_configured" }, 500);
     }
+
+    // ----- Verify Cloudflare Turnstile token before touching KV or PayPal -----
+    const turnstileResult = await verifyTurnstile(env, turnstileToken, request);
+    if (!turnstileResult.ok) {
+      return jsonResponse({ ok: false, error: turnstileResult.error }, turnstileResult.status);
+    }
+    // ---------------------------------------------------------------------------
 
     // Random key we control, stored as PayPal's custom_id so we can find the
     // buyer info again later regardless of which flow completes the order
