@@ -1,0 +1,45 @@
+<svg viewBox="0 0 480 600" xmlns="http://www.w3.org/2000/svg" role="img">
+<title>スパイスカレー専門店EC — カード表紙イラスト</title>
+<defs>
+<linearGradient id="bgGrad" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0%" stop-color="#e8631f"/>
+<stop offset="100%" stop-color="#f5912a"/>
+</linearGradient>
+<linearGradient id="botFade" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0%" stop-color="#000000" stop-opacity="0"/>
+<stop offset="100%" stop-color="#1a0e05" stop-opacity="0.35"/>
+</linearGradient>
+</defs>
+<rect x="0" y="0" width="480" height="600" fill="url(#bgGrad)"/>
+<circle cx="240" cy="330" r="168" fill="#ffffff" opacity="0.06"/>
+<g opacity="0.85">
+<path d="M60 90 Q50 110 65 128 Q80 118 78 96 Q72 88 60 90Z" fill="#e63548"/>
+<path d="M65 128 Q70 138 78 140" stroke="#6b8f47" stroke-width="4" fill="none" stroke-linecap="round"/>
+</g>
+<g opacity="0.85" transform="translate(380,150) rotate(20)">
+<rect x="-4" y="-22" width="8" height="44" rx="4" fill="#8a5a2b"/>
+<rect x="-4" y="-22" width="8" height="44" rx="4" fill="none" stroke="#5c3a1a" stroke-width="1"/>
+</g>
+<g opacity="0.85" transform="translate(410,420)">
+<path d="M0 -14 L4 -4 L14 -4 L5 3 L8 13 L0 6 L-8 13 L-5 3 L-14 -4 L-4 -4 Z" fill="#7a4a1c"/>
+</g>
+<circle cx="55" cy="440" r="5" fill="#5c3a1a" opacity="0.7"/>
+<circle cx="70" cy="455" r="4" fill="#5c3a1a" opacity="0.7"/>
+<circle cx="45" cy="465" r="4.5" fill="#5c3a1a" opacity="0.7"/>
+<path d="M215 220 Q205 190 220 165" stroke="#ffffff" stroke-width="5" fill="none" stroke-linecap="round" opacity="0.4"/>
+<path d="M240 215 Q230 185 245 158" stroke="#ffffff" stroke-width="5" fill="none" stroke-linecap="round" opacity="0.45"/>
+<path d="M265 220 Q255 190 270 165" stroke="#ffffff" stroke-width="5" fill="none" stroke-linecap="round" opacity="0.4"/>
+<ellipse cx="240" cy="345" rx="158" ry="62" fill="#3a2417"/>
+<ellipse cx="240" cy="336" rx="140" ry="50" fill="#f7c98f"/>
+<path d="M120 336 A140 50 0 0 1 355 320 A150 60 0 0 1 235 384 A150 62 0 0 1 120 336Z" fill="#c1440e"/>
+<ellipse cx="150" cy="322" rx="14" ry="7" fill="#f7c98f" opacity="0.9"/>
+<ellipse cx="175" cy="310" rx="10" ry="5" fill="#f7c98f" opacity="0.8"/>
+<ellipse cx="200" cy="330" rx="9" ry="4.5" fill="#6b8f47"/>
+<ellipse cx="260" cy="316" rx="9" ry="4.5" fill="#6b8f47"/>
+<ellipse cx="300" cy="340" rx="12" ry="6" fill="#e63548"/>
+<circle cx="304" cy="340" r="1.5" fill="#fdebd3"/>
+<circle cx="297" cy="341" r="1.5" fill="#fdebd3"/>
+<ellipse cx="230" cy="356" rx="11" ry="5.5" fill="#e63548"/>
+<circle cx="233" cy="356" r="1.5" fill="#fdebd3"/>
+<rect x="0" y="420" width="480" height="180" fill="url(#botFade)"/>
+</svg>
