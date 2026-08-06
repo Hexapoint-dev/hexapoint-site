@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset
+  xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+  xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
+  xmlns:xhtml="http://www.w3.org/1999/xhtml">
+
+  <url>
+    <loc>https://hexapoint.pages.dev/</loc>
+    <lastmod>2026-08-06</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+
+    <!-- Same URL serves both languages via an on-page toggle -->
+    <xhtml:link rel="alternate" hreflang="ja" href="https://hexapoint.pages.dev/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://hexapoint.pages.dev/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://hexapoint.pages.dev/" />
+
+    <image:image>
+      <image:loc>https://hexapoint.pages.dev/og-image.png</image:loc>
+      <image:title>HexaPoint — 日本全国対応のウェブ制作・SEOスタジオ</image:title>
+      <image:caption>個人・中小ビジネスのためのウェブ制作スタジオ。デザイン・文章・SEOを最小コストでワンストップ対応。</image:caption>
+    </image:image>
+
+    <image:image>
+      <image:loc>https://hexapoint.pages.dev/favicon-512.png</image:loc>
+      <image:title>HexaPoint ロゴ</image:title>
+    </image:image>
+
+    <image:image>
+      <image:loc>https://hexapoint.pages.dev/client-logo-mineshouten.jpeg</image:loc>
+      <image:title>峯商店 ロゴ — HexaPoint 制作実績</image:title>
+    </image:image>
+
+  </url>
+
+</urlset>
