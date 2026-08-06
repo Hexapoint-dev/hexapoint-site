@@ -52,3 +52,8 @@
 
 /manifest.json
   Cache-Control: public, max-age=86400
+
+# IndexNow key file must be served as plain text
+/c96a412c5d41125143ea5fa42129051f.txt
+  Content-Type: text/plain; charset=utf-8
+  Cache-Control: public, max-age=86400
