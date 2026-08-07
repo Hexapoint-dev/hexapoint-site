@@ -4917,6 +4917,10 @@
         })
           .then(function (res) { return res.json(); })
           .then(function (result) {
+            console.log('Bank order result:', result);
+            if (result.sheet && result.sheet.ok === false) {
+              console.warn('Google Sheet sync failed for this bank order:', result.sheet.error);
+            }
             if (result.ok) {
               hideAllSteps();
               document.getElementById('om-bank-success').classList.add('show');

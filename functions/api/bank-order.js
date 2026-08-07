@@ -50,22 +50,27 @@ export async function onRequestPost({ request, env }) {
 
     // Never let an email or Sheet hiccup fail the whole request — the Client
     // has already seen the bank details, so we still want to return ok:true
-    // as long as at least one of the two notifications gets through.
-    let notified = false;
+    // as long as at least one of the two notifications gets through. We do
+    // report the individual results though, so failures are visible in the
+    // browser's Network tab instead of only in Cloudflare's server logs.
+    let emailOk = false;
+    let emailError = null;
     try {
       await sendBankOrderNotification(env, { buyer, plan, orderID, amount });
-      notified = true;
+      emailOk = true;
     } catch (err) {
+      emailError = String(err);
       console.error("Bank order notification email failed:", err);
     }
-    try {
-      await appendOrderToSheet(env, { buyer, plan, orderID, amount, status });
-      notified = true;
-    } catch (err) {
-      console.error("Bank order Google Sheet sync failed:", err);
-    }
 
-    return jsonResponse({ ok: notified, orderID });
+    const sheetResult = await appendOrderToSheet(env, { buyer, plan, orderID, amount, status });
+
+    return jsonResponse({
+      ok: emailOk || sheetResult.ok,
+      orderID,
+      email: { ok: emailOk, error: emailError },
+      sheet: sheetResult,
+    });
   } catch (err) {
     console.error("bank-order error:", err);
     return jsonResponse({ ok: false, error: "server_error" }, 500);
