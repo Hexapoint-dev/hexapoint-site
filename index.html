@@ -4260,7 +4260,7 @@
           <div class="bank-box">
             <div class="bank-name"><span data-jp>振込先口座 1：ゆうちょ銀行</span><span data-en>Account 1: Japan Post Bank (Yucho Bank)</span></div>
             <div class="bank-row"><span class="bl"><span data-jp>記号番号（総合）</span><span data-en>Symbol–Number (Sogo)</span></span><span class="bv">10180 - 90649221</span></div>
-            <div class="bank-row"><span class="bl"><span data-jp>他銀行からのお振込み</span><span data-en>From other banks</span></span><span class="bv"><span data-jp>店名：〇一八店（019）／預金種目：普通／口座番号：9064922</span><span data-en>Branch: "019" (0-1-8)／Account type: Ordinary／Account No.: 9064922</span></span></div>
+            <div class="bank-row"><span class="bl"><span data-jp>他銀行からのお振込み</span><span data-en>From other banks</span></span><span class="bv"><span data-jp>店名：〇一八店（018）／預金種目：普通／口座番号：9064922</span><span data-en>Branch: "018" (0-1-8)／Account type: Ordinary／Account No.: 9064922</span></span></div>
             <div class="bank-row"><span class="bl"><span data-jp>口座名義</span><span data-en>Account Name</span></span><span class="bv">SHAHATA AHMAD MOHAMM<span data-jp>（シャハタ　アハマド　モハンマド　アデル　ア）</span></span></div>
           </div>
 
@@ -4745,7 +4745,7 @@
         <div class="bank-box">
           <div class="bank-name"><span data-jp>振込先口座 1：ゆうちょ銀行</span><span data-en>Account 1: Japan Post Bank</span></div>
           <div class="bank-row"><span class="bl"><span data-jp>記号番号（総合）</span><span data-en>Symbol–Number</span></span><span class="bv">10180 - 90649221</span></div>
-          <div class="bank-row"><span class="bl"><span data-jp>他銀行から</span><span data-en>From other banks</span></span><span class="bv"><span data-jp>店名：〇一八店(019)／普通／9064922</span><span data-en>Branch "019" / Ordinary / 9064922</span></span></div>
+          <div class="bank-row"><span class="bl"><span data-jp>他銀行から</span><span data-en>From other banks</span></span><span class="bv"><span data-jp>店名：〇一八店(018)／普通／9064922</span><span data-en>Branch "018" / Ordinary / 9064922</span></span></div>
           <div class="bank-row"><span class="bl"><span data-jp>口座名義</span><span data-en>Account Name</span></span><span class="bv">SHAHATA AHMAD MOHAMM</span></div>
         </div>
 
@@ -4758,6 +4758,11 @@
         </div>
 
         <p class="om-bank-note"><span data-jp>※ 振込の際は依頼主名をお名前でご入力ください。「注文内容を送信」を押すと、当方へご注文内容が届きます（このボタンは振込そのものではありません）。</span><span data-en>※ When transferring, please enter your name as the sender. Pressing "Send order details" notifies us of your order — it does not perform the transfer itself.</span></p>
+
+        <label class="consent" style="margin-top:14px">
+          <input type="checkbox" id="om-bank-consent">
+          <span><span data-jp>入金は当方にて確認のうえ制作を開始いたします。お振込みが確認できない場合、恐れ入りますが振込明細（受付番号・振込日時等が確認できるもの）のご提示をお願いする場合があります。上記内容を確認しました。</span><span data-en>We will begin work once payment is confirmed on our end. If we're unable to confirm receipt, we may ask you to provide proof of the transfer (a receipt showing the confirmation number and transfer date/time). I have read and understood the above.</span></span>
+        </label>
 
         <button type="button" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:6px" id="om-bank-submit"
           onclick="submitBankOrder()"><span data-jp>注文内容を送信 →</span><span data-en>Send order details →</span></button>
@@ -4837,7 +4842,12 @@
           '<span data-jp>読み込み中…</span><span data-en>Loading…</span></p>';
         buttonsRendered = false;
         var bankBtn = document.getElementById('om-bank-submit');
-        if (bankBtn) { bankBtn.disabled = false; }
+        if (bankBtn) {
+          bankBtn.disabled = false;
+          bankBtn.innerHTML = '<span data-jp>注文内容を送信 →</span><span data-en>Send order details →</span>';
+        }
+        var bankConsent = document.getElementById('om-bank-consent');
+        if (bankConsent) { bankConsent.checked = false; }
         document.getElementById('order-modal-overlay').classList.add('show');
       };
 
@@ -4879,10 +4889,19 @@
 
       window.chooseMethodBank = function () {
         hideAllSteps();
+        var bankBtn = document.getElementById('om-bank-submit');
+        bankBtn.disabled = false;
+        bankBtn.innerHTML = '<span data-jp>注文内容を送信 →</span><span data-en>Send order details →</span>';
         document.getElementById('om-step-bank').style.display = '';
       };
 
       window.submitBankOrder = function () {
+        var consentEl = document.getElementById('om-bank-consent');
+        if (!consentEl.checked) {
+          alert('内容をご確認のうえ、チェックボックスにチェックを入れてください。 / Please check the box to confirm you\'ve read the note above.');
+          return;
+        }
+
         var btn = document.getElementById('om-bank-submit');
         var info = PLAN_INFO[currentPlan];
         btn.disabled = true;
