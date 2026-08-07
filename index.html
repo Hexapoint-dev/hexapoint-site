@@ -4903,24 +4903,15 @@
         }
 
         var btn = document.getElementById('om-bank-submit');
-        var info = PLAN_INFO[currentPlan];
         btn.disabled = true;
         btn.textContent = '送信中… / Sending…';
 
-        var message =
-          'お支払い方法：銀行振込ご希望 / Payment method: Bank transfer requested\n' +
-          'プラン / Plan: ' + info.titleJp + ' / ' + info.titleEn + ' (' + info.priceLabel + ')\n' +
-          '電話番号 / Phone: ' + pendingBuyer.phone + '\n' +
-          'ご住所 / Address: ' + pendingBuyer.address;
-
-        fetch('/api/contact', {
+        fetch('/api/bank-order', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            name: pendingBuyer.name,
-            email: pendingBuyer.email,
-            service: info.titleJp + ' — 銀行振込 / Bank transfer',
-            message: message,
+            planId: currentPlan,
+            buyer: pendingBuyer,
             turnstileToken: pendingToken
           })
         })
