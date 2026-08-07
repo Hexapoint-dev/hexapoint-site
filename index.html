@@ -2634,6 +2634,51 @@
       font-style: italic
     }
 
+    .bank-box {
+      background: var(--cream);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin: 10px 0 18px
+    }
+
+    .bank-box+.bank-box {
+      margin-top: -6px
+    }
+
+    .bank-box .bank-name {
+      font-family: "Shippori Mincho", serif;
+      font-weight: 700;
+      font-size: 15.5px;
+      color: var(--emerald-deep);
+      margin-bottom: 10px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      gap: 8px
+    }
+
+    .bank-box .bank-row {
+      display: flex;
+      gap: 10px;
+      font-size: 14px;
+      line-height: 1.7;
+      padding: 3px 0
+    }
+
+    .bank-box .bank-row .bl {
+      flex: 0 0 120px;
+      opacity: .6
+    }
+
+    .bank-box .bank-row .bv {
+      font-family: "DM Mono", monospace;
+      font-weight: 600;
+      opacity: .95;
+      word-break: break-word
+    }
+
     .modal-hd {
       background: linear-gradient(130deg, var(--emerald), var(--emerald-deep));
       color: var(--cream);
@@ -3193,6 +3238,15 @@
       .mblock p,
       .mvalues {
         padding-left: 0
+      }
+
+      .bank-row {
+        flex-direction: column;
+        gap: 2px
+      }
+
+      .bank-row .bl {
+        flex: none
       }
 
       .modal-close {
@@ -3776,6 +3830,29 @@
           </div>
         </div>
       </div>
+      <details class="q pay-q reveal" style="max-width:760px;margin:28px auto 0">
+        <summary><span><span class="pay-ico" aria-hidden="true">🏦</span><span data-jp>お支払い方法（銀行振込）を確認する</span><span data-en>View Payment Details (Bank Transfer)</span></span><span class="pl">+</span></summary>
+        <div class="a">
+          <p style="font-size:15px;line-height:1.9;opacity:.88;margin-bottom:14px"><span data-jp>各プランの「選ぶ」ボタンからはPayPalでそのままお支払いいただけます。カスタムのご相談・お見積りの場合や、銀行振込でのお支払いをご希望の場合は、下記いずれかの口座へお見積り金額の全額をお振込みください。いずれの方法も、入金確認後に制作を開始いたします。振込手数料は恐れ入りますがお客様のご負担となります。</span><span data-en>You can pay directly via PayPal using the "Choose" button on each plan. For custom consultations or quotations, or if you'd prefer to pay by bank transfer, please transfer the full quoted amount to either of the accounts below. Either way, work begins once payment is confirmed. Any transfer fees are borne by the Client.</span></p>
+
+          <div class="bank-box">
+            <div class="bank-name"><span data-jp>振込先口座 1：ゆうちょ銀行</span><span data-en>Account 1: Japan Post Bank (Yucho Bank)</span></div>
+            <div class="bank-row"><span class="bl"><span data-jp>記号番号（総合）</span><span data-en>Symbol–Number (Sogo)</span></span><span class="bv">10180 - 90649221</span></div>
+            <div class="bank-row"><span class="bl"><span data-jp>他銀行からのお振込み</span><span data-en>From other banks</span></span><span class="bv"><span data-jp>店名：〇一八店（019）／預金種目：普通／口座番号：9064922</span><span data-en>Branch: "019" (0-1-8)／Account type: Ordinary／Account No.: 9064922</span></span></div>
+            <div class="bank-row"><span class="bl"><span data-jp>口座名義</span><span data-en>Account Name</span></span><span class="bv">SHAHATA AHMAD MOHAMM<span data-jp>（シャハタ　アハマド　モハンマド　アデル　ア）</span></span></div>
+          </div>
+
+          <div class="bank-box">
+            <div class="bank-name"><span data-jp>振込先口座 2：GMOあおぞらネット銀行</span><span data-en>Account 2: GMO Aozora Net Bank</span></div>
+            <div class="bank-row"><span class="bl"><span data-jp>支店番号／支店名</span><span data-en>Branch No. / Name</span></span><span class="bv">516 <span data-jp>（ソヨカゼ）</span><span data-en>(Soyokaze)</span></span></div>
+            <div class="bank-row"><span class="bl"><span data-jp>預金種目</span><span data-en>Account Type</span></span><span class="bv"><span data-jp>普通</span><span data-en>Ordinary</span></span></div>
+            <div class="bank-row"><span class="bl"><span data-jp>口座番号</span><span data-en>Account No.</span></span><span class="bv">3870690</span></div>
+            <div class="bank-row"><span class="bl"><span data-jp>口座名義</span><span data-en>Account Name</span></span><span class="bv"><span data-jp>カ）キヤツシユ　シヤハタ　アハマドモハンマドアデルア</span><span data-en>KA) KYASH SHAHATA AHMAD MOHAMMAD ADEL A</span></span></div>
+          </div>
+
+          <p style="font-size:13.5px;line-height:1.8;opacity:.65;margin-top:10px"><span data-jp>※ お振込みの際は、依頼主名をお見積り・請求書に記載のお名前でご入力ください。詳しいお支払い条件は<a href="#terms-open" class="consent-link">利用規約</a>をご確認ください。</span><span data-en>※ When transferring, please enter the sender's name exactly as shown on the quotation or invoice. See the <a href="#terms-open" class="consent-link">Terms &amp; Conditions</a> for full payment terms.</span></p>
+        </div>
+      </details>
     </div>
   </section>
   <section id="faq">
@@ -4014,7 +4091,7 @@
               data-en>Terms &amp; Conditions</span></a> · <a href="#about-open"
             style="color:inherit;text-decoration:underline"><span data-jp>私たちについて</span><span
               data-en>About</span></a></span>
-        <span>Web · Copy · SEO — Dammam &amp; Tokyo</span>
+        <span><span data-jp>Web・Copy・SEO — フルリモート・日本全国対応</span><span data-en>Web · Copy · SEO — Fully remote, serving all of Japan</span></span>
       </div>
     </div>
   </footer>
@@ -4147,28 +4224,32 @@
         <p class="role"><span data-jp>HexaPoint — ご利用条件</span><span data-en>HexaPoint — Terms of Service</span></p>
       </div>
       <div class="terms-bd">
-        <p class="updated"><span data-jp>最終更新日：2026年6月</span><span data-en>Last updated: June 2026</span></p>
+        <p class="updated"><span data-jp>最終更新日：2026年8月7日</span><span data-en>Last updated: August 7, 2026</span></p>
 
         <div class="terms-toc">
-          <a href="#t1"><span data-jp>1. 概要</span><span data-en>1. Overview</span></a>
+          <a href="#t1"><span data-jp>1. 総則</span><span data-en>1. General Provisions</span></a>
           <a href="#t2"><span data-jp>2. サービス内容</span><span data-en>2. Services</span></a>
-          <a href="#t3"><span data-jp>3. 料金と支払い</span><span data-en>3. Pricing &amp; Payment</span></a>
-          <a href="#t4"><span data-jp>4. 納期と修正</span><span data-en>4. Delivery &amp; Revisions</span></a>
-          <a href="#t5"><span data-jp>5. 知的財産権</span><span data-en>5. Intellectual Property</span></a>
-          <a href="#t6"><span data-jp>6. キャンセル・返金</span><span data-en>6. Cancellation &amp; Refunds</span></a>
-          <a href="#t7"><span data-jp>7. 責任の制限</span><span data-en>7. Liability</span></a>
-          <a href="#t8"><span data-jp>8. プライバシー</span><span data-en>8. Privacy</span></a>
-          <a href="#t9"><span data-jp>9. お問い合わせ</span><span data-en>9. Contact</span></a>
+          <a href="#t3"><span data-jp>3. 契約の成立とご依頼の流れ</span><span data-en>3. Formation of Contract</span></a>
+          <a href="#t4"><span data-jp>4. 料金とお支払い</span><span data-en>4. Pricing &amp; Payment</span></a>
+          <a href="#t5"><span data-jp>5. 納期と修正対応</span><span data-en>5. Delivery &amp; Revisions</span></a>
+          <a href="#t6"><span data-jp>6. 知的財産権</span><span data-en>6. Intellectual Property</span></a>
+          <a href="#t7"><span data-jp>7. 納品後の運用・保守について</span><span data-en>7. Post-Delivery Operation &amp; Maintenance</span></a>
+          <a href="#t8"><span data-jp>8. 甲による提供物の保証</span><span data-en>8. Client's Warranty on Provided Materials</span></a>
+          <a href="#t9"><span data-jp>9. 秘密保持</span><span data-en>9. Confidentiality</span></a>
+          <a href="#t10"><span data-jp>10. キャンセル・返金</span><span data-en>10. Cancellation &amp; Refunds</span></a>
+          <a href="#t11"><span data-jp>11. 契約の解除（無応答の場合）</span><span data-en>11. Termination for Non-Response</span></a>
+          <a href="#t12"><span data-jp>12. 責任の制限</span><span data-en>12. Limitation of Liability</span></a>
+          <a href="#t13"><span data-jp>13. 個人情報の取り扱い</span><span data-en>13. Privacy</span></a>
+          <a href="#t14"><span data-jp>14. 紛争解決・準拠法・管轄裁判所</span><span data-en>14. Disputes, Governing Law &amp; Jurisdiction</span></a>
+          <a href="#t15"><span data-jp>15. 雑則（準拠言語・完全合意・分離可能性）</span><span data-en>15. Miscellaneous (Language, Entire Agreement, Severability)</span></a>
+          <a href="#t16"><span data-jp>16. 規約の変更／お問い合わせ</span><span data-en>16. Changes &amp; Contact</span></a>
         </div>
 
         <div class="tsec" id="t1">
-          <h4><span class="tnum">01</span><span data-jp>概要</span><span data-en>Overview</span></h4>
-          <p><span
-              data-jp>本利用規約は、HexaPoint（以下「当方」）が提供するウェブ制作サービスのご利用条件を定めるものです。サービスをご利用いただいた時点で、本規約に同意いただいたものとみなします。</span><span
-              data-en>These Terms govern the use of the web design services provided by HexaPoint ("we," "us"). By using
-              our services, you agree to these Terms.</span></p>
-          <div class="placeholder"><span data-jp>※ ここに会社情報・追加の概要を記入できます。</span><span data-en>※ Add your company
-              information or additional overview here.</span></div>
+          <h4><span class="tnum">01</span><span data-jp>総則</span><span data-en>General Provisions</span></h4>
+          <p><span data-jp>本利用規約（以下「本規約」）は、HexaPoint（以下「当方」）が提供するウェブ制作・SEO・関連コンサルティングサービス（以下「本サービス」）の利用条件を定めるものです。お客様（以下「甲」）が本サービスにお申し込みいただいた時点、またはご依頼内容にご同意いただいた時点で、本規約の内容にご同意いただいたものとみなします。</span><span data-en>These Terms of Service ("Terms") set out the conditions under which HexaPoint ("we," "us," "the Provider") provides web design, SEO, and related consulting services (the "Services"). By submitting a request or agreeing to a quotation, the client ("you," "the Client") is deemed to have accepted these Terms in full.</span></p>
+          <p><span data-jp>本規約に定めのない事項については、日本国の関係法令および一般的な商慣習に従うものとします。</span><span data-en>Matters not covered by these Terms shall be governed by applicable Japanese law and general business practice.</span></p>
+          <p><span data-jp>当方の事業運営はオンラインを基盤としており、日本国内に固定の事業所・店舗を有しません。ご相談から納品まで、すべてメール・オンライン会議等の電磁的手段を通じて行います。当方は、所在地の形態にかかわらず、業務のあらゆる段階において誠実性と透明性を持って甲に対応することをお約束します。</span><span data-en>Our business operates on an online basis and does not maintain a fixed physical office or storefront in Japan. All communication, from initial consultation through delivery, takes place via email, online meetings, and other electronic means. Regardless of our physical location, we are committed to conducting every stage of the engagement with honesty and transparency toward the Client.</span></p>
         </div>
 
         <div class="tsec" id="t2">
@@ -4184,67 +4265,122 @@
             <li><span data-jp>検索エンジン最適化（SEO）</span><span data-en>Search engine optimization (SEO)</span></li>
             <li><span data-jp>公開・運用サポート</span><span data-en>Launch and maintenance support</span></li>
           </ul>
-          <div class="placeholder"><span data-jp>※ 提供サービスの詳細・除外事項をここに追記できます。</span><span data-en>※ Add service details
-              or exclusions here.</span></div>
+          <p><span data-jp>提供するサービスの具体的な範囲・仕様・作業項目は、案件ごとのお見積り・提案書に明記し、当該書面をもって本規約を補完するものとします。お見積りに明記のない作業（追加ページ、追加言語対応、外部システム連携など）は、別途料金が発生する場合があります。</span><span data-en>The specific scope, specifications, and deliverables for each project are set out in the individual quotation or proposal, which supplements these Terms. Work not listed in the quotation (e.g., additional pages, additional languages, third-party system integrations) may incur additional charges.</span></p>
         </div>
 
         <div class="tsec" id="t3">
-          <h4><span class="tnum">03</span><span data-jp>料金と支払い</span><span data-en>Pricing &amp; Payment</span></h4>
-          <p><span data-jp>料金はプロジェクト開始前のお見積りに基づきます。支払い条件・方法については個別にご案内します。</span><span data-en>Fees are based on a quote
-              provided before the project begins. Payment terms and methods are arranged individually.</span></p>
-          <div class="placeholder"><span data-jp>※ 支払い条件（前払い・分割・振込先など）をここに記入できます。</span><span data-en>※ Add payment
-              terms (deposit, installments, bank details, etc.) here.</span></div>
+          <h4><span class="tnum">03</span><span data-jp>契約の成立とご依頼の流れ</span><span data-en>Formation of Contract</span></h4>
+          <p><span data-jp>ご相談・お問い合わせは無料です。当方が提示するお見積りに甲が書面（メール等の電磁的記録を含む）にて承諾の意思を示した時点で、個別のサービス提供契約（以下「本契約」）が成立します。</span><span data-en>Initial consultation is free of charge. An individual service contract ("Contract") is formed once the Client accepts our quotation in writing (including email or other electronic means).</span></p>
+          <p><span data-jp>本契約には着手金・分割払いの制度はなく、お見積り金額の100％をお支払いいただき、当方にて入金を確認した時点で、初めて制作作業に着手します。</span><span data-en>This Contract does not involve a deposit or installment system. Work will only begin once 100% of the quoted amount has been paid in full and payment has been confirmed by us.</span></p>
+          <p><span data-jp>本契約成立後の仕様変更・追加のご依頼は、原則として別途協議のうえ、追加料金・納期の調整を行います。</span><span data-en>Any change or addition to the agreed scope after the Contract is formed will generally be subject to separate discussion and may result in additional fees or a revised schedule.</span></p>
         </div>
 
         <div class="tsec" id="t4">
-          <h4><span class="tnum">04</span><span data-jp>納期と修正</span><span data-en>Delivery &amp; Revisions</span></h4>
-          <p><span data-jp>納期はプロジェクトの規模により異なります。修正回数や追加対応の範囲については、ご契約時に取り決めます。</span><span data-en>Delivery timelines
-              vary by project scope. The number of revisions and scope of additional work are agreed at the time of
-              contract.</span></p>
-          <div class="placeholder"><span data-jp>※ 標準納期・修正回数のルールをここに記入できます。</span><span data-en>※ Add standard delivery
-              times and revision rules here.</span></div>
+          <h4><span class="tnum">04</span><span data-jp>料金とお支払い</span><span data-en>Pricing &amp; Payment</span></h4>
+          <p><span data-jp>料金は、プロジェクト開始前に提示するお見積りに基づきます。当方では着手金・分割払い制度を採用しておらず、お見積り金額の100％を前払いでお支払いいただきます。制作作業は、入金の確認が取れた後にのみ開始します。</span><span data-en>Fees are based on the quotation provided before the project begins. We do not offer a deposit or installment system; 100% of the quoted amount is payable in advance. Work will begin only after payment has been confirmed.</span></p>
+          <p><span data-jp>各プランの「選ぶ」ボタンからは、PayPalによるオンライン決済でお支払いいただけます。カスタムのお見積りをご依頼の場合や、PayPal以外の方法をご希望の場合は、下記いずれかの口座への銀行振込もご利用いただけます。振込手数料は甲のご負担とします。銀行振込でお支払いの際は、依頼主名を甲のお名前（お見積り・請求書に記載の氏名）でご入力ください。</span><span data-en>Payment via the "Choose" button on each plan is processed online through PayPal. If you have requested a custom quotation, or prefer a method other than PayPal, bank transfer to either of the two accounts below is also available. Any transfer fees are borne by the Client. When paying by bank transfer, please enter the sender's name exactly as it appears on the quotation or invoice.</span></p>
+
+          <div class="bank-box">
+            <div class="bank-name"><span data-jp>振込先口座 1：ゆうちょ銀行</span><span data-en>Account 1: Japan Post Bank (Yucho Bank)</span></div>
+            <div class="bank-row"><span class="bl"><span data-jp>記号番号（総合）</span><span data-en>Symbol–Number (Sogo)</span></span><span class="bv">10180 - 90649221</span></div>
+            <div class="bank-row"><span class="bl"><span data-jp>他銀行からのお振込み</span><span data-en>From other banks</span></span><span class="bv"><span data-jp>店名：〇一八店（019）／預金種目：普通／口座番号：9064922</span><span data-en>Branch: "019" (0-1-8)／Account type: Ordinary／Account No.: 9064922</span></span></div>
+            <div class="bank-row"><span class="bl"><span data-jp>口座名義</span><span data-en>Account Name</span></span><span class="bv">SHAHATA AHMAD MOHAMM<span data-jp>（シャハタ　アハマド　モハンマド　アデル　ア）</span></span></div>
+          </div>
+
+          <div class="bank-box">
+            <div class="bank-name"><span data-jp>振込先口座 2：GMOあおぞらネット銀行</span><span data-en>Account 2: GMO Aozora Net Bank</span></div>
+            <div class="bank-row"><span class="bl"><span data-jp>支店番号／支店名</span><span data-en>Branch No. / Name</span></span><span class="bv">516 <span data-jp>（ソヨカゼ）</span><span data-en>(Soyokaze)</span></span></div>
+            <div class="bank-row"><span class="bl"><span data-jp>預金種目</span><span data-en>Account Type</span></span><span class="bv"><span data-jp>普通</span><span data-en>Ordinary</span></span></div>
+            <div class="bank-row"><span class="bl"><span data-jp>口座番号</span><span data-en>Account No.</span></span><span class="bv">3870690</span></div>
+            <div class="bank-row"><span class="bl"><span data-jp>口座名義</span><span data-en>Account Name</span></span><span class="bv"><span data-jp>カ）キヤツシユ　シヤハタ　アハマドモハンマドアデルア</span><span data-en>KA) KYASH SHAHATA AHMAD MOHAMMAD ADEL A</span></span></div>
+          </div>
+
+          <p><span data-jp>いずれの口座も本サービス提供者本人の名義であり、お振込みいただいた資金は本サービスの提供以外の目的には使用いたしません。振込先情報に変更が生じた場合は、事前にメールにてご案内いたします。</span><span data-en>Both accounts are held in the name of the Service Provider, and funds transferred are used solely for the provision of this Service. Should the transfer details change, we will notify the Client in advance by email.</span></p>
+          <p><span data-jp>当方は、可能な限り低コストで質の高いサービスを提供することを方針としており、ご案内したお見積り金額以外に、納品後に甲へ追加の料金をご請求することはありません。ただし、独自ドメインの取得・年間利用（サブスクリプション）や外部有料サービスとの連携など、甲より明示的にご要望・ご依頼をいただいたオプションについては、この限りではなく、別途費用が発生します（例：無料のサブドメインでのご利用は追加費用なし、独自ドメインをご希望の場合は年間契約の費用が別途発生します）。</span><span data-en>It is our policy to deliver quality service at the lowest possible cost, and we do not charge the Client any additional fees after delivery beyond the amount stated in the quotation. This does not apply to options explicitly requested by the Client — such as registering and maintaining a custom domain (annual subscription) or integrating a paid third-party service — which will incur separate charges (for example, use of a free subdomain is included at no extra cost, while a custom domain requires a separate annual subscription fee).</span></p>
         </div>
 
         <div class="tsec" id="t5">
-          <h4><span class="tnum">05</span><span data-jp>知的財産権</span><span data-en>Intellectual Property</span></h4>
-          <p><span data-jp>最終的な成果物の権利の帰属、および第三者素材（フォント・画像など）のライセンスについて定めます。</span><span data-en>This section covers
-              ownership of final deliverables and licensing of third-party assets (fonts, images, etc.).</span></p>
-          <div class="placeholder"><span data-jp>※ 著作権の譲渡条件・ライセンス内容をここに記入できます。</span><span data-en>※ Add copyright
-              transfer terms and licensing details here.</span></div>
+          <h4><span class="tnum">05</span><span data-jp>納期と修正対応</span><span data-en>Delivery &amp; Revisions</span></h4>
+          <p><span data-jp>納期はプロジェクトの規模・内容によって個別に取り決め、お見積りまたは提案書に明記します。甲からの資料提供・フィードバックの遅延により生じた納期の遅れについて、当方は責任を負いません。</span><span data-en>Delivery timelines are agreed individually for each project and stated in the quotation or proposal. We are not responsible for delays caused by the Client's late provision of materials or feedback.</span></p>
+          <p><span data-jp>お見積りに別段の定めがない限り、成果物の初稿提出後、無償修正は2回までとします。3回目以降の修正、または当初のご依頼内容から大幅に逸脱する変更（デザインコンセプトの根本的な変更等）については、追加料金が発生する場合があります。</span><span data-en>Unless otherwise stated in the quotation, up to two rounds of revisions are included free of charge after the first draft is delivered. Further revisions, or changes that substantially depart from the original brief (e.g., a fundamental change of design concept), may incur additional fees.</span></p>
+          <p><span data-jp>ウェブページの納品完了後、甲には1ヶ月間（納品日から起算）、掲載されている文章・テキスト内容の変更を無償でご依頼いただける期間を設けます。この無償対応の範囲は文章・テキストの修正に限られ、デザイン・レイアウト・配色・構成等の変更は含まれません。当該期間を経過した後のテキスト修正、またはデザインに関わる変更については、別途お見積りのうえ追加料金が発生します。</span><span data-en>After delivery of the website, the Client has a period of one (1) month from the delivery date to request changes to the published text content free of charge. This free-of-charge scope is limited to text and copy edits only, and does not include changes to the design, layout, color scheme, or structure. Text changes requested after this period, or any changes involving the design, will be quoted separately and may incur additional fees.</span></p>
+          <p><span data-jp>本条に定める無償修正の範囲（初稿後2回まで、納品後1ヶ月間のテキスト修正）は、単発でご依頼いただく基本デザインプランを基準とするものです。「コンテンツ変更・保守プラン」および「年間無制限サブスクリプション」をご契約の甲については、当該プランの内容（ご依頼ごとの都度対応、または年間を通じた更新対応等）が本条の定めに優先して適用されます。</span><span data-en>The free-revision scope defined in this Article (up to two rounds after the first draft, and one month of text edits after delivery) applies to the one-time Basic Design Plan. For Clients under the Content &amp; Maintenance plan or the Unlimited Annual subscription, the terms of that specific plan (per-request handling, or ongoing updates throughout the year, respectively) take precedence over this Article.</span></p>
         </div>
 
         <div class="tsec" id="t6">
-          <h4><span class="tnum">06</span><span data-jp>キャンセル・返金</span><span data-en>Cancellation &amp; Refunds</span>
-          </h4>
-          <p><span data-jp>プロジェクトのキャンセルおよび返金の条件について定めます。</span><span data-en>This section defines the conditions for
-              project cancellation and refunds.</span></p>
-          <div class="placeholder"><span data-jp>※ キャンセル料・返金ポリシーをここに記入できます。</span><span data-en>※ Add cancellation fees
-              and refund policy here.</span></div>
+          <h4><span class="tnum">06</span><span data-jp>知的財産権</span><span data-en>Intellectual Property</span></h4>
+          <p><span data-jp>本サービスにより制作された成果物（デザイン・コーディング済みのウェブサイト・オリジナル文章等）に関する著作権その他の知的財産権は、料金の全額のお支払いが確認された時点で、当方から甲へ移転します。料金の全額のお支払いが完了するまでの間、当該権利は当方に留保されます。</span><span data-en>Copyright and other intellectual property rights in the deliverables produced under this Contract (design, coded website, original copy, etc.) transfer from us to the Client upon confirmation of full payment. Until full payment is received, such rights remain with us.</span></p>
+          <p><span data-jp>成果物に使用する第三者素材（有償・無償のフォント、ストック画像、プラグイン、オープンソースソフトウェア等）は、それぞれの提供元が定めるライセンス条件に従うものとし、当該ライセンスの範囲を超える利用については甲の責任において別途手続きを行うものとします。</span><span data-en>Third-party assets used in the deliverables (paid or free fonts, stock images, plugins, open-source software, etc.) remain subject to their own respective licenses. Any use beyond the scope of those licenses is the Client's responsibility.</span></p>
+          <p><span data-jp>当方は、甲の書面による事前の承諾がある場合を除き、完成した成果物を自社のポートフォリオ・実績紹介として掲載できるものとします。甲が非公開を希望する場合は、事前にその旨をご連絡ください。</span><span data-en>Unless the Client requests otherwise in writing, we may showcase completed deliverables in our portfolio and case studies. Clients wishing to keep a project confidential should notify us in advance.</span></p>
         </div>
 
         <div class="tsec" id="t7">
-          <h4><span class="tnum">07</span><span data-jp>責任の制限</span><span data-en>Limitation of Liability</span></h4>
-          <p><span data-jp>当方は、サービスの利用により生じた間接的・付随的な損害について、適用法令の範囲内で責任を負いません。検索順位などの結果を保証するものではありません。</span><span
-              data-en>To the extent permitted by law, we are not liable for indirect or incidental damages arising from
-              use of our services. We do not guarantee specific outcomes such as search rankings.</span></p>
-          <div class="placeholder"><span data-jp>※ 免責事項の詳細をここに記入できます。</span><span data-en>※ Add detailed disclaimers
-              here.</span></div>
+          <h4><span class="tnum">07</span><span data-jp>納品後の運用・保守について</span><span data-en>Post-Delivery Operation &amp; Maintenance</span></h4>
+          <p><span data-jp>成果物の納品後、ウェブサイトのホスティング（サーバー）、ドメインの維持・更新、SSL証明書、その他の運用・保守作業は、甲より明示的なご依頼・ご契約がない限り、当方の責任範囲には含まれません。甲は、必要に応じてご自身で、または当方への別途のご依頼により、これらの運用・保守を手配していただくものとします。</span><span data-en>After delivery, website hosting (server), domain maintenance and renewal, SSL certificates, and other operational or maintenance tasks are not within our scope of responsibility unless separately and explicitly requested and contracted by the Client. The Client is responsible for arranging such ongoing operation and maintenance themselves, or by placing a separate order with us if desired.</span></p>
+          <p><span data-jp>甲が当方の提供する無料サブドメインを利用する場合、当該サブドメインに関するサーバーの稼働・維持は当方の管理下で行いますが、常時稼働・特定のアップタイムを保証するものではありません。独自ドメインをご契約いただいた場合の運用条件は、個別のご契約内容に従うものとします。</span><span data-en>Where the Client uses the free subdomain we provide, server operation for that subdomain is managed by us, but we do not guarantee continuous operation or any specific uptime. Where the Client has contracted a custom domain, operating conditions follow the terms of that individual arrangement.</span></p>
         </div>
 
         <div class="tsec" id="t8">
-          <h4><span class="tnum">08</span><span data-jp>プライバシー</span><span data-en>Privacy</span></h4>
-          <p><span data-jp>お預かりした個人情報は、サービス提供の目的のみに使用し、適切に管理します。</span><span data-en>Personal information you provide is
-              used solely for delivering our services and is handled appropriately.</span></p>
-          <div class="placeholder"><span data-jp>※ プライバシーポリシーの詳細・データの取り扱いをここに記入できます。</span><span data-en>※ Add your full
-              privacy policy and data handling details here.</span></div>
+          <h4><span class="tnum">08</span><span data-jp>甲による提供物の保証</span><span data-en>Client's Warranty on Provided Materials</span></h4>
+          <p><span data-jp>甲は、本サービスの遂行のために当方へ提供する文章・画像・写真・ロゴ・商標その他一切の素材（以下「提供物」）について、自らが正当な権利を有していること、または適法に使用する権限を有していることを保証します。</span><span data-en>The Client warrants that it holds the legitimate rights, or has lawful authorization, to use any text, images, photographs, logos, trademarks, and other materials provided to us for the performance of the Services ("Provided Materials").</span></p>
+          <p><span data-jp>提供物が第三者の著作権、商標権、肖像権その他の権利を侵害していないことについても、甲がその責任を負うものとします。提供物に起因して第三者との間で紛争（権利侵害の主張、損害賠償請求等）が生じた場合、甲は自己の責任と費用負担によりこれを解決するものとし、当方が当該紛争により損害を被った場合、甲はこれを賠償するものとします。</span><span data-en>The Client is likewise responsible for ensuring that the Provided Materials do not infringe any third party's copyright, trademark, right of publicity, or other rights. Should any dispute arise with a third party in connection with the Provided Materials (including claims of infringement or damages), the Client shall resolve it at its own responsibility and expense, and shall indemnify us for any resulting damages we incur.</span></p>
+          <p><span data-jp>当方は、甲から提供された提供物について、独自に権利関係の調査・確認を行う義務を負わないものとします。</span><span data-en>We are under no obligation to independently investigate or verify the rights status of any Provided Materials submitted by the Client.</span></p>
         </div>
 
         <div class="tsec" id="t9">
-          <h4><span class="tnum">09</span><span data-jp>お問い合わせ</span><span data-en>Contact</span></h4>
-          <p><span data-jp>本規約に関するご質問は、以下までご連絡ください：hexapoint.jp@gmail.com</span><span data-en>For questions about these
-              Terms, please contact us at: hexapoint.jp@gmail.com</span></p>
+          <h4><span class="tnum">09</span><span data-jp>秘密保持</span><span data-en>Confidentiality</span></h4>
+          <p><span data-jp>甲および当方（以下、両者を合わせて「両当事者」）は、本契約の履行に関連して相手方から開示された技術情報、営業情報、顧客情報、ログイン情報、原稿・素材データその他非公開の情報（以下「機密情報」）を、善良な管理者の注意をもって秘密として保持し、相手方の書面による事前の承諾なく第三者に開示・漏洩してはならないものとします。</span><span data-en>The Client and HexaPoint (together, the "Parties") shall keep confidential, using reasonable care, all technical information, business information, customer data, login credentials, source files, and other non-public information disclosed by the other Party in connection with this Contract ("Confidential Information"), and shall not disclose such information to any third party without the other Party's prior written consent.</span></p>
+          <p><span data-jp>機密情報は、本サービスの提供・履行の目的以外に使用してはならず、目的外利用を行う場合は、必ず両当事者の書面による合意を得るものとします。</span><span data-en>Confidential Information shall not be used for any purpose other than the provision and performance of the Services, and any use beyond that purpose requires the prior written agreement of both Parties.</span></p>
+          <p><span data-jp>以下のいずれかに該当する情報は、機密情報の対象から除外します：（1）開示を受けた時点で既に公知であった情報、（2）開示後、自己の責めによらず公知となった情報、（3）開示を受ける前から自ら適法に保有していた情報、（4）正当な権限を有する第三者から秘密保持義務を負うことなく適法に取得した情報、（5）法令・裁判所・行政機関の要請に基づき開示が義務付けられる情報（この場合、可能な限り事前に相手方へ通知するものとします）。</span><span data-en>The following are excluded from Confidential Information: (1) information already public at the time of disclosure; (2) information that becomes public thereafter through no fault of the receiving Party; (3) information the receiving Party already lawfully held before disclosure; (4) information lawfully obtained from a third party without a duty of confidentiality; and (5) information required to be disclosed by law, court order, or a competent authority (in which case the disclosing Party shall be notified in advance where reasonably possible).</span></p>
+          <p><span data-jp>本条に定める秘密保持義務は、本契約の終了後も3年間存続するものとします。当方は、本契約の終了時、甲から預かった機密情報・データを甲の指示に従い返還または消去します。</span><span data-en>The confidentiality obligations in this Article shall survive termination of the Contract for three (3) years. Upon termination, we will return or delete Confidential Information and data received from the Client in accordance with the Client's instructions.</span></p>
         </div>
 
+        <div class="tsec" id="t10">
+          <h4><span class="tnum">10</span><span data-jp>キャンセル・返金</span><span data-en>Cancellation &amp; Refunds</span>
+          </h4>
+          <p><span data-jp>入金確認後、当方が制作作業に着手する前に甲のご都合によりキャンセルされる場合に限り、お支払いいただいた金額より事務手数料（お見積り金額の10％を上限）を差し引いたうえで返金いたします。</span><span data-en>Cancellation is only possible, and a refund only available, if the Client cancels for their own reasons after payment has been confirmed but before we have begun work on the project. In that case, the amount paid will be refunded after deducting an administrative fee (up to 10% of the quoted amount).</span></p>
+          <p><span data-jp>甲との合意（お見積りへのご承諾）およびご入金が完了し、当方が制作作業に実際に着手した後は、原則としてキャンセル・返金には応じられません。これは、着手した時点で当方の稼働時間・リソースが当該案件のために確保・投入されるためです。当方の責めに帰すべき事由（重大な納期遅延、契約内容の著しい不履行等）がある場合は、この限りではなく、対応について別途協議します。</span><span data-en>Once the Client has agreed to the quotation, payment has been completed, and we have actually begun work on the project, cancellation and refunds are, in principle, no longer available. This is because, from the point work begins, our time and resources are committed and allocated to that project. This does not apply where the cause is attributable to us (e.g., a serious delivery delay or material breach of contract), in which case the matter will be discussed separately.</span></p>
+        </div>
+
+        <div class="tsec" id="t11">
+          <h4><span class="tnum">11</span><span data-jp>契約の解除（ご連絡不能・無応答の場合）</span><span data-en>Termination for Non-Response</span></h4>
+          <p><span data-jp>プロジェクトの進行には、甲からの適時のご返信・資料提供・確認作業が必要です。当方が甲へ連絡（メール・電話等）を行ったにもかかわらず、30日間にわたり甲からの応答がない場合、当方は当該プロジェクトを「保留」扱いとし、リマインダーを送付します。</span><span data-en>Project progress depends on the Client's timely responses, materials, and approvals. If we contact the Client (by email, phone, etc.) and receive no response for thirty (30) consecutive days, we will place the project "on hold" and send a reminder notice.</span></p>
+          <p><span data-jp>保留の通知後、さらに30日間（合計60日間）応答がない場合、当方は本契約を甲の債務不履行により解除できるものとします。本サービスは全額前払い制のため、この場合にお支払い済みの料金は返金されず、当方が既に投じた稼働・確保した作業期間に対する対価として当方に帰属します。</span><span data-en>If no response is received for a further thirty (30) days after the on-hold notice (sixty (60) days in total), we may terminate the Contract for the Client's default. As this Service operates on a full-prepayment basis, fees already paid will not be refunded in this case and shall be retained as consideration for the work and time already committed by us.</span></p>
+          <p><span data-jp>契約解除後、甲がプロジェクトの再開を希望する場合は、新規案件として改めてお見積りをご案内します。データ・素材の保管期間は解除日より90日間とし、期間経過後は消去する場合があります。</span><span data-en>If the Client wishes to resume the project after termination, it will be treated as a new engagement and re-quoted accordingly. Project data and materials will be retained for ninety (90) days from the date of termination, after which they may be deleted.</span></p>
+        </div>
+
+        <div class="tsec" id="t12">
+          <h4><span class="tnum">12</span><span data-jp>責任の制限</span><span data-en>Limitation of Liability</span></h4>
+          <p><span data-jp>当方は、本サービスの利用に関連して甲に生じた損害について、当方の故意または重過失による場合を除き、当該損害発生の原因となった個別契約に基づき甲から現実に受領した料金総額を上限として賠償責任を負うものとします。当方は、間接損害・逸失利益・機会損失・データ喪失その他の付随的・派生的損害について、適用法令により許容される範囲で責任を負いません。</span><span data-en>Except where caused by our willful misconduct or gross negligence, our total liability for any damages arising in connection with the Services shall be limited to the total fees actually received from the Client under the individual contract giving rise to the claim. To the extent permitted by applicable law, we shall not be liable for indirect damages, lost profits, loss of business opportunity, data loss, or other consequential or incidental damages.</span></p>
+          <p><span data-jp>当方は、検索エンジンでの掲載順位、アクセス数、問い合わせ数、売上その他の成果について、これを保証するものではありません。これらは検索エンジンのアルゴリズム変更、市場環境、甲自身の運用方法など、当方の制御が及ばない要因の影響を受けるためです。</span><span data-en>We do not guarantee search engine rankings, traffic, inquiries, sales, or any other outcome, as these are affected by factors beyond our control, such as search engine algorithm changes, market conditions, and how the Client operates the site after launch.</span></p>
+        </div>
+
+        <div class="tsec" id="t13">
+          <h4><span class="tnum">13</span><span data-jp>個人情報の取り扱い</span><span data-en>Privacy</span></h4>
+          <p><span data-jp>当方は、お問い合わせフォームおよびプロジェクト遂行の過程で取得した氏名・連絡先・住所その他の個人情報を、日本の個人情報保護法その他の関連法令を遵守し、本サービスの提供・ご連絡・お見積り作成・請求処理の目的の範囲内でのみ利用します。取得した個人情報は、法令に基づく場合または甲の書面による同意がある場合を除き、第三者へ提供いたしません。</span><span data-en>Personal information collected via our contact form or in the course of a project — such as name, contact details, and address — is handled in accordance with Japan's Act on the Protection of Personal Information and other applicable laws, and is used solely for providing the Services, communicating with the Client, preparing quotations, and processing invoices. We do not share personal information with third parties except where required by law or with the Client's prior written consent.</span></p>
+          <p><span data-jp>個人情報の開示・訂正・利用停止等をご希望の場合は、下記のお問い合わせ先までご連絡ください。合理的な期間内に対応いたします。</span><span data-en>Requests to access, correct, or stop the use of personal information may be sent to the contact address below, and will be handled within a reasonable time.</span></p>
+        </div>
+
+        <div class="tsec" id="t14">
+          <h4><span class="tnum">14</span><span data-jp>紛争解決・準拠法・管轄裁判所</span><span data-en>Disputes, Governing Law &amp; Jurisdiction</span></h4>
+          <p><span data-jp>本規約および個別契約に関して両当事者間に疑義または紛争が生じた場合、両当事者は訴訟に先立ち、誠実な協議によりその解決を図るものとします。</span><span data-en>If any question or dispute arises between the Parties relating to these Terms or an individual contract, the Parties shall first attempt to resolve it through good-faith negotiation before resorting to litigation.</span></p>
+          <p><span data-jp>協議によっても解決に至らない場合、本規約および個別契約は日本国法に準拠し、これに従って解釈されるものとし、東京地方裁判所を第一審の専属的合意管轄裁判所とします。</span><span data-en>If the dispute cannot be resolved through negotiation, these Terms and any individual contract shall be governed by and construed in accordance with the laws of Japan, and the Tokyo District Court shall have exclusive jurisdiction as the court of first instance.</span></p>
+          <p><span data-jp>当方は日本国内に固定の事業所を有さず、業務はオンラインを通じて行われるため、両当事者の便宜と予見可能性を考慮し、上記の管轄裁判所を合意のうえ定めるものとします。</span><span data-en>As we do not maintain a fixed place of business in Japan and operate entirely online, the above jurisdiction is agreed by both Parties in the interest of convenience and predictability.</span></p>
+        </div>
+
+        <div class="tsec" id="t15">
+          <h4><span class="tnum">15</span><span data-jp>雑則（準拠言語・完全合意・分離可能性）</span><span data-en>Miscellaneous (Language, Entire Agreement, Severability)</span></h4>
+          <p><span data-jp>本規約は日本語および英語で作成されていますが、両言語間で解釈・内容に相違が生じた場合は、日本語版の内容を優先するものとします。</span><span data-en>These Terms are provided in both Japanese and English. In the event of any discrepancy or conflict between the two versions, the Japanese version shall prevail.</span></p>
+          <p><span data-jp>本規約および個別のお見積り・提案書は、甲と当方との間における本サービスに関する完全な合意を構成し、本規約締結以前に両当事者間で交わされた口頭または書面によるすべての合意・表明に優先するものとします。</span><span data-en>These Terms, together with the individual quotation or proposal, constitute the entire agreement between the Client and us regarding the Services, and supersede all prior oral or written agreements and representations between the Parties on the subject.</span></p>
+          <p><span data-jp>本規約のいずれかの条項が、法令により無効または執行不能と判断された場合であっても、当該条項以外の規定の効力には影響を及ぼさず、本規約はその他の部分について引き続き有効に存続するものとします。</span><span data-en>If any provision of these Terms is held invalid or unenforceable under applicable law, that determination shall not affect the validity of the remaining provisions, and these Terms shall continue in full force and effect with respect to the remainder.</span></p>
+        </div>
+
+        <div class="tsec" id="t16">
+          <h4><span class="tnum">16</span><span data-jp>規約の変更／お問い合わせ</span><span data-en>Changes to These Terms &amp; Contact</span></h4>
+          <p><span data-jp>当方は、必要と判断した場合、事前の予告なく本規約の内容を変更できるものとします。変更後の規約は、本ウェブサイト上に掲載した時点から効力を生じます。既に進行中の個別契約については、契約締結時点の規約が優先して適用されます。</span><span data-en>We may amend these Terms at any time without prior notice where we consider it necessary. Amended Terms take effect once posted on this website. For contracts already in progress, the Terms in force at the time the individual contract was formed shall continue to apply.</span></p>
+          <p><span data-jp>本規約に関するご質問、または本サービスに関するお問い合わせは、以下までご連絡ください：hexapoint.jp@gmail.com</span><span data-en>For questions about these
+              Terms, please contact us at: hexapoint.jp@gmail.com</span></p>
+        </div>
         <a class="btn btn-primary modal-cta" href="#contact" id="termsCta"><span data-jp>お問い合わせ →</span><span
             data-en>Contact us →</span></a>
       </div>
