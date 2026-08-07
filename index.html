@@ -2350,6 +2350,47 @@
       opacity: .9
     }
 
+    .trust-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      max-width: 620px;
+      margin: 22px auto 0;
+      padding: 12px 20px;
+      background: var(--cream);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      text-align: center;
+      flex-wrap: wrap;
+    }
+
+    .trust-row .ti {
+      flex: 0 0 auto;
+      font-size: 16px;
+      line-height: 1;
+    }
+
+    .trust-row .tt {
+      font-size: 13px;
+      opacity: .78;
+      line-height: 1.6;
+    }
+
+    .trust-row .tt b {
+      opacity: 1;
+      font-weight: 700;
+      color: var(--emerald-deep);
+    }
+
+    .line-note {
+      font-size: 12px;
+      line-height: 1.7;
+      opacity: .62;
+      margin-top: 8px;
+      max-width: 320px;
+    }
+
     .modal-overlay {
       position: fixed;
       inset: 0;
@@ -3830,6 +3871,10 @@
           </div>
         </div>
       </div>
+      <div class="trust-row reveal">
+        <span class="ti" aria-hidden="true">🔒</span>
+        <span class="tt"><span data-jp><b>PayPalの安全な決済</b>でクレジットカードもご利用いただけます。カード情報が当方に渡ることはありません。</span><span data-en>Payments are processed securely through <b>PayPal</b>, including credit cards — your card details are never seen or stored by us.</span></span>
+      </div>
     </div>
   </section>
   <section id="faq">
@@ -3946,6 +3991,7 @@
                 src="https://scdn.line-apps.com/n/line_add_friends/btn/ja.png" alt="友だち追加" height="36"
                 border="0"></a>
           </div>
+          <p class="line-note"><span data-jp>※ LINE公式アカウントの認証バッジは、日本・台湾・タイ国内登録の事業者のみが対象の制度のため、当アカウントは認証マークの表示対象外です。事業運営やご対応の内容に変わりはございませんので、安心してご連絡ください。</span><span data-en>※ LINE's official verification badge is only available to businesses registered in Japan, Taiwan, or Thailand, so this account isn't eligible to display it. It doesn't reflect how we operate — please feel free to reach out with confidence.</span></p>
           <div class="socials">
             <a href="#" aria-label="Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="1.8">
@@ -4725,7 +4771,7 @@
 
         <button type="button" class="om-method-btn" onclick="chooseMethodPaypal()">
           <span class="om-mi" aria-hidden="true">💳</span>
-          <span class="om-mt"><b><span data-jp>PayPalで今すぐ支払う</span><span data-en>Pay now with PayPal</span></b><span class="om-sub"><span data-jp>自動決済・即時完了</span><span data-en>Automated checkout, completed instantly</span></span></span>
+          <span class="om-mt"><b><span data-jp>PayPalで今すぐ支払う</span><span data-en>Pay now with PayPal</span></b><span class="om-sub"><span data-jp>自動決済・即時完了・クレジットカード対応</span><span data-en>Automated checkout, instant, credit cards accepted</span></span></span>
           <span class="om-mar" aria-hidden="true">→</span>
         </button>
 
@@ -4734,6 +4780,8 @@
           <span class="om-mt"><b><span data-jp>銀行振込で支払う</span><span data-en>Pay by bank transfer</span></b><span class="om-sub"><span data-jp>振込先口座をご案内します</span><span data-en>We'll show you the account details</span></span></span>
           <span class="om-mar" aria-hidden="true">→</span>
         </button>
+
+        <p class="om-bank-note" style="text-align:center"><span data-jp>🔒 PayPalでのお支払いはSSL暗号化で保護されており、カード情報が当方に渡ることはありません。</span><span data-en>🔒 PayPal payments are protected by SSL encryption — your card details are never shared with us.</span></p>
 
         <button type="button" class="btn btn-ghost" style="width:100%;justify-content:center;margin-top:6px"
           onclick="backToOrderForm()"><span data-jp>← 戻る</span><span data-en>← Back</span></button>
