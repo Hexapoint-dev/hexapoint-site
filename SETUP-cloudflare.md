@@ -122,11 +122,11 @@ curl -X POST "https://hexapoint.pages.dev/api/indexnow?secret=YOUR_SECRET" \
 **KV 名前空間のバインド**
 `ORDERS_KV`（Settings → Functions → KV namespace bindings）
 
-> ⚠️ **PayPal は現在サンドボックス（テスト）モードです。**
-> `index.html` の SDK は `https://www.sandbox.paypal.com/web-sdk/v6/core` を読み込んでいます。
-> 本番決済を受け付けるには、SDK を `https://www.paypal.com/web-sdk/v6/core` に変更し、
-> `PAYPAL_ENV=live` と本番の Client ID / Secret を設定してください。
-> この 3 つを揃えずに片方だけ変更すると決済が動作しません。
+> ⚠️ **`index.html` の SDK は現在 LIVE（本番）モードに切り替え済みです。**
+> `https://www.paypal.com/web-sdk/v6/core` を読み込んでいます。
+> 本番決済を正しく受け付けるには、Cloudflare の環境変数（Production）を
+> `PAYPAL_ENV=live` にし、**Live** の Client ID / Secret / Webhook ID を設定してください。
+> Sandbox 用の値のままデプロイすると決済が失敗します（SDK と API 環境の不一致）。
 
 ---
 

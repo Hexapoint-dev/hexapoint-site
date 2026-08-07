@@ -4551,10 +4551,11 @@
     })();
   </script>
 
-  <!-- PayPal JS SDK v6 — currently pointed at SANDBOX for testing.
-       When you switch to a Live Client ID, change this back to:
-       https://www.paypal.com/web-sdk/v6/core -->
-  <script src="https://www.sandbox.paypal.com/web-sdk/v6/core"></script>
+  <!-- PayPal JS SDK v6 — LIVE mode.
+       Make sure PAYPAL_ENV=live and the LIVE Client ID / Secret / Webhook ID
+       are set in Cloudflare Pages → Settings → Environment variables (Production)
+       before this takes effect for real payments. -->
+  <script src="https://www.paypal.com/web-sdk/v6/core"></script>
 
   <!-- ===== Order modal: collects buyer info, then renders PayPal Buttons ===== -->
   <style>
