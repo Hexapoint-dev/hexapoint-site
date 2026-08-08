@@ -1604,52 +1604,160 @@
       }
     }
 
-    .quotes {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 20px
+    .tstage {
+      position: relative;
+      max-width: 720px;
+      margin: 0 auto
+    }
+
+    .tviewport {
+      overflow: hidden;
+      border-radius: 28px
+    }
+
+    .ttrack {
+      display: flex;
+      align-items: stretch;
+      transition: transform .7s cubic-bezier(.22, .9, .24, 1)
     }
 
     .quote {
+      flex: 0 0 100%;
+      width: 100%;
+      box-sizing: border-box;
       background: var(--cream);
       border: 1px solid var(--line);
-      border-radius: 22px;
-      padding: 32px;
-      position: relative
+      border-radius: 28px;
+      padding: 56px 60px 44px;
+      position: relative;
+      text-align: center
+    }
+
+    .quote .qnum {
+      position: absolute;
+      top: 20px;
+      right: 30px;
+      font-family: "Shippori Mincho", serif;
+      font-size: 46px;
+      font-weight: 800;
+      color: var(--accent);
+      opacity: .13;
+      line-height: 1;
+      pointer-events: none;
+      user-select: none
     }
 
     .quote .qm {
+      display: inline-grid;
+      place-items: center;
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #fff;
       font-family: "Shippori Mincho", serif;
-      font-size: 60px;
-      color: var(--mint-2);
-      line-height: .6;
-      position: absolute;
-      top: 24px;
-      right: 26px
+      font-size: 30px;
+      line-height: 1;
+      margin: 0 auto 20px;
+      transform: scale(.4);
+      opacity: 0;
+      transition: transform .6s cubic-bezier(.34, 1.56, .64, 1) .2s, opacity .5s ease .2s
+    }
+
+    .quote.in .qm {
+      transform: scale(1);
+      opacity: 1
+    }
+
+    .quote .stars {
+      display: flex;
+      justify-content: center;
+      gap: 3px;
+      margin-bottom: 16px
+    }
+
+    .quote .stars i {
+      font-style: normal;
+      color: var(--accent);
+      font-size: 15px;
+      opacity: 0;
+      transform: translateY(4px) scale(.6);
+      transition: opacity .35s ease, transform .35s cubic-bezier(.34, 1.56, .64, 1)
+    }
+
+    .quote.in .stars i {
+      opacity: 1;
+      transform: none
+    }
+
+    .quote.in .stars i:nth-child(1) {
+      transition-delay: .3s
+    }
+
+    .quote.in .stars i:nth-child(2) {
+      transition-delay: .36s
+    }
+
+    .quote.in .stars i:nth-child(3) {
+      transition-delay: .42s
+    }
+
+    .quote.in .stars i:nth-child(4) {
+      transition-delay: .48s
+    }
+
+    .quote.in .stars i:nth-child(5) {
+      transition-delay: .54s
     }
 
     .quote p {
       position: relative;
       z-index: 1;
-      font-size: 16px
+      font-size: 19px;
+      line-height: 1.8;
+      max-width: 520px;
+      margin: 0 auto;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity .5s ease .18s, transform .5s ease .18s
+    }
+
+    .quote.in p {
+      opacity: 1;
+      transform: none
     }
 
     .quote .who {
       display: flex;
       align-items: center;
+      justify-content: center;
       gap: 12px;
-      margin-top: 20px
+      margin-top: 28px;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity .5s ease .3s, transform .5s ease .3s
+    }
+
+    .quote.in .who {
+      opacity: 1;
+      transform: none
     }
 
     .quote .who .av {
-      width: 42px;
-      height: 42px;
+      width: 44px;
+      height: 44px;
       border-radius: 50%;
       display: grid;
       place-items: center;
       color: #fff;
       font-family: "Shippori Mincho", serif;
-      font-weight: 700
+      font-weight: 700;
+      background: var(--accent);
+      flex-shrink: 0
+    }
+
+    .quote .who .nm {
+      text-align: left
     }
 
     .quote .who .nm b {
@@ -1662,9 +1770,111 @@
       opacity: .65
     }
 
-    @media(max-width:720px) {
-      .quotes {
-        grid-template-columns: 1fr
+    .tctrls {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+      margin-top: 30px
+    }
+
+    .tarrow {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 1px solid var(--line);
+      background: var(--cream);
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      font-size: 17px;
+      color: var(--ink);
+      transition: background .25s, color .25s, border-color .25s, transform .25s
+    }
+
+    .tarrow:hover {
+      background: var(--ink);
+      color: #fff;
+      border-color: var(--ink);
+      transform: translateY(-2px)
+    }
+
+    .tdots {
+      display: flex;
+      align-items: center;
+      gap: 8px
+    }
+
+    .tdot {
+      width: 8px;
+      height: 8px;
+      padding: 0;
+      border: none;
+      border-radius: 50%;
+      background: var(--line);
+      cursor: pointer;
+      transition: all .3s cubic-bezier(.2, .7, .2, 1)
+    }
+
+    .tdot.is-active {
+      width: 26px;
+      border-radius: 5px;
+      background: var(--dot, var(--ink))
+    }
+
+    .tprogress {
+      height: 3px;
+      width: 160px;
+      margin: 20px auto 0;
+      border-radius: 2px;
+      background: var(--line);
+      overflow: hidden
+    }
+
+    .tprogress i {
+      display: block;
+      height: 100%;
+      width: 100%;
+      background: var(--ink);
+      transform: scaleX(0);
+      transform-origin: 0 50%
+    }
+
+    .tprogress.run i {
+      animation: tprog 6s linear forwards
+    }
+
+    .tprogress.paused i {
+      animation-play-state: paused
+    }
+
+    @keyframes tprog {
+      from {
+        transform: scaleX(0)
+      }
+
+      to {
+        transform: scaleX(1)
+      }
+    }
+
+    @media(max-width:640px) {
+      .quote {
+        padding: 44px 26px 34px
+      }
+
+      .quote p {
+        font-size: 17px
+      }
+    }
+
+    @media(prefers-reduced-motion:reduce) {
+      .ttrack {
+        transition: none
+      }
+
+      .tprogress {
+        display: none
       }
     }
 
@@ -3772,24 +3982,63 @@
       </div>
     </div>
   </section>
-  <section style="padding-top:0">
+  <section id="voices">
+    <div class="gbg" aria-hidden="true">
+      <div class="gtint cool"></div>
+      <div class="ghex gfloat hide-sm" style="width:110px;height:120px;top:30px;left:-30px;color:#f5912a">
+        <svg viewBox="0 0 100 110">
+          <path d="M50 2 L93 27 L93 83 L50 108 L7 83 L7 27 Z" fill="none" stroke="currentColor" stroke-width="2.5" />
+        </svg>
+      </div>
+      <div class="ghex gspin hide-sm" style="width:150px;height:164px;bottom:-30px;right:-50px;color:#e63548;opacity:.09">
+        <svg viewBox="0 0 100 110">
+          <path d="M50 2 L93 27 L93 83 L50 108 L7 83 L7 27 Z" fill="none" stroke="currentColor" stroke-width="2.5" />
+        </svg>
+      </div>
+      <div class="gblob" style="width:220px;height:220px;background:var(--mint-2);top:40%;left:50%;opacity:.22"></div>
+    </div>
     <div class="wrap">
-      <div class="quotes">
-        <div class="quote reveal" data-d="1"><span class="qm">”</span>
-          <p><span data-jp>公開して二ヶ月で、検索からの問い合わせが倍になりました。文章まで任せられたのが本当に助かりました。</span><span data-en>Inquiries from search
-              doubled within two months of launch. Having the copy handled too was a lifesaver.</span></p>
-          <div class="who"><span class="av" style="background:var(--emerald)">T</span><span class="nm"><b><span
-                  data-jp>田中 様</span><span data-en>Ms. Tanaka</span></b><span><span data-jp>フリーランス写真家</span><span
-                  data-en>Freelance photographer</span></span></span></div>
+      <div class="sec-head reveal" style="text-align:center">
+        <span class="eye" style="justify-content:center"><span data-jp>お客様の声</span><span data-en>Client
+            voices</span></span>
+        <h2 style="margin:0 auto"><span data-jp>信頼と実績、その声。</span><span data-en>Real people, real
+            results.</span></h2>
+        <p style="margin:16px auto 0"><span data-jp>実際に依頼してくださった方々の、率直な声です。</span><span data-en>A few honest
+            words from clients I've worked with.</span></p>
+      </div>
+      <div class="tstage reveal" id="tStage">
+        <div class="tviewport">
+          <div class="ttrack" id="tTrack">
+            <div class="quote" style="--accent:var(--emerald)">
+              <span class="qnum">01</span>
+              <span class="qm">”</span>
+              <div class="stars" aria-hidden="true"><i>★</i><i>★</i><i>★</i><i>★</i><i>★</i></div>
+              <p><span data-jp>公開して二ヶ月で、検索からの問い合わせが倍になりました。文章まで任せられたのが本当に助かりました。</span><span data-en>Inquiries
+                  from search doubled within two months of launch. Having the copy handled too was a
+                  lifesaver.</span></p>
+              <div class="who"><span class="av">T</span><span class="nm"><b><span data-jp>田中 様</span><span
+                      data-en>Ms. Tanaka</span></b><span><span data-jp>フリーランス写真家</span><span
+                      data-en>Freelance photographer</span></span></span></div>
+            </div>
+            <div class="quote" style="--accent:var(--coral)">
+              <span class="qnum">02</span>
+              <span class="qm">”</span>
+              <div class="stars" aria-hidden="true"><i>★</i><i>★</i><i>★</i><i>★</i><i>★</i></div>
+              <p><span data-jp>日本語と英語の両方で作ってもらえて、海外のお客様からの注文が増えました。対応も丁寧で安心でした。</span><span data-en>Building it
+                  in both Japanese and English brought in orders from overseas. The whole process felt careful and
+                  reassuring.</span></p>
+              <div class="who"><span class="av">S</span><span class="nm"><b><span data-jp>佐藤 様</span><span
+                      data-en>Mr. Sato</span></b><span><span data-jp>コーヒー焙煎所オーナー</span><span data-en>Coffee
+                      roaster owner</span></span></span></div>
+            </div>
+          </div>
         </div>
-        <div class="quote reveal" data-d="2"><span class="qm">”</span>
-          <p><span data-jp>日本語と英語の両方で作ってもらえて、海外のお客様からの注文が増えました。対応も丁寧で安心でした。</span><span data-en>Building it in both
-              Japanese and English brought in orders from overseas. The whole process felt careful and
-              reassuring.</span></p>
-          <div class="who"><span class="av" style="background:var(--coral)">S</span><span class="nm"><b><span data-jp>佐藤
-                  様</span><span data-en>Mr. Sato</span></b><span><span data-jp>コーヒー焙煎所オーナー</span><span data-en>Coffee
-                  roaster owner</span></span></span></div>
+        <div class="tctrls">
+          <button class="tarrow" id="tPrev" type="button" aria-label="Previous testimonial">‹</button>
+          <div class="tdots" id="tDots"></div>
+          <button class="tarrow" id="tNext" type="button" aria-label="Next testimonial">›</button>
         </div>
+        <div class="tprogress" id="tProg"><i></i></div>
       </div>
     </div>
   </section>
@@ -4576,6 +4825,85 @@
           stopCycle(); hovering = false; reset();
         }
       }).observe(aModal, { attributes: true, attributeFilter: ['class'] });
+    })();
+  </script>
+  <script>
+    /* client-voices carousel: auto-advances one testimonial at a time, pauses on hover/focus, dots + arrows */
+    (function () {
+      var stage = document.getElementById('tStage');
+      var track = document.getElementById('tTrack');
+      var dotsWrap = document.getElementById('tDots');
+      var prog = document.getElementById('tProg');
+      var prevBtn = document.getElementById('tPrev');
+      var nextBtn = document.getElementById('tNext');
+      if (!stage || !track || !dotsWrap) return;
+      var slides = [].slice.call(track.children);
+      if (!slides.length) return;
+      var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var DUR = 6000;
+      var i = 0, timer = null;
+
+      slides.forEach(function (s, idx) {
+        var d = document.createElement('button');
+        d.type = 'button';
+        d.className = 'tdot';
+        d.setAttribute('aria-label', 'Show testimonial ' + (idx + 1));
+        var accent = s.style.getPropertyValue('--accent');
+        if (accent) d.style.setProperty('--dot', accent);
+        d.addEventListener('click', function () { go(idx, true); });
+        dotsWrap.appendChild(d);
+      });
+      var dots = [].slice.call(dotsWrap.children);
+
+      function go(n, user) {
+        i = (n + slides.length) % slides.length;
+        track.style.transform = 'translateX(-' + (i * 100) + '%)';
+        slides.forEach(function (s, idx) { s.classList.toggle('in', idx === i); });
+        dots.forEach(function (d, idx) { d.classList.toggle('is-active', idx === i); });
+        restartProgress();
+        if (user) restartTimer();
+      }
+      function next() { go(i + 1); }
+      function prev() { go(i - 1); }
+      function restartProgress() {
+        if (!prog || reduce) return;
+        prog.classList.remove('run');
+        void prog.offsetWidth;
+        prog.classList.add('run');
+      }
+      function startTimer() {
+        if (reduce || timer) return;
+        timer = setInterval(next, DUR);
+      }
+      function stopTimer() {
+        if (timer) { clearInterval(timer); timer = null; }
+      }
+      function restartTimer() { stopTimer(); startTimer(); }
+
+      if (nextBtn) nextBtn.addEventListener('click', function () { go(i + 1, true); });
+      if (prevBtn) prevBtn.addEventListener('click', function () { go(i - 1, true); });
+      stage.addEventListener('mouseenter', function () { stopTimer(); if (prog) prog.classList.add('paused'); });
+      stage.addEventListener('mouseleave', function () { startTimer(); if (prog) prog.classList.remove('paused'); });
+      stage.addEventListener('focusin', function () { stopTimer(); if (prog) prog.classList.add('paused'); });
+      stage.addEventListener('focusout', function () { startTimer(); if (prog) prog.classList.remove('paused'); });
+      stage.setAttribute('tabindex', '0');
+      stage.addEventListener('keydown', function (e) {
+        if (e.key === 'ArrowLeft') { prev(); restartTimer(); }
+        if (e.key === 'ArrowRight') { next(); restartTimer(); }
+      });
+
+      // basic swipe support for touch devices
+      var touchX = null;
+      track.addEventListener('touchstart', function (e) { touchX = e.touches[0].clientX; }, { passive: true });
+      track.addEventListener('touchend', function (e) {
+        if (touchX === null) return;
+        var dx = e.changedTouches[0].clientX - touchX;
+        if (Math.abs(dx) > 40) { dx < 0 ? next() : prev(); restartTimer(); }
+        touchX = null;
+      }, { passive: true });
+
+      go(0);
+      startTimer();
     })();
   </script>
 
