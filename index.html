@@ -1091,10 +1091,173 @@
       background: var(--ink);
       color: var(--paper);
       border-radius: 34px;
-      padding: 64px 0;
+      padding: 44px 0;
       margin: 0;
       position: relative;
       overflow: hidden
+    }
+
+    .proc-nav {
+      display: flex;
+      gap: 6px;
+      position: relative;
+      margin-bottom: 22px;
+    }
+
+    .proc-nav:before {
+      content: "";
+      position: absolute;
+      left: 20px;
+      right: 20px;
+      top: 20px;
+      height: 1px;
+      background: rgba(251, 250, 244, .16);
+      z-index: 0;
+    }
+
+    .proc-tab {
+      flex: 1;
+      background: none;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 4px 0;
+      position: relative;
+      z-index: 1;
+      font-family: inherit;
+    }
+
+    .proc-tab .pn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(251, 250, 244, .3);
+      color: var(--paper);
+      opacity: .55;
+      font-family: "DM Mono", monospace;
+      display: grid;
+      place-items: center;
+      font-size: 14px;
+      background: var(--ink);
+      transition: transform .3s ease, background .25s, border-color .25s, color .25s, opacity .25s;
+    }
+
+    .proc-tab .pt-track {
+      width: 100%;
+      max-width: 76px;
+      height: 2px;
+      background: rgba(251, 250, 244, .15);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-top: 2px;
+    }
+
+    .proc-tab .pt-fill {
+      display: block;
+      height: 100%;
+      width: 0%;
+      background: var(--lime);
+      border-radius: 2px;
+    }
+
+    .proc-tab .pt-fill.anim {
+      animation: procProgress 4.5s linear forwards;
+    }
+
+    @keyframes procProgress {
+      from {
+        width: 0%
+      }
+
+      to {
+        width: 100%
+      }
+    }
+
+    .proc-tab .pt {
+      font-size: 12px;
+      color: var(--paper);
+      opacity: .55;
+      text-align: center;
+      line-height: 1.3;
+      transition: .25s;
+      display: block;
+    }
+
+    .proc-tab.active .pn {
+      background: var(--lime);
+      border-color: var(--lime);
+      color: var(--ink);
+      opacity: 1;
+      transform: scale(1.1);
+    }
+
+    .proc-tab.active .pt {
+      opacity: 1;
+      color: var(--lime);
+    }
+
+    .proc-panel-wrap {
+      min-height: 92px;
+    }
+
+    .proc-panel {
+      display: none;
+    }
+
+    .proc-panel.active {
+      display: block;
+    }
+
+    .proc-panel .pp-en {
+      font-family: "Spectral", serif;
+      font-style: italic;
+      font-size: 13px;
+      color: var(--lime);
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    .proc-panel p {
+      font-size: 15px;
+      color: #fbe4cf;
+      opacity: .9;
+      max-width: 560px;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    @keyframes procFadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(6px)
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0)
+      }
+    }
+
+    .proc-panel.fade-in {
+      animation: procFadeIn .35s ease;
+    }
+
+    @media(max-width:640px) {
+      .proc-tab .pt {
+        display: none;
+      }
+
+      .proc-tab.active .pt {
+        display: block;
+      }
+
+      .proc-panel p {
+        font-size: 14px;
+      }
     }
 
     .proc .glow {
@@ -1122,92 +1285,9 @@
       z-index: 2
     }
 
-    .steps {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 0
-    }
-
-    .step {
-      padding: 0 24px;
-      position: relative
-    }
-
-    .step:not(:last-child):after {
-      content: "";
-      position: absolute;
-      right: 0;
-      top: 14px;
-      width: 1px;
-      height: calc(100% - 14px);
-      background: rgba(251, 250, 244, .16)
-    }
-
-    .step .n {
-      width: 48px;
-      height: 48px;
-      border-radius: 50%;
-      border: 1.5px solid var(--lime);
-      color: var(--lime);
-      font-family: "DM Mono", monospace;
-      display: grid;
-      place-items: center;
-      font-size: 16px;
-      margin-bottom: 20px;
-      transition: .3s
-    }
-
-    .step:hover .n {
-      background: var(--lime);
-      color: var(--ink)
-    }
-
-    .step h4,
-    .step h3 {
-      font-family: "Shippori Mincho", serif;
-      font-weight: 700;
-      font-size: 20px;
-      margin-bottom: 4px
-    }
-
-    .step .h4en {
-      font-family: "Spectral", serif;
-      font-style: italic;
-      font-size: 13px;
-      color: var(--lime);
-      display: block;
-      margin-bottom: 10px
-    }
-
-    .step p {
-      font-size: 14px;
-      color: #fbe4cf;
-      opacity: .85
-    }
-
     @media(max-width:860px) {
-      .steps {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 36px 0
-      }
-
-      .step:nth-child(2):after {
-        display: none
-      }
-    }
-
-    @media(max-width:520px) {
-      .steps {
-        grid-template-columns: 1fr
-      }
-
-      .step:after {
-        display: none !important
-      }
-
-      .step {
-        border-bottom: 1px solid rgba(251, 250, 244, .14);
-        padding-bottom: 28px
+      .proc-nav .pt {
+        font-size: 11px;
       }
     }
 
@@ -3737,36 +3817,111 @@
             <p><span data-jp>何が起きているか、いつも見えるように進めます。丸投げで不安、にはしません。</span><span data-en>You always know what's happening.
                 No black boxes, no anxious waiting.</span></p>
           </div>
-          <div class="steps">
-            <div class="step reveal" data-d="1">
-              <div class="n">01</div>
-              <h3><span data-jp>ヒアリング</span><span data-en>Listen</span></h3><span class="h4en"><span
-                  data-jp>Discovery</span><span data-en>発見</span></span>
-              <p><span data-jp>仕事・お客様・目標を伺い、検索でどう見つけてほしいかも一緒に決めます。</span><span data-en>We map your work, clients, and
-                  goals — including how people should find you.</span></p>
+          <div class="proc-nav">
+            <button type="button" class="proc-tab active" data-step="1" onclick="setProcStep(1)">
+              <span class="pn">01</span><span class="pt"><span data-jp>ヒアリング</span><span data-en>Listen</span></span>
+              <span class="pt-track"><span class="pt-fill"></span></span>
+            </button>
+            <button type="button" class="proc-tab" data-step="2" onclick="setProcStep(2)">
+              <span class="pn">02</span><span class="pt"><span data-jp>設計と執筆</span><span data-en>Plan &
+                  write</span></span>
+              <span class="pt-track"><span class="pt-fill"></span></span>
+            </button>
+            <button type="button" class="proc-tab" data-step="3" onclick="setProcStep(3)">
+              <span class="pn">03</span><span class="pt"><span data-jp>デザイン制作</span><span data-en>Design &
+                  build</span></span>
+              <span class="pt-track"><span class="pt-fill"></span></span>
+            </button>
+            <button type="button" class="proc-tab" data-step="4" onclick="setProcStep(4)">
+              <span class="pn">04</span><span class="pt"><span data-jp>公開と改善</span><span data-en>Launch &
+                  grow</span></span>
+              <span class="pt-track"><span class="pt-fill"></span></span>
+            </button>
+          </div>
+          <div class="proc-panel-wrap">
+            <div class="proc-panel active" data-panel="1">
+              <span class="pp-en"><span data-jp>発見</span><span data-en>Discovery</span></span>
+              <p><span data-jp>仕事・お客様・目標を伺い、検索でどう見つけてほしいかも一緒に決めます。</span><span data-en>We map your work, clients,
+                  and goals — including how people should find you.</span></p>
             </div>
-            <div class="step reveal" data-d="2">
-              <div class="n">02</div>
-              <h3><span data-jp>設計と執筆</span><span data-en>Plan & write</span></h3><span class="h4en"><span
-                  data-jp>Structure</span><span data-en>構成</span></span>
+            <div class="proc-panel" data-panel="2">
+              <span class="pp-en"><span data-jp>構成</span><span data-en>Structure</span></span>
               <p><span data-jp>ページ構成・キーワード設計・日英の文章を準備します。</span><span data-en>Page structure, target keywords, and
                   bilingual copy take shape.</span></p>
             </div>
-            <div class="step reveal" data-d="3">
-              <div class="n">03</div>
-              <h3><span data-jp>デザイン制作</span><span data-en>Design & build</span></h3><span class="h4en"><span
-                  data-jp>Make it</span><span data-en>形にする</span></span>
-              <p><span data-jp>デザインを起こし、速くて崩れないコードに組み上げます。</span><span data-en>Design becomes fast, solid, hand-built
-                  code.</span></p>
+            <div class="proc-panel" data-panel="3">
+              <span class="pp-en"><span data-jp>形にする</span><span data-en>Make it</span></span>
+              <p><span data-jp>デザインを起こし、速くて崩れないコードに組み上げます。</span><span data-en>Design becomes fast, solid,
+                  hand-built code.</span></p>
             </div>
-            <div class="step reveal" data-d="4">
-              <div class="n">04</div>
-              <h3><span data-jp>公開と改善</span><span data-en>Launch & grow</span></h3><span class="h4en"><span data-jp>Go
-                  live</span><span data-en>公開</span></span>
-              <p><span data-jp>Google登録・順位確認・微調整まで。公開後も伴走します。</span><span data-en>Indexing, ranking checks, tuning — I
-                  stay with you after launch.</span></p>
+            <div class="proc-panel" data-panel="4">
+              <span class="pp-en"><span data-jp>公開</span><span data-en>Go live</span></span>
+              <p><span data-jp>Google登録・順位確認・微調整まで。公開後も伴走します。</span><span data-en>Indexing, ranking checks, tuning
+                  — I stay with you after launch.</span></p>
             </div>
           </div>
+          <script>
+            (function () {
+              var procTotal = 4;
+              var procIndex = 1;
+              var procDuration = 4500;
+              var procTimer = null;
+
+              function activateStep(n) {
+                procIndex = n;
+                document.querySelectorAll('.proc-tab').forEach(function (el) {
+                  var isActive = Number(el.dataset.step) === n;
+                  el.classList.toggle('active', isActive);
+                  var fill = el.querySelector('.pt-fill');
+                  if (fill) {
+                    fill.classList.remove('anim');
+                    void fill.offsetWidth;
+                    if (isActive) fill.classList.add('anim');
+                  }
+                });
+                document.querySelectorAll('.proc-panel').forEach(function (el) {
+                  if (Number(el.dataset.panel) === n) {
+                    el.classList.add('active');
+                    el.classList.remove('fade-in');
+                    void el.offsetWidth;
+                    el.classList.add('fade-in');
+                  } else {
+                    el.classList.remove('active');
+                  }
+                });
+              }
+
+              function stopAuto() {
+                if (procTimer) { clearInterval(procTimer); procTimer = null; }
+              }
+
+              function startAuto() {
+                stopAuto();
+                procTimer = setInterval(function () {
+                  activateStep(procIndex >= procTotal ? 1 : procIndex + 1);
+                }, procDuration);
+              }
+
+              window.setProcStep = function (n) {
+                activateStep(n);
+                startAuto();
+              };
+
+              activateStep(1);
+              startAuto();
+
+              var procSection = document.getElementById('process');
+              if (procSection && 'IntersectionObserver' in window) {
+                var procIO = new IntersectionObserver(function (entries) {
+                  entries.forEach(function (entry) {
+                    if (entry.isIntersecting) startAuto();
+                    else stopAuto();
+                  });
+                }, { threshold: .2 });
+                procIO.observe(procSection);
+              }
+            })();
+          </script>
         </div>
       </div>
     </div>
