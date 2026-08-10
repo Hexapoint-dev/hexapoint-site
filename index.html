@@ -1769,6 +1769,42 @@
       border-radius: 30px
     }
 
+    .tag-base {
+      position: absolute;
+      top: -13px;
+      left: 30px;
+      background: var(--emerald-deep);
+      color: #fff;
+      font-family: "DM Mono", monospace;
+      font-size: 11px;
+      letter-spacing: .08em;
+      padding: 5px 13px;
+      border-radius: 30px
+    }
+
+    .plan-branch {
+      font-family: "DM Mono", monospace;
+      font-size: 11px;
+      letter-spacing: .02em;
+      color: var(--emerald-deep);
+      opacity: .8;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin: -8px 0 16px;
+    }
+
+    .plan-branch svg {
+      width: 12px;
+      height: 12px;
+      flex: 0 0 auto;
+      opacity: .8;
+    }
+
+    .plan.feat .plan-branch {
+      color: var(--lime);
+    }
+
     .plan h3 {
       font-family: "Shippori Mincho", serif;
       font-weight: 700;
@@ -1823,6 +1859,88 @@
 
     .plan.feat li:before {
       color: var(--lime)
+    }
+
+    .plan li.plan-group {
+      border-top: none;
+      padding: 16px 0 4px;
+      font-family: "DM Mono", monospace;
+      font-size: 10.5px;
+      letter-spacing: .08em;
+      font-weight: 700;
+      color: var(--emerald-deep);
+      opacity: .8;
+      text-transform: uppercase;
+    }
+
+    .plan.feat li.plan-group {
+      color: var(--lime);
+      opacity: .9;
+    }
+
+    .plan li.plan-group:first-child {
+      padding-top: 0
+    }
+
+    .plan li.plan-group:before {
+      content: none
+    }
+
+    .plan ul.collapsible {
+      max-height: 275px;
+      overflow: hidden;
+      position: relative;
+      transition: max-height .4s ease;
+    }
+
+    .plan ul.collapsible.expanded {
+      max-height: 3000px;
+    }
+
+    .plan ul.collapsible:not(.expanded):after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 46px;
+      background: linear-gradient(transparent, var(--cream));
+      pointer-events: none;
+    }
+
+    .plan.feat ul.collapsible:not(.expanded):after {
+      background: linear-gradient(transparent, var(--ink));
+    }
+
+    .plan-more-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      width: 100%;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-family: "Zen Kaku Gothic New", sans-serif;
+      font-size: 12.5px;
+      font-weight: 700;
+      color: var(--emerald-deep);
+      padding: 4px 0 18px;
+      margin-top: -4px;
+    }
+
+    .plan.feat .plan-more-btn {
+      color: var(--lime);
+    }
+
+    .plan-more-btn svg {
+      width: 12px;
+      height: 12px;
+      transition: transform .3s ease;
+    }
+
+    .plan-more-btn.is-open svg {
+      transform: rotate(180deg);
     }
 
     .plan .btn {
@@ -3528,7 +3646,7 @@
               <circle cx="10.3" cy="11.9" r=".95" fill="currentColor" />
             </svg></div>
           <h3><span data-jp>モダンなテンプレート設計</span><span data-en>Modern templates</span></h3><span class="h3en"><span
-              data-jp>Modern page templates</span><span data-en>洗練されたデザイン</span></span>
+              data-jp>洗練されたデザイン</span><span data-en>Modern page templates</span></span>
           <p><span data-jp>今の時代に合った、洗練された画面デザイン。すぐ使えるのに、あなたのブランドに合わせて仕上げます。</span><span data-en>Sleek, current page
               designs that work out of the box, then get tailored to fit your brand.</span></p>
         </div>
@@ -3542,7 +3660,7 @@
                 stroke-width="1.9" />
             </svg></div>
           <h3><span data-jp>ビジュアル・アイデンティティ</span><span data-en>Brand identity</span></h3><span class="h3en"><span
-              data-jp>Logo & visual identity</span><span data-en>ロゴと世界観</span></span>
+              data-jp>ロゴと世界観</span><span data-en>Logo & visual identity</span></span>
           <p><span data-jp>ロゴ・配色・フォントまで、ひと目であなただとわかる世界観を設計。サイト全体に一貫性を持たせます。</span><span data-en>Logo, palette, and type
               that make you instantly recognizable — carried consistently across the whole site.</span></p>
         </div>
@@ -3556,7 +3674,7 @@
                 stroke-linecap="round" />
             </svg></div>
           <h3><span data-jp>ページの文章作成</span><span data-en>Content writing</span></h3><span class="h3en"><span
-              data-jp>Words that convert</span><span data-en>伝わる文章</span></span>
+              data-jp>伝わる文章</span><span data-en>Words that convert</span></span>
           <p><span data-jp>「何ができる人か」が三秒で伝わる文章を、日本語と英語の両方で。読まれて、行動につながる言葉を。</span><span data-en>Copy that says what you
               do in three seconds — in both Japanese and English, written to move people to act.</span></p>
         </div>
@@ -3569,8 +3687,8 @@
                 stroke-width="2.2" />
               <path d="M22.1 13.2 24.9 16" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" />
             </svg></div>
-          <h3><span data-jp>SEOの強化</span><span data-en>SEO optimization</span></h3><span class="h3en"><span data-jp>Get
-              found on Google</span><span data-en>検索で見つかる</span></span>
+          <h3><span data-jp>SEOの強化</span><span data-en>SEO optimization</span></h3><span class="h3en"><span data-jp>検索で見つかる</span><span data-en>Get
+              found on Google</span></span>
           <p><span data-jp>キーワード調査・構造化データ・表示速度まで。Googleに正しく理解され、上位に表示される土台を整えます。</span><span data-en>Keyword research,
               structured data, and speed — the groundwork for Google to understand and rank you.</span></p>
         </div>
@@ -3587,7 +3705,7 @@
                 stroke-linecap="round" />
             </svg></div>
           <h3><span data-jp>最小コストで公開</span><span data-en>Lowest-cost launch</span></h3><span class="h3en"><span
-              data-jp>Best value, live fast</span><span data-en>低コストで運用開始</span></span>
+              data-jp>低コストで運用開始</span><span data-en>Best value, live fast</span></span>
           <p><span data-jp>できるだけ費用を抑えてあなたのページを公開・運用。無駄を省いた構成で、すぐに成果につなげます。</span><span data-en>Get your page live and
               running at the lowest possible cost — a lean setup with no waste, working for you fast.</span></p>
         </div>
@@ -3600,7 +3718,7 @@
                 stroke-linejoin="round" />
             </svg></div>
           <h3><span data-jp>公開後の運用・サポート</span><span data-en>Care & support</span></h3><span class="h3en"><span
-              data-jp>With you after launch</span><span data-en>公開後もずっと一緒に</span></span>
+              data-jp>公開後もずっと一緒に</span><span data-en>With you after launch</span></span>
           <p><span data-jp>公開して終わりではありません。更新・改善・検索順位の確認まで、公開後もずっと一緒に。安心して運用を続けられます。</span><span data-en>Launch isn't the
               finish line. Updates, improvements, and ranking checks — I stay with you long after going live, so your
               site keeps performing with peace of mind.</span></p>
@@ -3850,8 +3968,9 @@
       <div class="sec-head reveal" style="text-align:center">
         <span class="eye" style="justify-content:center"><span data-jp>料金</span><span data-en>Pricing</span></span>
         <h2 style="margin:0 auto"><span data-jp>わかりやすい、3つの料金。</span><span data-en>Three clear ways to start.</span></h2>
-        <p style="margin:16px auto 0"><span data-jp>すべて初回相談・お見積りは無料です。規模に合わせて柔軟に調整します。</span><span data-en>The first
-            call and quote are always free, and every plan flexes to your scale.</span></p>
+        <p style="margin:16px auto 0"><span data-jp>すべて初回相談・お見積りは無料です。掲載内容は一例で、実際の構成は業種やご要望に合わせて、打ち合わせの中で一緒に決めていきます。</span><span data-en>The first
+            call and quote are always free. What's listed below is a starting point — the exact mix is shaped
+            around your business and needs as we talk it through.</span></p>
       </div>
       <div class="vbanner reveal">
         <span class="vb-ico">¥</span>
@@ -3860,21 +3979,61 @@
               no-waste setup that keeps your spend as low as possible.</span></span></span>
       </div>
       <div class="plans">
-        <div class="plan reveal" data-d="1">
+        <div class="plan reveal" data-d="1"><span class="tag-base"><span data-jp>土台</span><span
+              data-en>FOUNDATION</span></span>
           <h3><span data-jp>基本デザインプラン</span><span data-en>Basic Design</span></h3><span class="h3en"><span
-              data-jp>Single page</span><span data-en>1ページ完結</span></span>
+              data-jp>1ページ完結</span><span data-en>Single page</span></span>
           <div class="price">¥100,000<small> 〜</small></div>
-          <ul>
-            <li><span data-jp>完全な1ページ・スマホ完全対応</span><span data-en>One complete page, fully mobile-responsive</span></li>
-            <li><span data-jp>HTML, CSS, JS Programming</span><span data-en>HTML, CSS, JS programming</span></li>
-            <li><span data-jp>ロゴ＆ビジュアルアイデンティティ</span><span data-en>Logo &amp; visual identity</span></li>
-            <li><span data-jp>二言語サイト</span><span data-en>Bilingual website</span></li>
-            <li><span data-jp>業務紹介セクション</span><span data-en>Business introduction section</span></li>
-            <li><span data-jp>提供サービスセクション</span><span data-en>Services offered section</span></li>
-            <li><span data-jp>よくある質問（Q&amp;A）セクション</span><span data-en>FAQ (Q&amp;A) section</span></li>
-            <li><span data-jp>「私たちについて」セクション</span><span data-en>About section</span></li>
-            <li><span data-jp>お問い合わせ セクション</span><span data-en>Contact section</span></li>
+          <p class="line-note" style="margin:-6px 0 14px;opacity:.7"><span data-jp>まずはこのプランでサイトを制作します。運用開始後は、下記いずれかのプランで継続的にサポートできます。</span><span data-en>Start here to build your site. Once it's live, continue with either plan below for ongoing support.</span></p>
+          <ul class="collapsible" id="basic-plan-list">
+            <li class="plan-group"><span data-jp>ページ構成</span><span data-en>Page sections</span></li>
+            <li><span data-jp>完全レスポンシブな1ページ構成</span><span data-en>One fully responsive one-page site</span></li>
+            <li><span data-jp>ギャラリー（写真・作品紹介）セクション</span><span data-en>Photo gallery section</span></li>
+            <li><span data-jp>自己紹介・会社紹介セクション</span><span data-en>About / self-introduction section</span></li>
+            <li><span data-jp>サービス・メニュー紹介セクション（飲食店の商品メニューにも対応）</span><span data-en>Services or menu section (supports restaurant menus)</span></li>
+            <li><span data-jp>お客様の声セクション</span><span data-en>Customer testimonials section</span></li>
+            <li><span data-jp>料金・ご購入セクション</span><span data-en>Pricing &amp; purchase section</span></li>
+            <li><span data-jp>よくある質問（Q&amp;A）セクション</span><span data-en>FAQ section</span></li>
+            <li><span data-jp>お問い合わせセクション</span><span data-en>Contact section</span></li>
+
+            <li class="plan-group"><span data-jp>デザイン・コンテンツ</span><span data-en>Design &amp; content</span></li>
+            <li><span data-jp>ロゴ＆ビジュアルアイデンティティ制作</span><span data-en>Logo &amp; visual identity design</span></li>
+            <li><span data-jp>初期コンテンツ（文章）の執筆代行</span><span data-en>Initial copywriting</span></li>
+            <li><span data-jp>日英二言語対応サイト</span><span data-en>Bilingual site (JP/EN)</span></li>
+
+            <li class="plan-group"><span data-jp>機能・外部連携</span><span data-en>Features &amp; integrations</span></li>
+            <li><span data-jp>Googleマップとの連携</span><span data-en>Google Maps integration</span></li>
+            <li><span data-jp>LINE公式アカウント（LINE Business）との連携</span><span data-en>LINE Business integration</span></li>
+            <li><span data-jp>クレジットカード等オンライン決済サービスとのAPI連携</span><span data-en>Online payment API integration</span></li>
+            <li><span data-jp>お客様情報入力フォーム＋メールでのご注文受付</span><span data-en>Customer info form with email order notifications</span></li>
+            <li><span data-jp>専用データベースでのお問い合わせ・注文管理</span><span data-en>Dedicated database for inquiries &amp; orders</span></li>
+            <li><span data-jp>高速表示に優れた静的サイト構築（HTML, CSS, JS）</span><span data-en>Fast static site build (HTML, CSS, JS)</span></li>
+
+            <li class="plan-group"><span data-jp>セキュリティ・信頼性</span><span data-en>Security &amp; trust</span></li>
+            <li><span data-jp>無料SSL証明書による暗号化通信（HTTPS）</span><span data-en>Free SSL certificate — encrypted HTTPS connection</span></li>
+            <li><span data-jp>スパム・不正送信を防ぐBot対策</span><span data-en>Bot &amp; spam protection on forms</span></li>
+            <li><span data-jp>クリックジャッキング等を防ぐセキュリティヘッダー設定</span><span data-en>Security headers against clickjacking &amp; common attacks</span></li>
+            <li><span data-jp>世界規模のCDNによる高速配信とDDoS対策</span><span data-en>Global CDN delivery with built-in DDoS protection</span></li>
+
+            <li class="plan-group"><span data-jp>SEO・分析</span><span data-en>SEO &amp; analytics</span></li>
+            <li><span data-jp>基本的なSEO設定（メタタグ・OGP・構造化データ）</span><span data-en>Basic SEO setup (meta tags, OGP, structured data)</span></li>
+            <li><span data-jp>ファビコン＆SNSシェア用画像（OGP画像）の設定</span><span data-en>Favicon &amp; social-share image (OGP) setup</span></li>
+            <li><span data-jp>サイトマップの作成・検索エンジンへの送信</span><span data-en>Sitemap creation &amp; search engine submission</span></li>
+            <li><span data-jp>アクセス解析の導入（訪問者数の可視化）</span><span data-en>Visitor analytics setup</span></li>
+
+            <li class="plan-group"><span data-jp>公開・法務サポート</span><span data-en>Launch &amp; support</span></li>
+            <li><span data-jp>サブドメインでの公開・ホスティング</span><span data-en>Hosting on a subdomain</span></li>
+            <li><span data-jp>利用規約の設置</span><span data-en>Terms &amp; Conditions page</span></li>
+            <li><span data-jp>プライバシーポリシーの設置</span><span data-en>Privacy Policy page</span></li>
+            <li><span data-jp>公開後1ヶ月間の無料サポート（軽微な不具合の修正）</span><span data-en>1 month of free post-launch support (minor bug fixes)</span></li>
           </ul>
+          <button type="button" class="plan-more-btn" aria-expanded="false" aria-controls="basic-plan-list"
+            onclick="var u=this.previousElementSibling,o=u.classList.toggle('expanded');u.style.maxHeight=o?(u.scrollHeight+'px'):'';this.classList.toggle('is-open',o);this.setAttribute('aria-expanded',o);this.querySelector('[data-jp]').textContent=o?'閉じる':'すべての項目を見る';this.querySelector('[data-en]').textContent=o?'Show less':'See everything included';">
+            <span data-jp>すべての項目を見る</span><span data-en>See everything included</span>
+            <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M2 4l4 4 4-4" />
+            </svg>
+          </button>
           <div style="text-align:center;margin-top:auto">
             <button type="button" class="btn btn-primary" style="width:100%;justify-content:center"
               onclick="openOrderModal('basic')"><span data-jp>選ぶ</span><span data-en>Choose</span></button>
@@ -3882,15 +4041,46 @@
         </div>
         <div class="plan reveal" data-d="2">
           <h3><span data-jp>コンテンツ変更・保守プラン</span><span data-en>Content &amp; Maintenance</span></h3><span
-            class="h3en"><span data-jp>Per request</span><span data-en>ご依頼ごと</span></span>
+            class="h3en"><span data-jp>ご依頼ごと</span><span data-en>Per request</span></span>
+          <p class="plan-branch"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M2 1v5a3 3 0 003 3h5M7 6l3 3-3 3" />
+            </svg><span data-jp>基本デザインプランへの追加</span><span data-en>Builds on the Basic Design plan</span></p>
           <div class="price">¥50,000<small> /件</small></div>
-          <ul>
-            <li><span data-jp>既存サイトの文章・画像の変更</span><span data-en>Update existing text &amp; images</span></li>
-            <li><span data-jp>新しいセクションの追加</span><span data-en>Add new sections</span></li>
-            <li><span data-jp>デザインの微調整</span><span data-en>Minor design adjustments</span></li>
+          <p class="line-note" style="margin:-6px 0 14px"><span data-jp>サブスクリプションではなく、都度のご購入です。サイトの安全性維持のため、半年に一度のご利用を推奨しています。</span><span data-en>Not a subscription — purchased whenever you need it. We recommend using it about every 6 months to keep your site secure and up to date.</span></p>
+          <ul class="collapsible" id="maintenance-plan-list">
+            <li class="plan-group"><span data-jp>コンテンツ更新</span><span data-en>Content updates</span></li>
+            <li><span data-jp>既存ページの文章・写真の変更</span><span data-en>Update existing text &amp; images</span></li>
+            <li><span data-jp>価格表・メニュー内容の更新</span><span data-en>Update price lists &amp; menu content</span></li>
+            <li><span data-jp>新しいセクション・ページ要素の追加</span><span data-en>Add new sections or page elements</span></li>
+            <li><span data-jp>キャンペーン・季節のお知らせバナーの掲載</span><span data-en>Add campaign or seasonal announcement banners</span></li>
+
+            <li class="plan-group"><span data-jp>デザイン調整</span><span data-en>Design adjustments</span></li>
+            <li><span data-jp>レイアウト・配色の微調整</span><span data-en>Minor layout &amp; color adjustments</span></li>
+            <li><span data-jp>写真・画像素材の差し替え</span><span data-en>Replace photos &amp; image assets</span></li>
+
+            <li class="plan-group"><span data-jp>不具合・トラブル対応</span><span data-en>Bug &amp; issue fixes</span></li>
+            <li><span data-jp>表示崩れ・レイアウト崩れの修正</span><span data-en>Fix display &amp; layout glitches</span></li>
+            <li><span data-jp>リンク切れ・画像未表示の修正</span><span data-en>Fix broken links &amp; missing images</span></li>
+            <li><span data-jp>スマホ表示の不具合対応</span><span data-en>Fix mobile display issues</span></li>
+            <li><span data-jp>フォーム・決済機能の動作確認と修正</span><span data-en>Check &amp; fix contact form and payment functionality</span></li>
+
+            <li class="plan-group"><span data-jp>SEO・外部連携の見直し</span><span data-en>SEO &amp; integration updates</span></li>
+            <li><span data-jp>メタタグ・SEO設定の見直し</span><span data-en>Review &amp; update SEO meta settings</span></li>
+            <li><span data-jp>サイトマップの再送信</span><span data-en>Resubmit sitemap after major changes</span></li>
+            <li><span data-jp>Googleマップ・LINE等の連携情報の更新</span><span data-en>Update Google Maps &amp; LINE integration details</span></li>
+
+            <li class="plan-group"><span data-jp>対応の流れ・安心保証</span><span data-en>Process &amp; assurance</span></li>
+            <li><span data-jp>作業前に現状のバックアップを取得</span><span data-en>Backup taken before every change</span></li>
             <li><span data-jp>修正のご依頼ごとにお見積り</span><span data-en>Priced per individual update request</span></li>
             <li><span data-jp>通常3営業日以内に対応</span><span data-en>Typically completed within 3 business days</span></li>
           </ul>
+          <button type="button" class="plan-more-btn" aria-expanded="false" aria-controls="maintenance-plan-list"
+            onclick="var u=this.previousElementSibling,o=u.classList.toggle('expanded');u.style.maxHeight=o?(u.scrollHeight+'px'):'';this.classList.toggle('is-open',o);this.setAttribute('aria-expanded',o);this.querySelector('[data-jp]').textContent=o?'閉じる':'すべての項目を見る';this.querySelector('[data-en]').textContent=o?'Show less':'See everything included';">
+            <span data-jp>すべての項目を見る</span><span data-en>See everything included</span>
+            <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M2 4l4 4 4-4" />
+            </svg>
+          </button>
           <div style="text-align:center;margin-top:auto">
             <button type="button" class="btn btn-primary" style="width:100%;justify-content:center"
               onclick="openOrderModal('maintenance')"><span data-jp>選ぶ</span><span
@@ -3900,14 +4090,42 @@
         <div class="plan feat reveal" data-d="3"><span class="tag3"><span data-jp>人気</span><span
               data-en>POPULAR</span></span>
           <h3><span data-jp>年間無制限サブスクリプション</span><span data-en>Unlimited Annual</span></h3><span class="h3en"><span
-              data-jp>Best value</span><span data-en>最もお得</span></span>
+              data-jp>最もお得</span><span data-en>Best value</span></span>
+          <p class="plan-branch"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M2 1v5a3 3 0 003 3h5M7 6l3 3-3 3" />
+            </svg><span data-jp>基本デザインプランへの追加</span><span data-en>Builds on the Basic Design plan</span></p>
           <div class="price">¥200,000<small> /年〜</small></div>
-          <ul>
-            <li><span data-jp>年間を通して更新・修正が無制限</span><span data-en>Unlimited updates &amp; edits all year</span></li>
-            <li><span data-jp>優先対応</span><span data-en>Priority support</span></li>
-            <li><span data-jp>検索順位レポート</span><span data-en>Search ranking reports</span></li>
+          <p class="line-note" style="margin:-6px 0 14px;opacity:.85"><span data-jp>年間を通じて、更新・修正・新しいお知らせの掲載回数に制限はありません。</span><span data-en>Unlimited updates, edits, and new posts — all year round.</span></p>
+          <ul class="collapsible" id="annual-plan-list">
+            <li class="plan-group"><span data-jp>デザイン・ページ構成</span><span data-en>Design &amp; page structure</span></li>
+            <li><span data-jp>デザインの更新・部分リニューアル（回数無制限）</span><span data-en>Design updates &amp; partial refreshes (unlimited)</span></li>
+            <li><span data-jp>新しいセクション・ページ要素の追加（回数無制限）</span><span data-en>New sections or page elements added anytime</span></li>
+            <li><span data-jp>写真・画像素材の差し替え</span><span data-en>Replace photos &amp; image assets</span></li>
+
+            <li class="plan-group"><span data-jp>コンテンツ更新（随時・無制限）</span><span data-en>Content updates (anytime, unlimited)</span></li>
+            <li><span data-jp>文章・価格表・メニュー内容の更新</span><span data-en>Update text, price lists &amp; menu content</span></li>
+            <li><span data-jp>キャンペーン・セール情報の随時掲載</span><span data-en>Publish campaigns &amp; sales promotions anytime</span></li>
+            <li><span data-jp>イベント・季節のお知らせ・臨時営業案内の掲載</span><span data-en>Post events, seasonal notices &amp; special announcements</span></li>
+            <li><span data-jp>新商品・新サービスの追加掲載</span><span data-en>Add new products or services as they launch</span></li>
+
+            <li class="plan-group"><span data-jp>不具合・トラブル対応</span><span data-en>Bug &amp; issue fixes</span></li>
+            <li><span data-jp>表示崩れ・リンク切れ・スマホ表示不具合の随時修正</span><span data-en>Ongoing fixes for display glitches, broken links &amp; mobile issues</span></li>
+            <li><span data-jp>フォーム・決済機能の動作確認と修正</span><span data-en>Check &amp; fix contact form and payment functionality</span></li>
+            <li><span data-jp>作業前に現状のバックアップを取得</span><span data-en>Backup taken before every change</span></li>
+
+            <li class="plan-group"><span data-jp>優先対応・成長サポート</span><span data-en>Priority support &amp; growth</span></li>
+            <li><span data-jp>他プランより優先的に対応</span><span data-en>Priority turnaround over other plans</span></li>
+            <li><span data-jp>検索順位レポート（定期）</span><span data-en>Regular search ranking reports</span></li>
             <li><span data-jp>表示速度・SEOの継続的な改善</span><span data-en>Ongoing speed &amp; SEO improvements</span></li>
+            <li><span data-jp>チャット・メールでいつでもご相談可能</span><span data-en>Chat &amp; email support whenever you need it</span></li>
           </ul>
+          <button type="button" class="plan-more-btn" aria-expanded="false" aria-controls="annual-plan-list"
+            onclick="var u=this.previousElementSibling,o=u.classList.toggle('expanded');u.style.maxHeight=o?(u.scrollHeight+'px'):'';this.classList.toggle('is-open',o);this.setAttribute('aria-expanded',o);this.querySelector('[data-jp]').textContent=o?'閉じる':'すべての項目を見る';this.querySelector('[data-en]').textContent=o?'Show less':'See everything included';">
+            <span data-jp>すべての項目を見る</span><span data-en>See everything included</span>
+            <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M2 4l4 4 4-4" />
+            </svg>
+          </button>
           <div style="text-align:center;margin-top:auto">
             <button type="button" class="btn btn-ghost" style="width:100%;justify-content:center"
               onclick="openOrderModal('annual')"><span data-jp>選ぶ</span><span data-en>Choose</span></button>
@@ -3949,7 +4167,7 @@
         <details class="q">
           <summary><span><span data-jp>公開後の更新は自分でできますか？</span><span data-en>Can I update the site myself
                 afterward?</span></span><span class="pl">+</span></summary>
-          <div class="a"><span data-jp>ご希望に応じて選べます。ご自身で気軽に更新できる仕組みにすることも、内容変更・保守プランや年間無制限サブスクリプションでこちらが代行することも可能です。「どちらが自分に合うか分からない」という場合も、一緒に考えますのでご安心ください。</span><span data-en>It's entirely up to you. I can build the site so you can update it yourself with ease, or handle everything for you through the Content &amp; Maintenance package or the Unlimited Annual subscription. Not sure which fits you best? We'll figure it out together.</span></div>
+          <div class="a"><span data-jp>ご希望に応じて選べます。ご自身で気軽に更新できる仕組みにすることも、コンテンツ変更・保守プランや年間無制限サブスクリプションでこちらが代行することも可能です。「どちらが自分に合うか分からない」という場合も、一緒に考えますのでご安心ください。</span><span data-en>It's entirely up to you. I can build the site so you can update it yourself with ease, or handle everything for you through the Content &amp; Maintenance package or the Unlimited Annual subscription. Not sure which fits you best? We'll figure it out together.</span></div>
         </details>
         <details class="q">
           <summary><span><span data-jp>本当に検索で上位に出ますか？</span><span data-en>Will I really rank on
