@@ -1718,10 +1718,51 @@
       }
     }
 
-    .quotes {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 20px
+    .quotes-viewport {
+      overflow: hidden;
+      position: relative;
+      -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+      mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+    }
+
+    .quotes-track {
+      display: flex;
+      gap: 20px;
+      width: max-content;
+      animation: quotesScroll 32s linear infinite;
+    }
+
+    .quotes-viewport:hover .quotes-track,
+    .quotes-viewport:focus-within .quotes-track {
+      animation-play-state: paused;
+    }
+
+    @keyframes quotesScroll {
+      from {
+        transform: translateX(0)
+      }
+
+      to {
+        transform: translateX(-50%)
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .quotes-track {
+        animation: none;
+      }
+    }
+
+    .quotes-track .quote {
+      width: 360px;
+      flex: 0 0 360px;
+    }
+
+    @media(max-width:520px) {
+      .quotes-track .quote {
+        width: 300px;
+        flex: 0 0 300px;
+      }
     }
 
     .quote {
@@ -1774,12 +1815,6 @@
     .quote .who .nm span {
       font-size: 13px;
       opacity: .65
-    }
-
-    @media(max-width:720px) {
-      .quotes {
-        grid-template-columns: 1fr
-      }
     }
 
     .plans {
@@ -4089,21 +4124,42 @@
   </section>
   <section style="padding-top:0">
     <div class="wrap">
-      <div class="quotes">
-        <div class="quote reveal" data-d="1"><span class="qm">”</span>
-          <p><span data-jp>公開して二ヶ月で、検索からの問い合わせが倍になりました。文章まで任せられたのが本当に助かりました。</span><span data-en>Inquiries from search
-              doubled within two months of launch. Having the copy handled too was a lifesaver.</span></p>
-          <div class="who"><span class="av" style="background:var(--emerald)">T</span><span class="nm"><b><span
-                  data-jp>田中 様</span><span data-en>Ms. Tanaka</span></b><span><span data-jp>フリーランス写真家</span><span
-                  data-en>Freelance photographer</span></span></span></div>
-        </div>
-        <div class="quote reveal" data-d="2"><span class="qm">”</span>
-          <p><span data-jp>日本語と英語の両方で作ってもらえて、海外のお客様からの注文が増えました。対応も丁寧で安心でした。</span><span data-en>Building it in both
-              Japanese and English brought in orders from overseas. The whole process felt careful and
-              reassuring.</span></p>
-          <div class="who"><span class="av" style="background:var(--coral)">S</span><span class="nm"><b><span data-jp>佐藤
-                  様</span><span data-en>Mr. Sato</span></b><span><span data-jp>コーヒー焙煎所オーナー</span><span data-en>Coffee
-                  roaster owner</span></span></span></div>
+      <div class="quotes-viewport">
+        <div class="quotes-track">
+          <div class="quote"><span class="qm">”</span>
+            <p><span data-jp>とにかく出来上がりのスピードが早いです。毎回細かい部分の改善をお願いしたのですが、すぐ編集してくださり思い通りのサイトができました！また文章などの案も出してくださるので私はほとんど何もせず確認作業のみでした！ありがとうございます！</span><span
+                data-en>The turnaround was incredibly fast. Every time I asked for small tweaks, they were made
+                right away, and the site turned out exactly as I imagined. They even suggested the wording
+                themselves, so all I really had to do was review it. Thank you so much!</span></p>
+            <div class="who"><span class="av" style="background:var(--emerald)">す</span><span class="nm"><b><span
+                    data-jp>すずジャパニーズアカデミー 様</span><span data-en>Suzu Japanese Academy</span></b><span><span
+                    data-jp>オンライン日本語レッスン</span><span data-en>Online Japanese Lessons</span></span></span></div>
+          </div>
+          <div class="quote"><span class="qm">”</span>
+            <p><span data-jp>日本語と英語の両方で作ってもらえて、海外のお客様からの注文が増えました。対応も丁寧で安心でした。</span><span data-en>Building it in both
+                Japanese and English brought in orders from overseas. The whole process felt careful and
+                reassuring.</span></p>
+            <div class="who"><span class="av" style="background:var(--coral)">S</span><span class="nm"><b><span
+                    data-jp>佐藤 様</span><span data-en>Mr. Sato</span></b><span><span data-jp>コーヒー焙煎所オーナー</span><span
+                    data-en>Coffee roaster owner</span></span></span></div>
+          </div>
+          <div class="quote" aria-hidden="true"><span class="qm">”</span>
+            <p><span data-jp>とにかく出来上がりのスピードが早いです。毎回細かい部分の改善をお願いしたのですが、すぐ編集してくださり思い通りのサイトができました！また文章などの案も出してくださるので私はほとんど何もせず確認作業のみでした！ありがとうございます！</span><span
+                data-en>The turnaround was incredibly fast. Every time I asked for small tweaks, they were made
+                right away, and the site turned out exactly as I imagined. They even suggested the wording
+                themselves, so all I really had to do was review it. Thank you so much!</span></p>
+            <div class="who"><span class="av" style="background:var(--emerald)">す</span><span class="nm"><b><span
+                    data-jp>すずジャパニーズアカデミー 様</span><span data-en>Suzu Japanese Academy</span></b><span><span
+                    data-jp>オンライン日本語レッスン</span><span data-en>Online Japanese Lessons</span></span></span></div>
+          </div>
+          <div class="quote" aria-hidden="true"><span class="qm">”</span>
+            <p><span data-jp>日本語と英語の両方で作ってもらえて、海外のお客様からの注文が増えました。対応も丁寧で安心でした。</span><span data-en>Building it in both
+                Japanese and English brought in orders from overseas. The whole process felt careful and
+                reassuring.</span></p>
+            <div class="who"><span class="av" style="background:var(--coral)">S</span><span class="nm"><b><span
+                    data-jp>佐藤 様</span><span data-en>Mr. Sato</span></b><span><span data-jp>コーヒー焙煎所オーナー</span><span
+                    data-en>Coffee roaster owner</span></span></span></div>
+          </div>
         </div>
       </div>
     </div>
