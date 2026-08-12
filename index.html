@@ -2951,6 +2951,61 @@
       font-style: italic
     }
 
+    .legal-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 6px;
+    }
+
+    .legal-table tr {
+      border-bottom: 1px solid var(--line);
+    }
+
+    .legal-table th {
+      text-align: left;
+      padding: 18px 24px 18px 0;
+      width: 190px;
+      font-weight: 700;
+      font-family: "Zen Kaku Gothic New", sans-serif;
+      font-size: 14px;
+      vertical-align: top;
+      color: var(--ink);
+    }
+
+    .legal-table td {
+      padding: 18px 0;
+      font-size: 14px;
+      line-height: 1.85;
+      color: var(--ink);
+      opacity: .85;
+      vertical-align: top;
+    }
+
+    .legal-table td a {
+      color: var(--emerald-deep);
+      text-decoration: underline;
+    }
+
+    @media(max-width:640px) {
+
+      .legal-table th,
+      .legal-table td {
+        display: block;
+        width: 100%;
+        padding: 2px 0;
+      }
+
+      .legal-table th {
+        padding-top: 18px;
+        opacity: .55;
+        font-size: 12px;
+      }
+
+      .legal-table td {
+        padding-bottom: 4px;
+      }
+    }
+
     .bank-box {
       background: var(--cream);
       border: 1px solid var(--line);
@@ -4581,13 +4636,16 @@
           <a href="https://wa.me/966548447746"><span data-jp>WhatsApp</span><span data-en>WhatsApp</span></a>
           <a href="#about-open"><span data-jp>私たちについて</span><span data-en>About</span></a>
           <a href="#terms-open"><span data-jp>利用規約</span><span data-en>Terms &amp; Conditions</span></a>
+          <a href="#legal-open"><span data-jp>特定商取引法に基づく表記</span><span data-en>Legal Notice</span></a>
           <a href="#work"><span data-jp>実績</span><span data-en>Work</span></a>
         </div>
       </div>
       <div class="foot-btm">
         <span>© 2026 HexaPoint</span>
         <span><a href="#terms-open" style="color:inherit;text-decoration:underline"><span data-jp>利用規約</span><span
-              data-en>Terms &amp; Conditions</span></a> · <a href="#about-open"
+              data-en>Terms &amp; Conditions</span></a> · <a href="#legal-open"
+            style="color:inherit;text-decoration:underline"><span data-jp>特定商取引法に基づく表記</span><span
+              data-en>Legal Notice</span></a> · <a href="#about-open"
             style="color:inherit;text-decoration:underline"><span data-jp>私たちについて</span><span
               data-en>About</span></a></span>
         <span><span data-jp>Web・Copy・SEO — フルリモート・日本全国対応</span><span data-en>Web · Copy · SEO — Fully remote, serving all of Japan</span></span>
@@ -4699,6 +4757,26 @@
               time.</span></p>
         </div>
         <div class="mblock">
+          <h4><span class="mi">環</span><span data-jp>働き方について</span><span data-en>How I work</span></h4>
+          <p><span
+              data-jp>サウジアラビアを拠点にしながら、日本のお客様とオンラインで日々やり取りしています。時差はおよそ4〜6時間ほどありますが、メールやLINEでのご連絡には基本的に24時間以内にご返信し、大きな支障が出ないよう工夫しています。実際に日本に滞在する機会も定期的にあり、必要であれば対面でのご相談も可能です。</span><span
+              data-en>Based in Saudi Arabia, I work with clients across Japan entirely online. The time difference is
+              roughly 4–6 hours, but I reply to emails and LINE messages within 24 hours as a rule, so it rarely
+              gets in the way. I also travel to Japan regularly, so in-person conversations are possible when
+              needed.</span></p>
+        </div>
+        <div class="mblock">
+          <h4><span class="mi">個</span><span data-jp>一人だからこそ</span><span data-en>The strength of working
+              solo</span></h4>
+          <p><span
+              data-jp>HexaPointは、私一人で運営しています。だからこそ、ヒアリングからデザイン、コーディング、SEOまで、すべてを同じ人間が一貫して担当します。間に営業や複数の担当者を挟まないので、伝言ゲームのようなズレが起きず、細かなご要望もそのまま反映できます。小さなチームだからこそ実現できる、小回りの利く制作スタイルです。</span><span
+              data-en>HexaPoint is run by me alone — and that's exactly the point. From the first conversation
+              through design, coding, and SEO, the same person handles everything end to end. There's no sales rep
+              or hand-off between departments, so nothing gets lost along the way, and even small requests come
+              through exactly as you meant them. It's a hands-on style of work only a one-person studio can
+              offer.</span></p>
+        </div>
+        <div class="mblock">
           <h4><span class="mi">志</span><span data-jp>ミッション</span><span data-en>Mission</span></h4>
           <p><span data-jp>すべてのビジネスに、お客様を惹きつける「オンラインの顔」を。規模や予算に関わらず、誰もがプロフェッショナルなウェブページを持てる世界を目指します。</span><span
               data-en>To give every business an online presence that attracts customers — making a professional web page
@@ -4711,6 +4789,15 @@
               data-en>A web page that merely exists isn't enough. Its value lies in telling your full story, earning
               trust, and turning into inquiries and sales. We keep pursuing pages that turn visitors into
               customers.</span></p>
+        </div>
+        <div class="mblock">
+          <h4><span class="mi">広</span><span data-jp>専門分野の広さ</span><span data-en>A range of industries</span></h4>
+          <p><span
+              data-jp>飲食店、写真家、語学スクール、コンサルティング会社など、業種を問わず幅広いお客様のウェブサイトを手がけてきました。それぞれの業界に合わせた見せ方・伝え方のコツを積み重ねてきたことも、私たちの強みです。どんな業種のお客様でも、まずはお気軽にご相談ください。</span><span
+              data-en>I've built sites for restaurants, photographers, language schools, consulting firms, and
+              more — across a wide range of industries. Along the way, I've picked up an instinct for how to
+              present each kind of business at its best. Whatever field you're in, feel free to reach out and we'll
+              figure it out together.</span></p>
         </div>
         <div class="mblock">
           <h4><span class="mi">値</span><span data-jp>大切にしていること</span><span data-en>What I value</span></h4>
@@ -4904,6 +4991,93 @@
       </div>
     </div>
   </div>
+  <div class="modal-overlay" id="legalModal" role="dialog" aria-modal="true" aria-labelledby="legalTitle">
+    <div class="modal modal-wide">
+      <button class="modal-close" id="legalClose" aria-label="Close">×</button>
+      <div class="modal-hd">
+        <div class="ring a"></div>
+        <div class="ring b"></div>
+        <div class="ava"><img
+            src="/logo.webp" loading="lazy" decoding="async"
+            alt="HexaPoint"></div>
+        <h3 id="legalTitle"><span data-jp>特定商取引法に基づく表記</span><span data-en>Legal Notice</span></h3>
+        <p class="role"><span data-jp>特定商取引法第11条に基づく表示</span><span data-en>Disclosure under Japan's Act on Specified
+            Commercial Transactions</span></p>
+      </div>
+      <div class="terms-bd">
+        <p class="updated"><span data-jp>最終更新日：2026年8月11日</span><span data-en>Last updated: August 11, 2026</span></p>
+        <table class="legal-table">
+          <tr>
+            <th><span data-jp>販売業者</span><span data-en>Business Operator</span></th>
+            <td>シャハタ アハマド モハンマドアデル ア<br><span style="opacity:.7">Ahmad Mohammedadel A Shahata</span></td>
+          </tr>
+          <tr>
+            <th><span data-jp>運営統括責任者</span><span data-en>Person in Charge</span></th>
+            <td><span data-jp>シャハタ アハマド モハンマドアデル ア（同上）</span><span data-en>Ahmad Mohammedadel A Shahata (same as
+                above)</span></td>
+          </tr>
+          <tr>
+            <th><span data-jp>事業形態</span><span data-en>Business Type</span></th>
+            <td><span data-jp>個人事業主（フリーランス）／サウジアラビア政府公認</span><span data-en>Individual business (freelance),
+                officially licensed by the Saudi Arabian government</span></td>
+          </tr>
+          <tr>
+            <th><span data-jp>所在地</span><span data-en>Address</span></th>
+            <td><span data-jp>ご請求をいただいた場合、遅滞なく開示いたします。</span><span data-en>Available promptly upon request.</span></td>
+          </tr>
+          <tr>
+            <th><span data-jp>電話番号</span><span data-en>Phone Number</span></th>
+            <td>+966 54 844 7746 <span style="opacity:.65">(<span data-jp>サウジアラビア・勤務中</span><span data-en>Saudi
+                  Arabia, business hours</span>)</span><br>+81 70 2250 4188 <span style="opacity:.65">(<span
+                  data-jp>日本滞在中</span><span data-en>while in Japan</span>)</span></td>
+          </tr>
+          <tr>
+            <th><span data-jp>メールアドレス</span><span data-en>Email</span></th>
+            <td><a href="mailto:hexapoint.jp@gmail.com">hexapoint.jp@gmail.com</a></td>
+          </tr>
+          <tr>
+            <th><span data-jp>販売価格</span><span data-en>Prices</span></th>
+            <td><span data-jp>各プランのページに記載の金額です。表示価格に別途消費税は加算されません。詳しくは</span><span data-en>See the amount listed on each
+                plan. No additional consumption tax is added on top of the listed price. See the</span> <a
+                href="#pricing"><span data-jp>料金ページ</span><span data-en>pricing section</span></a><span
+                data-jp>をご覧ください。</span><span data-en>.</span></td>
+          </tr>
+          <tr>
+            <th><span data-jp>商品代金以外の必要料金</span><span data-en>Additional Fees</span></th>
+            <td><span data-jp>表示価格以外の追加費用は発生しません。ただし、ご契約成立後の仕様変更・追加のご依頼は、別途協議のうえ追加料金が発生する場合があります。</span><span data-en>No fees
+                beyond the listed price. Changes or additions requested after the Contract is formed may incur
+                extra charges, subject to separate discussion.</span></td>
+          </tr>
+          <tr>
+            <th><span data-jp>お支払方法</span><span data-en>Payment Methods</span></th>
+            <td><span data-jp>クレジットカード決済（PayPal）、銀行振込</span><span data-en>Credit card (via PayPal), bank
+                transfer</span></td>
+          </tr>
+          <tr>
+            <th><span data-jp>お支払時期</span><span data-en>Payment Timing</span></th>
+            <td><span data-jp>ご契約成立後、お見積り金額の100％を前払いでお支払いいただきます（分割払い・着手金制度なし）。制作は入金確認後に着手します。</span><span data-en>100% of
+                the quoted amount is payable in advance once the Contract is formed (no installments or deposit
+                system). Work begins after payment is confirmed.</span></td>
+          </tr>
+          <tr>
+            <th><span data-jp>引渡し・提供時期</span><span data-en>Delivery Timing</span></th>
+            <td><span data-jp>プロジェクトの規模・内容により個別に取り決め、お見積りまたは提案書に明記します。</span><span data-en>Agreed individually for each
+                project and stated in the quotation or proposal.</span></td>
+          </tr>
+          <tr>
+            <th><span data-jp>キャンセル・返金について</span><span data-en>Cancellation &amp; Refunds</span></th>
+            <td><span data-jp>制作作業の着手前に限りキャンセル可能で、事務手数料（お見積り金額の10％を上限）を差し引いたうえで返金します。着手後は原則として返金をお受けできません。詳細は</span><span
+                data-en>Cancellation is possible only before work begins, with a refund after deducting an
+                administrative fee (up to 10% of the quoted amount). Once work has begun, refunds are generally
+                not available. See the</span> <a href="#terms-open"><span data-jp>利用規約</span><span
+                  data-en>Terms &amp; Conditions</span></a><span data-jp>をご覧ください。</span><span data-en>.</span></td>
+          </tr>
+        </table>
+        <a class="btn btn-primary modal-cta" href="#contact" id="legalCta"><span data-jp>お問い合わせ →</span><span
+            data-en>Contact us →</span></a>
+      </div>
+    </div>
+  </div>
   <script>
     const io = new IntersectionObserver((es) => { es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target) } }) }, { threshold: .15 });
     document.querySelectorAll('.reveal').forEach(el => io.observe(el));
@@ -4941,6 +5115,15 @@
     tModal.addEventListener('click', (e) => { if (e.target === tModal) closeT() });
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeT() });
     document.getElementById('termsCta').addEventListener('click', closeT);
+    // legal notice modal
+    const lModal = document.getElementById('legalModal');
+    const openL = (e) => { if (e) e.preventDefault(); lModal.classList.add('open'); document.body.style.overflow = 'hidden' };
+    const closeL = () => { lModal.classList.remove('open'); document.body.style.overflow = '' };
+    document.querySelectorAll('[href="#legal-open"]').forEach(a => a.addEventListener('click', openL));
+    document.getElementById('legalClose').addEventListener('click', closeL);
+    lModal.addEventListener('click', (e) => { if (e.target === lModal) closeL() });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeL() });
+    document.getElementById('legalCta').addEventListener('click', closeL);
     // contact form -> EmailJS
     const send = document.getElementById('f-send');
     if (send) {
@@ -5235,6 +5418,34 @@
       padding: 12px 14px;
       margin-top: 4px;
     }
+
+    .trust-badges {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+      margin: 14px 0;
+    }
+
+    .trust-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--mint);
+      border: 1px solid var(--mint-2);
+      border-radius: 30px;
+      padding: 6px 13px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--emerald-deep);
+      white-space: nowrap;
+    }
+
+    .trust-badge svg {
+      width: 13px;
+      height: 13px;
+      flex: 0 0 auto;
+    }
   </style>
 
   <div id="order-modal-overlay">
@@ -5307,6 +5518,12 @@
           <span><span data-jp>入金は当方にて確認のうえ制作を開始いたします。お振込みが確認できない場合、恐れ入りますが振込明細（受付番号・振込日時等が確認できるもの）のご提示をお願いする場合があります。上記内容を確認しました。</span><span data-en>We will begin work once payment is confirmed on our end. If we're unable to confirm receipt, we may ask you to provide proof of the transfer (a receipt showing the confirmation number and transfer date/time). I have read and understood the above.</span></span>
         </label>
 
+        <div class="trust-badges" style="margin-bottom:0">
+          <span class="trust-badge"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+              <rect x="3" y="7" width="10" height="7" rx="1.5" />
+              <path d="M5 7V5a3 3 0 016 0v2" />
+            </svg><span data-jp>SSL暗号化通信</span><span data-en>SSL Encrypted</span></span>
+        </div>
         <button type="button" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:6px" id="om-bank-submit"
           onclick="submitBankOrder()" disabled><span data-jp>注文内容を送信 →</span><span data-en>Send order details →</span></button>
         <button type="button" class="btn btn-ghost" style="width:100%;justify-content:center;margin-top:10px"
@@ -5316,6 +5533,20 @@
       <div id="om-step-pay" style="display:none">
         <p class="om-note"><span data-jp>下のボタンからPayPalでお支払いください。</span><span data-en>Complete your payment with
             PayPal below.</span></p>
+        <div class="trust-badges">
+          <span class="trust-badge"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+              <rect x="3" y="7" width="10" height="7" rx="1.5" />
+              <path d="M5 7V5a3 3 0 016 0v2" />
+            </svg><span data-jp>SSL暗号化通信</span><span data-en>SSL Encrypted</span></span>
+          <span class="trust-badge"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+              <path d="M8 1.5l5.5 2.2v4c0 3.5-2.3 5.8-5.5 6.8-3.2-1-5.5-3.3-5.5-6.8v-4L8 1.5z" />
+              <path d="M5.8 8l1.6 1.6 2.8-3.2" />
+            </svg><span data-jp>PayPal公式決済</span><span data-en>Secured by PayPal</span></span>
+          <span class="trust-badge"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+              <rect x="1.5" y="4" width="13" height="9" rx="1.5" />
+              <path d="M1.5 6.5h13" />
+            </svg><span data-jp>カード情報は非保持</span><span data-en>Card details never stored by us</span></span>
+        </div>
         <div id="paypal-button-container">
           <paypal-button hidden></paypal-button>
           <p id="paypal-init-msg" style="font-size:13px;text-align:center;opacity:.6;margin:0"><span
