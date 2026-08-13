@@ -2727,6 +2727,7 @@
       max-height: 90dvh;
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
       position: relative;
       transform: translateY(30px) scale(.96);
       transition: transform .4s cubic-bezier(.2, .7, .2, 1);
@@ -4922,11 +4923,9 @@
         <div class="tsec" id="t4">
           <h4><span class="tnum">04</span><span data-jp>料金とお支払い</span><span data-en>Pricing &amp; Payment</span></h4>
           <p><span data-jp>料金は、プロジェクト開始前に提示するお見積りに基づきます。当方では着手金・分割払い制度を採用しておらず、お見積り金額の100％を前払いでお支払いいただきます。制作作業は、入金の確認が取れた後にのみ開始します。</span><span data-en>Fees are based on the quotation provided before the project begins. We do not offer a deposit or installment system; 100% of the quoted amount is payable in advance. Work will begin only after payment has been confirmed.</span></p>
-          <p><span data-jp>各プランの「選ぶ」ボタンからは、PayPalによるオンライン決済でお支払いいただけます。カスタムのお見積りをご依頼の場合や、PayPal以外の方法をご希望の場合は、下記いずれかの口座への銀行振込もご利用いただけます。振込手数料は甲のご負担とします。銀行振込でお支払いの際は、依頼主名を甲のお名前（お見積り・請求書に記載の氏名）でご入力ください。</span><span data-en>Payment via the "Choose" button on each plan is processed online through PayPal. If you have requested a custom quotation, or prefer a method other than PayPal, bank transfer to either of the two accounts below is also available. Any transfer fees are borne by the Client. When paying by bank transfer, please enter the sender's name exactly as it appears on the quotation or invoice.</span></p>
+          <p><span data-jp>各プランの「選ぶ」ボタンからは、PayPalによるオンライン決済でお支払いいただけます。カスタムのお見積りをご依頼の場合や、PayPal以外の方法をご希望の場合は、銀行振込もご利用いただけます（口座情報はお申し込み時にご案内します）。振込手数料は甲のご負担とします。銀行振込でお支払いの際は、依頼主名を甲のお名前（お見積り・請求書に記載の氏名）でご入力ください。</span><span data-en>Payment via the "Choose" button on each plan is processed online through PayPal. If you have requested a custom quotation, or prefer a method other than PayPal, bank transfer is also available (account details are provided when you place your order). Any transfer fees are borne by the Client. When paying by bank transfer, please enter the sender's name exactly as it appears on the quotation or invoice.</span></p>
 
-          <div class="bank-box">
-            <div class="bank-name"><span data-jp>振込先口座 1：ゆうちょ銀行</span><span data-en>Account 1: Japan Post Bank (Yucho Bank)</span></div>
-            <div class="tsec" id="t5">
+          <div class="tsec" id="t5">
           <h4><span class="tnum">05</span><span data-jp>納期と修正対応</span><span data-en>Delivery &amp; Revisions</span></h4>
           <p><span data-jp>納期はプロジェクトの規模・内容によって個別に取り決め、お見積りまたは提案書に明記します。甲からの資料提供・フィードバックの遅延により生じた納期の遅れについて、当方は責任を負いません。</span><span data-en>Delivery timelines are agreed individually for each project and stated in the quotation or proposal. We are not responsible for delays caused by the Client's late provision of materials or feedback.</span></p>
           <p><span data-jp>お見積りに別段の定めがない限り、成果物の初稿提出後、無償修正は2回までとします。3回目以降の修正、または当初のご依頼内容から大幅に逸脱する変更（デザインコンセプトの根本的な変更等）については、追加料金が発生する場合があります。</span><span data-en>Unless otherwise stated in the quotation, up to two rounds of revisions are included free of charge after the first draft is delivered. Further revisions, or changes that substantially depart from the original brief (e.g., a fundamental change of design concept), may incur additional fees.</span></p>
@@ -5033,6 +5032,8 @@
       </div>
     </div>
   </div>
+  </div>
+
   <div class="modal-overlay" id="legalModal" role="dialog" aria-modal="true" aria-labelledby="legalTitle">
     <div class="modal modal-wide">
       <button class="modal-close" id="legalClose" aria-label="Close">×</button>
@@ -5323,7 +5324,10 @@
       width: 100%;
       max-width: 460px;
       max-height: 90vh;
+      max-height: 90dvh;
       overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
       padding: 32px 30px;
       position: relative;
       box-shadow: 0 30px 70px -20px rgba(14, 22, 51, .45);
@@ -5649,6 +5653,7 @@
         document.getElementById('om-phone').value = '';
         document.getElementById('om-email').value = '';
         document.getElementById('om-address').value = '';
+        document.body.style.overflow = 'hidden';
         if (typeof turnstile !== 'undefined') {
           try { turnstile.reset('#om-turnstile'); } catch (e) { /* not yet rendered on first open */ }
         }
@@ -5669,6 +5674,7 @@
 
       window.closeOrderModal = function () {
         document.getElementById('order-modal-overlay').classList.remove('show');
+        document.body.style.overflow = '';
       };
 
       document.getElementById('order-modal-overlay').addEventListener('click', function (e) {
