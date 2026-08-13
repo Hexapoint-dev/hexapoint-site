@@ -59,3 +59,8 @@
 /c96a412c5d41125143ea5fa42129051f.txt
   Content-Type: text/plain; charset=utf-8
   Cache-Control: public, max-age=86400
+
+/terms.pdf
+  Content-Type: application/pdf
+  Cache-Control: public, max-age=3600
+  Content-Disposition: inline; filename="HexaPoint-Terms-of-Service.pdf"
