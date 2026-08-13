@@ -4,7 +4,7 @@
   X-Frame-Options: SAMEORIGIN
   Permissions-Policy: geolocation=(), microphone=(), camera=()
   Strict-Transport-Security: max-age=31536000; includeSubDomains
-  Content-Security-Policy-Report-Only: default-src 'self'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://www.paypal.com https://www.paypalobjects.com https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://www.paypalobjects.com; connect-src 'self' https://www.paypal.com https://www.paypalobjects.com https://api-m.paypal.com https://challenges.cloudflare.com https://static.cloudflareinsights.com; frame-src https://www.paypal.com https://challenges.cloudflare.com; object-src 'none'; base-uri 'self'; frame-ancestors 'self'
+  Content-Security-Policy-Report-Only: default-src 'self'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://www.paypal.com https://www.paypalobjects.com https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://www.paypalobjects.com https://scdn.line-apps.com; connect-src 'self' https://www.paypal.com https://www.paypalobjects.com https://api-m.paypal.com https://challenges.cloudflare.com https://static.cloudflareinsights.com https://cloudflareinsights.com; frame-src https://www.paypal.com https://challenges.cloudflare.com; object-src 'none'; base-uri 'self'; frame-ancestors 'self'
 
 # Long-lived caching for immutable static assets
 /logo.webp

@@ -5167,7 +5167,7 @@
     lModal.addEventListener('click', (e) => { if (e.target === lModal) closeL() });
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeL() });
     document.getElementById('legalCta').addEventListener('click', closeL);
-    // contact form -> EmailJS
+    // contact form -> Cloudflare Pages Function (/api/contact) -> Resend
     const send = document.getElementById('f-send');
     if (send) {
       send.addEventListener('click', () => {
@@ -6134,12 +6134,15 @@
        Privacy-first, cookie-free analytics. Measures real-user Core Web Vitals
        (LCP / INP / CLS) — the same speed signals Google uses for ranking.
 
-       SETUP (one step): in the Cloudflare dashboard go to
+       Left disabled (commented out) because no real token is set yet — loading
+       the beacon with a placeholder token fires a failing network request on
+       every real page view. SETUP (one step): in the Cloudflare dashboard go to
        Web Analytics -> Add a site -> hexapoint.pages.dev, copy the token it
-       gives you, and paste it below in place of PASTE_YOUR_TOKEN_HERE.
-       Until then this script does nothing and is harmless. -->
+       gives you, replace PASTE_YOUR_TOKEN_HERE below, then uncomment the tag. -->
+  <!--
   <script defer src="https://static.cloudflareinsights.com/beacon.min.js"
     data-cf-beacon='{"token": "PASTE_YOUR_TOKEN_HERE"}'></script>
+  -->
 </body>
 
 </html>
