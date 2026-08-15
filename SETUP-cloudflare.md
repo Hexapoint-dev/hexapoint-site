@@ -13,17 +13,14 @@ This file is documentation only — it is not part of the published site.
 1. Cloudflare ダッシュボード → **Web Analytics** → **Add a site**
 2. `hexapoint.pages.dev` を入力
 3. 表示される **token** をコピー
-4. `index.html` の末尾にある次のブロックを探し、`PASTE_YOUR_TOKEN_HERE` を token に置き換えたうえで、
-   コメントアウト（`<!-- -->`）を外して有効化する：
+4. `index.html` の末尾にある次の行を探し、`PASTE_YOUR_TOKEN_HERE` を token に置き換える：
 
 ```html
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js"
   data-cf-beacon='{"token": "PASTE_YOUR_TOKEN_HERE"}'></script>
 ```
 
-本物のトークンを設定するまでは、意図的にコメントアウトしたままにしてあります
-（プレースホルダーのトークンのままタグを有効化すると、実際の訪問者のブラウザで
-毎回失敗するネットワークリクエストが発生してしまうため）。
+トークンを入れるまでこのスクリプトは何もしません（害はありません）。
 
 ---
 

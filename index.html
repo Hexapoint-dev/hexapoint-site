@@ -1285,6 +1285,134 @@
       z-index: 2
     }
 
+    #why {
+      padding-top: 26px;
+      padding-bottom: 26px;
+    }
+
+    #why .proc {
+      padding: 22px 0;
+    }
+
+    .why-bar {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+
+    .why-tag {
+      flex: 0 0 auto;
+      font-family: "DM Mono", monospace;
+      font-size: 11px;
+      letter-spacing: .1em;
+      color: var(--lime);
+      white-space: nowrap;
+      opacity: .9;
+    }
+
+    .why-stage {
+      position: relative;
+      flex: 1 1 320px;
+      min-width: 0;
+      min-height: 30px;
+      display: flex;
+      align-items: center;
+    }
+
+    .why-slide {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity .5s ease, transform .5s ease;
+      pointer-events: none;
+    }
+
+    .why-slide.active {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+      position: relative;
+    }
+
+    .why-slide .wi {
+      flex: 0 0 auto;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      border: 1.5px solid var(--lime);
+      color: var(--lime);
+      font-family: "Shippori Mincho", serif;
+      font-size: 12px;
+      display: grid;
+      place-items: center;
+    }
+
+    .why-slide b {
+      color: var(--paper);
+      font-family: "Shippori Mincho", serif;
+      font-weight: 700;
+      font-size: 14px;
+      white-space: nowrap;
+    }
+
+    .why-slide span.wd {
+      color: #fbe4cf;
+      opacity: .78;
+      font-size: 12.5px;
+      line-height: 1.5;
+    }
+
+    .why-dots {
+      flex: 0 0 auto;
+      display: flex;
+      gap: 6px;
+    }
+
+    .why-dots i {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: rgba(251, 250, 244, .25);
+      transition: background .3s;
+    }
+
+    .why-dots i.active {
+      background: var(--lime);
+    }
+
+    @media(max-width:720px) {
+      .why-bar {
+        gap: 10px;
+      }
+
+      .why-stage {
+        flex-basis: 100%;
+        order: 3;
+        min-height: 54px;
+      }
+
+      .why-slide {
+        align-items: flex-start;
+      }
+
+      .why-slide span.wd {
+        display: block;
+      }
+
+      .why-slide b {
+        white-space: normal;
+      }
+
+      .why-dots {
+        order: 2;
+      }
+    }
+
     @media(max-width:860px) {
       .proc-nav .pt {
         font-size: 11px;
@@ -2331,63 +2459,6 @@
     }
 
     .pdf-dl svg {
-      width: 13px;
-      height: 13px;
-      flex: 0 0 auto;
-    }
-
-    .foot-social {
-      display: flex;
-      gap: 10px;
-      margin-top: 18px;
-    }
-
-    .foot-social a {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 34px;
-      height: 34px;
-      border-radius: 50%;
-      border: 1px solid var(--line);
-      color: var(--ink);
-      opacity: .75;
-      transition: .2s;
-      padding: 0;
-    }
-
-    .foot-social a:hover {
-      opacity: 1;
-      color: var(--emerald-deep);
-      border-color: var(--emerald);
-      background: var(--mint);
-    }
-
-    .foot-social svg {
-      width: 16px;
-      height: 16px;
-    }
-
-    .trust-line {
-      display: flex;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 18px;
-      margin-top: 16px;
-      padding-top: 16px;
-      border-top: 1px solid var(--line);
-      font-family: "DM Mono", monospace;
-      font-size: 11.5px;
-      opacity: .55;
-    }
-
-    .trust-line span {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .trust-line svg {
       width: 13px;
       height: 13px;
       flex: 0 0 auto;
@@ -3675,8 +3746,6 @@
       }
 
       .modal {
-        max-height: none;
-        min-height: auto;
         margin: auto 0;
         border-radius: 22px
       }
@@ -3866,6 +3935,87 @@
         <b>執筆</b></span><span data-en>Google SEO <b>検索</b></span><span data-en>Low-cost Launch <b>低コスト</b></span>
     </div>
   </div>
+
+  <section id="why" style="padding-top:0">
+    <div class="wrap">
+      <div class="proc">
+        <div class="glow"></div>
+        <div class="wrap">
+          <div class="why-bar">
+            <span class="why-tag"><span data-jp>なぜ、必要なのか</span><span data-en>Why it matters</span></span>
+            <div class="why-stage" id="why-stage">
+              <div class="why-slide active" data-i="1">
+                <span class="wi">検</span>
+                <span class="wd"><b><span data-jp>検索される時代。</span><span data-en>People search first.</span></b>
+                  <span data-jp>気になれば、まず検索する。ホームページがなければ、選択肢にすら入りません。</span><span data-en>Without a site, you
+                    may not even make the list.</span></span>
+              </div>
+              <div class="why-slide" data-i="2">
+                <span class="wi">時</span>
+                <span class="wd"><b><span data-jp>24時間働く営業担当。</span><span data-en>Working while you sleep.</span></b>
+                  <span data-jp>夜中も休業日も、黙って働き続けます。</span><span data-en>Even on your day off, it keeps quietly
+                    working.</span></span>
+              </div>
+              <div class="why-slide" data-i="3">
+                <span class="wi">信</span>
+                <span class="wd"><b><span data-jp>言葉より先に届く安心感。</span><span data-en>Trust, before a word is
+                      said.</span></b> <span data-jp>整ったサイトは「きちんとした会社だ」という安心感を先に届けます。</span><span data-en>A
+                    well-made site conveys credibility first.</span></span>
+              </div>
+              <div class="why-slide" data-i="4">
+                <span class="wi">声</span>
+                <span class="wd"><b><span data-jp>完全に、あなたのもの。</span><span data-en>Fully yours.</span></b> <span
+                    data-jp>アルゴリズムにも、他社の規約にも縛られない唯一の場所です。</span><span data-en>No algorithm, no platform rules to
+                    follow.</span></span>
+              </div>
+            </div>
+            <div class="why-dots" id="why-dots">
+              <i class="active"></i><i></i><i></i><i></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script>
+      (function () {
+        var total = 4;
+        var idx = 1;
+        var duration = 4000;
+        var timer = null;
+
+        function activate(n) {
+          idx = n;
+          document.querySelectorAll('#why-stage .why-slide').forEach(function (el) {
+            el.classList.toggle('active', Number(el.dataset.i) === n);
+          });
+          document.querySelectorAll('#why-dots i').forEach(function (el, i) {
+            el.classList.toggle('active', i === n - 1);
+          });
+        }
+
+        function stop() { if (timer) { clearInterval(timer); timer = null; } }
+        function start() {
+          stop();
+          timer = setInterval(function () {
+            activate(idx >= total ? 1 : idx + 1);
+          }, duration);
+        }
+
+        start();
+
+        var section = document.getElementById('why');
+        if (section && 'IntersectionObserver' in window) {
+          var io = new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
+              if (entry.isIntersecting) start(); else stop();
+            });
+          }, { threshold: .2 });
+          io.observe(section);
+        }
+      })();
+    </script>
+  </section>
+
   <section id="services">
     <div class="gbg" aria-hidden="true">
       <div class="gtint warm"></div>
@@ -4706,20 +4856,6 @@
               alt="HexaPoint"></a>
           <p><span data-jp>個人と中小ビジネスのためのウェブ制作スタジオ。デザインから運用まで。</span><span data-en>A web studio for individuals and small
               businesses — from design to ongoing care.</span></p>
-          <div class="foot-social">
-            <a href="https://www.instagram.com/hexapoint.studio" target="_blank" rel="noopener" aria-label="Instagram">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
-                <rect x="3" y="3" width="18" height="18" rx="5" />
-                <circle cx="12" cy="12" r="4.2" />
-                <circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" stroke="none" />
-              </svg>
-            </a>
-            <a href="https://lin.ee/7sWjUV4" target="_blank" rel="noopener" aria-label="LINE">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
-                <path d="M21 11.2c0-4.3-4.3-7.8-9.6-7.8S1.8 6.9 1.8 11.2c0 3.9 3.4 7.1 8 7.7.3.1.7.2.8.5.1.3.1.7 0 1l-.1.8c0 .3-.2 1 .9.6 1.1-.5 6-3.5 8.2-6 1.5-1.7 2.4-3.4 2.4-4.6z" stroke-linejoin="round" />
-              </svg>
-            </a>
-          </div>
         </div>
         <div>
           <h3><span data-jp>サービス</span><span data-en>Services</span></h3>
@@ -4740,7 +4876,6 @@
           <a href="/terms.pdf" target="_blank" rel="noopener"><span data-jp>利用規約（PDF）</span><span data-en>Terms
               (PDF)</span></a>
           <a href="#legal-open"><span data-jp>特定商取引法に基づく表記</span><span data-en>Legal Notice</span></a>
-          <a href="#privacy-open"><span data-jp>プライバシーポリシー</span><span data-en>Privacy Policy</span></a>
           <a href="#work"><span data-jp>実績</span><span data-en>Work</span></a>
         </div>
       </div>
@@ -4749,9 +4884,7 @@
         <span><a href="#terms-open" style="color:inherit;text-decoration:underline"><span data-jp>利用規約</span><span
               data-en>Terms &amp; Conditions</span></a> · <a href="#legal-open"
             style="color:inherit;text-decoration:underline"><span data-jp>特定商取引法に基づく表記</span><span
-              data-en>Legal Notice</span></a> · <a href="#privacy-open"
-            style="color:inherit;text-decoration:underline"><span data-jp>プライバシーポリシー</span><span
-              data-en>Privacy Policy</span></a> · <a href="#about-open"
+              data-en>Legal Notice</span></a> · <a href="#about-open"
             style="color:inherit;text-decoration:underline"><span data-jp>私たちについて</span><span
               data-en>About</span></a></span>
         <a class="pdf-dl" href="/terms.pdf" target="_blank" rel="noopener" download="HexaPoint-Terms-of-Service.pdf">
@@ -4762,29 +4895,6 @@
           <span data-jp>利用規約をPDFでダウンロード</span><span data-en>Download Terms as PDF</span>
         </a>
         <span><span data-jp>Web・Copy・SEO — フルリモート・日本全国対応</span><span data-en>Web · Copy · SEO — Fully remote, serving all of Japan</span></span>
-      </div>
-      <div class="trust-line">
-        <span>
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
-            <rect x="3.5" y="7" width="9" height="6.5" rx="1.4" />
-            <path d="M5.5 7V4.8a2.5 2.5 0 015 0V7" stroke-linecap="round" />
-          </svg>
-          <span data-jp>通信は SSL（HTTPS）で暗号化されています</span><span data-en>This site uses an encrypted (HTTPS/SSL) connection</span>
-        </span>
-        <span>
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
-            <path d="M8 1.5l5 2v3.8c0 3.4-2.1 5.8-5 7.2-2.9-1.4-5-3.8-5-7.2V3.5l5-2z" stroke-linejoin="round" />
-            <path d="M5.8 8.1l1.5 1.5 2.9-3" stroke-linecap="round" stroke-linejoin="round" />
-          </svg>
-          <span data-jp>お問い合わせフォームは Cloudflare により不正送信から保護されています</span><span data-en>The contact form is protected against spam by Cloudflare</span>
-        </span>
-        <span>
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
-            <circle cx="8" cy="8" r="6.2" />
-            <path d="M8 4.5v4l2.6 1.5" stroke-linecap="round" stroke-linejoin="round" />
-          </svg>
-          <span data-jp>Cookie・アクセス解析ツールは使用していません</span><span data-en>No cookies or analytics tracking are used on this site</span>
-        </span>
       </div>
     </div>
   </footer>
@@ -5218,75 +5328,6 @@
       </div>
     </div>
   </div>
-  <div class="modal-overlay" id="privacyModal" role="dialog" aria-modal="true" aria-labelledby="privacyTitle">
-    <div class="modal modal-wide">
-      <button class="modal-close" id="privacyClose" aria-label="Close">×</button>
-      <div class="modal-hd">
-        <div class="ring a"></div>
-        <div class="ring b"></div>
-        <div class="ava"><img
-            src="/logo.webp" loading="lazy" decoding="async"
-            alt="HexaPoint"></div>
-        <h3 id="privacyTitle"><span data-jp>プライバシーポリシー</span><span data-en>Privacy Policy</span></h3>
-        <p class="role"><span data-jp>個人情報の取り扱いについて</span><span data-en>How we handle your personal information</span></p>
-      </div>
-      <div class="terms-bd">
-        <p class="updated"><span data-jp>最終更新日：2026年8月13日</span><span data-en>Last updated: August 13, 2026</span></p>
-
-        <div class="tsec" id="p1">
-          <h4><span class="tnum">01</span><span data-jp>はじめに</span><span data-en>Introduction</span></h4>
-          <p><span data-jp>HexaPoint（以下「当方」）は、本ウェブサイトおよびお問い合わせフォームを通じて取得する個人情報を、日本の個人情報保護法その他の関連法令を遵守し、適切に取り扱います。本プライバシーポリシーは、当方がどのような情報を、どのような目的で、どのように取り扱うかを説明するものです。</span><span data-en>HexaPoint ("we," "us") handles personal information obtained through this website and its contact form in accordance with Japan's Act on the Protection of Personal Information and other applicable laws. This Privacy Policy explains what information we collect, why, and how it is handled.</span></p>
-        </div>
-
-        <div class="tsec" id="p2">
-          <h4><span class="tnum">02</span><span data-jp>取得する情報</span><span data-en>Information We Collect</span></h4>
-          <p><span data-jp>お問い合わせフォームをご利用いただく際、お名前・メールアドレス・ご希望のサービス・ご相談内容をご入力いただきます。これら以外の個人情報（住所・電話番号等）は、プロジェクトのご契約が成立した後、必要な範囲でのみ別途お伺いします。</span><span data-en>When you use our contact form, we ask for your name, email address, service of interest, and message. We do not collect any other personal information (such as an address or phone number) unless a project contract is formed, at which point we request only what is necessary.</span></p>
-          <p><span data-jp>本サイトは、Cookie・アクセス解析ツール（Google Analytics 等）・広告トラッキングタグを一切使用していません。閲覧履歴や行動データを収集することはありません。</span><span data-en>This site does not use cookies, analytics tools (such as Google Analytics), or advertising trackers. We do not collect browsing history or behavioral data.</span></p>
-        </div>
-
-        <div class="tsec" id="p3">
-          <h4><span class="tnum">03</span><span data-jp>利用目的</span><span data-en>Purpose of Use</span></h4>
-          <p><span data-jp>取得した個人情報は、以下の目的の範囲内でのみ利用します。（1）お問い合わせへの回答・ご相談対応、（2）お見積りの作成、（3）ご契約成立後のサービス提供・ご連絡・請求処理、（4）法令上必要な記録の保持。上記以外の目的で利用することはありません。</span><span data-en>Personal information we collect is used solely for the following purposes: (1) responding to inquiries and consultations, (2) preparing quotations, (3) providing the Services, communicating, and processing invoices once a contract is formed, and (4) retaining records required by law. We do not use it for any other purpose.</span></p>
-        </div>
-
-        <div class="tsec" id="p4">
-          <h4><span class="tnum">04</span><span data-jp>第三者への提供・委託先</span><span data-en>Third Parties &amp; Service Providers</span></h4>
-          <p><span data-jp>当方は、法令に基づく場合または甲の書面による同意がある場合を除き、取得した個人情報を第三者に提供することはありません。ただし、本サービスの提供に必要な範囲で、以下の外部サービスを利用しています。</span><span data-en>We do not share your personal information with third parties except where required by law or with your prior written consent. However, we rely on the following external services to the extent necessary to operate this site and provide the Services:</span></p>
-          <p><span data-jp>・お問い合わせフォームの送信内容は、メール配信サービス「Resend」を経由して当方に転送されます。<br>・お問い合わせフォームは「Cloudflare Turnstile」により、ロボットによる不正送信を防止しています。<br>・本サイトは「Cloudflare Pages」上でホスティングされています。</span><span data-en>&bull; Contact form submissions are relayed to us via the email delivery service "Resend."<br>&bull; The contact form is protected from automated/bot submissions by "Cloudflare Turnstile."<br>&bull; This site is hosted on "Cloudflare Pages."</span></p>
-          <p><span data-jp>これらのサービス提供事業者は、それぞれ独自のプライバシーポリシーに基づきデータを処理します。当方は、送信内容が本サービスの提供以外の目的で利用されないよう、必要な範囲でのみこれらのサービスを利用しています。</span><span data-en>These service providers process data under their own respective privacy policies. We use them only to the extent necessary and do not permit submitted content to be used for purposes beyond providing the Services.</span></p>
-        </div>
-
-        <div class="tsec" id="p5">
-          <h4><span class="tnum">05</span><span data-jp>保管期間</span><span data-en>Retention Period</span></h4>
-          <p><span data-jp>お問い合わせ内容は、対応完了後、合理的な期間内に削除します。ご契約に至った場合は、法令（税務関連書類の保存義務等）で定められた期間、必要な情報を保管します。</span><span data-en>Inquiry content is deleted within a reasonable period after the matter is resolved. If a contract is formed, information necessary to comply with legal requirements (such as tax record-keeping obligations) is retained for the period required by law.</span></p>
-        </div>
-
-        <div class="tsec" id="p6">
-          <h4><span class="tnum">06</span><span data-jp>安全管理措置</span><span data-en>Security Measures</span></h4>
-          <p><span data-jp>本サイトとの通信はすべてSSL（HTTPS）により暗号化されています。お問い合わせフォームはボットによる不正送信対策（Cloudflare Turnstile）を導入し、個人情報への不正アクセス・漏えい・滅失・毀損の防止に努めています。</span><span data-en>All communication with this site is encrypted via SSL (HTTPS). The contact form uses bot-prevention measures (Cloudflare Turnstile), and we take reasonable steps to prevent unauthorized access to, or the leakage, loss, or damage of, personal information.</span></p>
-        </div>
-
-        <div class="tsec" id="p7">
-          <h4><span class="tnum">07</span><span data-jp>ご本人の権利</span><span data-en>Your Rights</span></h4>
-          <p><span data-jp>ご自身の個人情報の開示・訂正・利用停止・削除をご希望の場合は、下記のお問い合わせ先までご連絡ください。ご本人確認のうえ、合理的な期間内に対応いたします。</span><span data-en>To request access to, correction of, cessation of use of, or deletion of your personal information, please contact us using the details below. We will respond within a reasonable time after verifying your identity.</span></p>
-        </div>
-
-        <div class="tsec" id="p8">
-          <h4><span class="tnum">08</span><span data-jp>本ポリシーの変更</span><span data-en>Changes to This Policy</span></h4>
-          <p><span data-jp>当方は、必要に応じて本プライバシーポリシーの内容を変更することがあります。変更後の内容は、本ウェブサイトに掲載した時点から効力を生じます。</span><span data-en>We may update this Privacy Policy from time to time. Any changes take effect once posted on this website.</span></p>
-        </div>
-
-        <div class="tsec" id="p9">
-          <h4><span class="tnum">09</span><span data-jp>お問い合わせ先</span><span data-en>Contact</span></h4>
-          <p><span data-jp>本ポリシーに関するご質問、または個人情報の開示等のご請求は、以下までご連絡ください：hexapoint.jp@gmail.com</span><span data-en>For questions about this Policy, or to make a request regarding your personal information, please contact us at: hexapoint.jp@gmail.com</span></p>
-          <p><span data-jp>個人情報の取り扱いについては、</span><span data-en>See also Section 16 of our</span> <a href="#terms-open"><span data-jp>利用規約 第16条</span><span data-en>Terms &amp; Conditions</span></a><span data-jp>もあわせてご覧ください。</span><span data-en>regarding the handling of personal information.</span></p>
-        </div>
-
-        <a class="btn btn-primary modal-cta" href="#contact" id="privacyCta"><span data-jp>お問い合わせ →</span><span
-            data-en>Contact us →</span></a>
-      </div>
-    </div>
-  </div>
   <script>
     const io = new IntersectionObserver((es) => { es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target) } }) }, { threshold: .15 });
     document.querySelectorAll('.reveal').forEach(el => io.observe(el));
@@ -5333,16 +5374,7 @@
     lModal.addEventListener('click', (e) => { if (e.target === lModal) closeL() });
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeL() });
     document.getElementById('legalCta').addEventListener('click', closeL);
-    // privacy policy modal
-    const pModal = document.getElementById('privacyModal');
-    const openP = (e) => { if (e) e.preventDefault(); pModal.classList.add('open'); document.body.style.overflow = 'hidden' };
-    const closeP = () => { pModal.classList.remove('open'); document.body.style.overflow = '' };
-    document.querySelectorAll('[href="#privacy-open"]').forEach(a => a.addEventListener('click', openP));
-    document.getElementById('privacyClose').addEventListener('click', closeP);
-    pModal.addEventListener('click', (e) => { if (e.target === pModal) closeP() });
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeP() });
-    document.getElementById('privacyCta').addEventListener('click', closeP);
-    // contact form -> Cloudflare Pages Function (/api/contact) -> Resend
+    // contact form -> EmailJS
     const send = document.getElementById('f-send');
     if (send) {
       send.addEventListener('click', () => {
@@ -6309,15 +6341,12 @@
        Privacy-first, cookie-free analytics. Measures real-user Core Web Vitals
        (LCP / INP / CLS) — the same speed signals Google uses for ranking.
 
-       Left disabled (commented out) because no real token is set yet — loading
-       the beacon with a placeholder token fires a failing network request on
-       every real page view. SETUP (one step): in the Cloudflare dashboard go to
+       SETUP (one step): in the Cloudflare dashboard go to
        Web Analytics -> Add a site -> hexapoint.pages.dev, copy the token it
-       gives you, replace PASTE_YOUR_TOKEN_HERE below, then uncomment the tag. -->
-  <!--
+       gives you, and paste it below in place of PASTE_YOUR_TOKEN_HERE.
+       Until then this script does nothing and is harmless. -->
   <script defer src="https://static.cloudflareinsights.com/beacon.min.js"
     data-cf-beacon='{"token": "PASTE_YOUR_TOKEN_HERE"}'></script>
-  -->
 </body>
 
 </html>
