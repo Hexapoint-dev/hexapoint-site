@@ -93,7 +93,7 @@ export async function onRequestPost({ request, env }) {
           const plan = PLANS[planId];
           const amount = resource?.amount?.value || plan.priceJPY;
           const finalOrderID = orderID || resource.id || "N/A";
-          await sendOrderConfirmation(env, {
+          const emailResult = await sendOrderConfirmation(env, {
             buyer,
             plan,
             orderID: finalOrderID,
@@ -106,7 +106,15 @@ export async function onRequestPost({ request, env }) {
             amount,
             status: "COMPLETED",
           });
-          await env.ORDERS_KV.put(emailedKey, "1", { expirationTtl: 60 * 60 * 24 * 7 });
+          // Only mark as "emailed" once Resend actually confirmed the send —
+          // leaving it unset on failure lets the other flow (the browser's
+          // fast-path capture call, or a later webhook delivery) still get a
+          // chance to send it, instead of the confirmation being silently lost.
+          if (emailResult.ok) {
+            await env.ORDERS_KV.put(emailedKey, "1", { expirationTtl: 60 * 60 * 24 * 7 });
+          } else {
+            console.error("Order confirmation email failed for order", finalOrderID, emailResult.error);
+          }
         }
       } else {
         console.error("Webhook: no buyer info found for order", orderID, resource.custom_id);

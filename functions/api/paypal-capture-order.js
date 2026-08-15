@@ -62,9 +62,16 @@ export async function onRequestPost({ request, env }) {
         const plan = PLANS[planId];
         const capture = capData?.purchase_units?.[0]?.payments?.captures?.[0];
         const amount = capture?.amount?.value || plan.priceJPY;
-        await sendOrderConfirmation(env, { buyer, plan, orderID, amount });
+        const emailResult = await sendOrderConfirmation(env, { buyer, plan, orderID, amount });
         await appendOrderToSheet(env, { buyer, plan, orderID, amount, status });
-        await env.ORDERS_KV.put(`emailed:${orderID}`, "1", { expirationTtl: 60 * 60 * 24 * 7 });
+        // Only mark as "emailed" once Resend actually confirmed the send —
+        // otherwise the webhook's later delivery (or a retry) never gets a
+        // chance to send the confirmation the buyer is still missing.
+        if (emailResult.ok) {
+          await env.ORDERS_KV.put(`emailed:${orderID}`, "1", { expirationTtl: 60 * 60 * 24 * 7 });
+        } else {
+          console.error("Order confirmation email failed for order", orderID, emailResult.error);
+        }
       }
     } else if (status === "COMPLETED") {
       console.error("Capture completed but buyer info missing for order", orderID);

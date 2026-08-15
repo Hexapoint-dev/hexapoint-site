@@ -53,14 +53,11 @@ export async function onRequestPost({ request, env }) {
     // as long as at least one of the two notifications gets through. We do
     // report the individual results though, so failures are visible in the
     // browser's Network tab instead of only in Cloudflare's server logs.
-    let emailOk = false;
-    let emailError = null;
-    try {
-      await sendBankOrderNotification(env, { buyer, plan, orderID, amount });
-      emailOk = true;
-    } catch (err) {
-      emailError = String(err);
-      console.error("Bank order notification email failed:", err);
+    const emailResult = await sendBankOrderNotification(env, { buyer, plan, orderID, amount });
+    const emailOk = emailResult.ok;
+    const emailError = emailResult.ok ? null : emailResult.error;
+    if (!emailOk) {
+      console.error("Bank order notification email failed:", emailError);
     }
 
     const sheetResult = await appendOrderToSheet(env, { buyer, plan, orderID, amount, status });

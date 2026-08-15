@@ -12,7 +12,7 @@ function esc(s) {
 export async function sendOrderConfirmation(env, { buyer, plan, orderID, amount }) {
   if (!env.RESEND_API_KEY || !env.CONTACT_TO || !env.CONTACT_FROM) {
     console.error("Resend not configured, skipping order confirmation email");
-    return;
+    return { ok: false, error: "not_configured" };
   }
 
   const receivedAt = new Intl.DateTimeFormat("ja-JP", {
@@ -130,21 +130,33 @@ export async function sendOrderConfirmation(env, { buyer, plan, orderID, amount 
     `電話番号 / Phone: ${buyer.phone}\n` +
     `ご住所 / Address: ${buyer.address}\n`;
 
-  await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${env.RESEND_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      from: env.CONTACT_FROM,
-      to: env.CONTACT_TO,
-      reply_to: buyer.email,
-      subject: `【HexaPoint】新規お支払い / New payment — ${plan.nameJa}`,
-      html,
-      text,
-    }),
-  });
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${env.RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: env.CONTACT_FROM,
+        to: env.CONTACT_TO,
+        reply_to: buyer.email,
+        subject: `【HexaPoint】新規お支払い / New payment — ${plan.nameJa}`,
+        html,
+        text,
+      }),
+    });
+
+    if (!res.ok) {
+      const detail = await res.text();
+      console.error("Resend order confirmation error:", res.status, detail);
+      return { ok: false, error: `resend_${res.status}` };
+    }
+    return { ok: true };
+  } catch (err) {
+    console.error("Order confirmation email request failed:", err);
+    return { ok: false, error: String(err) };
+  }
 }
 
 // Sent when a Client chooses "Bank Transfer" in the order modal, instead of
@@ -154,7 +166,7 @@ export async function sendOrderConfirmation(env, { buyer, plan, orderID, amount 
 export async function sendBankOrderNotification(env, { buyer, plan, orderID, amount }) {
   if (!env.RESEND_API_KEY || !env.CONTACT_TO || !env.CONTACT_FROM) {
     console.error("Resend not configured, skipping bank order notification email");
-    return;
+    return { ok: false, error: "not_configured" };
   }
 
   const receivedAt = new Intl.DateTimeFormat("ja-JP", {
@@ -287,19 +299,31 @@ export async function sendBankOrderNotification(env, { buyer, plan, orderID, amo
     `電話番号 / Phone: ${buyer.phone}\n` +
     `ご住所 / Address: ${buyer.address}\n`;
 
-  await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${env.RESEND_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      from: env.CONTACT_FROM,
-      to: env.CONTACT_TO,
-      reply_to: buyer.email,
-      subject: `【HexaPoint】銀行振込のご注文 / Bank transfer order — ${plan.nameJa}`,
-      html,
-      text,
-    }),
-  });
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${env.RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: env.CONTACT_FROM,
+        to: env.CONTACT_TO,
+        reply_to: buyer.email,
+        subject: `【HexaPoint】銀行振込のご注文 / Bank transfer order — ${plan.nameJa}`,
+        html,
+        text,
+      }),
+    });
+
+    if (!res.ok) {
+      const detail = await res.text();
+      console.error("Resend bank order notification error:", res.status, detail);
+      return { ok: false, error: `resend_${res.status}` };
+    }
+    return { ok: true };
+  } catch (err) {
+    console.error("Bank order notification email request failed:", err);
+    return { ok: false, error: String(err) };
+  }
 }
