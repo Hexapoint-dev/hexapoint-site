@@ -731,6 +731,92 @@
       animation: pulse 2s infinite
     }
 
+    .why-mini {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--mint);
+      border: 1px solid var(--mint-2);
+      border-radius: 30px;
+      padding: 7px 16px 7px 8px;
+      margin: 2px 0 4px;
+      max-width: 100%
+    }
+
+    .why-mini .wmi {
+      flex: 0 0 auto;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: 1.5px solid var(--emerald-deep);
+      color: var(--emerald-deep);
+      font-family: "Shippori Mincho", serif;
+      font-size: 11px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: .3s
+    }
+
+    .why-mini .wmt {
+      position: relative;
+      flex: 1 1 auto;
+      min-width: 0;
+      min-height: 18px;
+      display: flex;
+      align-items: center
+    }
+
+    .why-mini-slide {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      opacity: 0;
+      transform: translateY(6px);
+      transition: opacity .5s ease, transform .5s ease;
+      pointer-events: none;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--emerald-deep);
+      white-space: nowrap
+    }
+
+    .why-mini-slide.active {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+      position: relative
+    }
+
+    .why-mini-dots {
+      flex: 0 0 auto;
+      display: flex;
+      gap: 5px
+    }
+
+    .why-mini-dots i {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--mint-2);
+      transition: background .3s
+    }
+
+    .why-mini-dots i.active {
+      background: var(--emerald-deep)
+    }
+
+    @media(max-width:480px) {
+      .why-mini-slide {
+        white-space: normal
+      }
+
+      .why-mini .wmt {
+        min-height: 34px
+      }
+    }
+
     @keyframes pulse {
 
       0%,
@@ -1288,129 +1374,6 @@
     #why {
       padding-top: 26px;
       padding-bottom: 26px;
-    }
-
-    #why .proc {
-      padding: 22px 0;
-    }
-
-    .why-bar {
-      display: flex;
-      align-items: center;
-      gap: 18px;
-      flex-wrap: wrap;
-    }
-
-    .why-tag {
-      flex: 0 0 auto;
-      font-family: "DM Mono", monospace;
-      font-size: 11px;
-      letter-spacing: .1em;
-      color: var(--lime);
-      white-space: nowrap;
-      opacity: .9;
-    }
-
-    .why-stage {
-      position: relative;
-      flex: 1 1 320px;
-      min-width: 0;
-      min-height: 30px;
-      display: flex;
-      align-items: center;
-    }
-
-    .why-slide {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      opacity: 0;
-      transform: translateY(8px);
-      transition: opacity .5s ease, transform .5s ease;
-      pointer-events: none;
-    }
-
-    .why-slide.active {
-      opacity: 1;
-      transform: translateY(0);
-      pointer-events: auto;
-      position: relative;
-    }
-
-    .why-slide .wi {
-      flex: 0 0 auto;
-      width: 26px;
-      height: 26px;
-      border-radius: 50%;
-      border: 1.5px solid var(--lime);
-      color: var(--lime);
-      font-family: "Shippori Mincho", serif;
-      font-size: 12px;
-      display: grid;
-      place-items: center;
-    }
-
-    .why-slide b {
-      color: var(--paper);
-      font-family: "Shippori Mincho", serif;
-      font-weight: 700;
-      font-size: 14px;
-      white-space: nowrap;
-    }
-
-    .why-slide span.wd {
-      color: #fbe4cf;
-      opacity: .78;
-      font-size: 12.5px;
-      line-height: 1.5;
-    }
-
-    .why-dots {
-      flex: 0 0 auto;
-      display: flex;
-      gap: 6px;
-    }
-
-    .why-dots i {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: rgba(251, 250, 244, .25);
-      transition: background .3s;
-    }
-
-    .why-dots i.active {
-      background: var(--lime);
-    }
-
-    @media(max-width:720px) {
-      .why-bar {
-        gap: 10px;
-      }
-
-      .why-stage {
-        flex-basis: 100%;
-        order: 3;
-        min-height: 54px;
-      }
-
-      .why-slide {
-        align-items: flex-start;
-      }
-
-      .why-slide span.wd {
-        display: block;
-      }
-
-      .why-slide b {
-        white-space: normal;
-      }
-
-      .why-dots {
-        order: 2;
-      }
     }
 
     @media(max-width:860px) {
@@ -3917,6 +3880,20 @@
             data-en>A company site, a page for your own small business, or one that backs up your social media — we
             build a page that tells your full story, shows what you offer, and turns visitors into paying customers. The
             lowest cost, the best possible performance.</span></p>
+        <div class="why-mini reveal" data-d="2" id="whyMini">
+          <span class="wmi" id="whyMiniIcon">検</span>
+          <span class="wmt">
+            <span class="why-mini-slide active" data-i="1"><span data-jp>検索されなければ、存在しないのと同じ。</span><span data-en>People
+                search first.</span></span>
+            <span class="why-mini-slide" data-i="2"><span data-jp>24時間働く、黙って働く営業担当。</span><span data-en>Working while
+                you sleep.</span></span>
+            <span class="why-mini-slide" data-i="3"><span data-jp>言葉より先に届く安心感。</span><span data-en>Trust, before a
+                word is said.</span></span>
+            <span class="why-mini-slide" data-i="4"><span data-jp>完全に、あなたのもの。</span><span data-en>Fully
+                yours.</span></span>
+          </span>
+          <span class="why-mini-dots" id="whyMiniDots"><i class="active"></i><i></i><i></i><i></i></span>
+        </div>
         <div class="cta-row reveal" data-d="3">
           <a class="btn btn-primary" href="#contact"><span data-jp>無料で相談する →</span><span data-en>Book a free call
               →</span></a>
@@ -3996,6 +3973,35 @@
       </div>
     </div>
   </section>
+  <script>
+    (function () {
+      var icons = ['検', '時', '信', '声'];
+      var total = icons.length;
+      var idx = 1;
+      var timer = null;
+
+      function activate(n) {
+        idx = n;
+        document.querySelectorAll('#whyMini .why-mini-slide').forEach(function (el) {
+          el.classList.toggle('active', Number(el.dataset.i) === n);
+        });
+        document.querySelectorAll('#whyMiniDots i').forEach(function (el, i) {
+          el.classList.toggle('active', i === n - 1);
+        });
+        var ic = document.getElementById('whyMiniIcon');
+        if (ic) ic.textContent = icons[n - 1];
+      }
+
+      function start() {
+        if (timer) return;
+        timer = setInterval(function () {
+          activate(idx >= total ? 1 : idx + 1);
+        }, 3200);
+      }
+
+      if (document.getElementById('whyMini')) start();
+    })();
+  </script>
   <div class="strip" aria-hidden="true">
     <div class="run">
       <span data-jp>テンプレート設計 <b>TEMPLATES</b></span><span data-jp>ビジュアル・アイデンティティ <b>BRANDING</b></span><span
@@ -4011,85 +4017,6 @@
     </div>
   </div>
 
-  <section id="why" style="padding-top:0">
-    <div class="wrap">
-      <div class="proc">
-        <div class="glow"></div>
-        <div class="wrap">
-          <div class="why-bar">
-            <span class="why-tag"><span data-jp>なぜ、必要なのか</span><span data-en>Why it matters</span></span>
-            <div class="why-stage" id="why-stage">
-              <div class="why-slide active" data-i="1">
-                <span class="wi">検</span>
-                <span class="wd"><b><span data-jp>検索される時代。</span><span data-en>People search first.</span></b>
-                  <span data-jp>気になれば、まず検索する。ホームページがなければ、選択肢にすら入りません。</span><span data-en>Without a site, you
-                    may not even make the list.</span></span>
-              </div>
-              <div class="why-slide" data-i="2">
-                <span class="wi">時</span>
-                <span class="wd"><b><span data-jp>24時間働く営業担当。</span><span data-en>Working while you sleep.</span></b>
-                  <span data-jp>夜中も休業日も、黙って働き続けます。</span><span data-en>Even on your day off, it keeps quietly
-                    working.</span></span>
-              </div>
-              <div class="why-slide" data-i="3">
-                <span class="wi">信</span>
-                <span class="wd"><b><span data-jp>言葉より先に届く安心感。</span><span data-en>Trust, before a word is
-                      said.</span></b> <span data-jp>整ったサイトは「きちんとした会社だ」という安心感を先に届けます。</span><span data-en>A
-                    well-made site conveys credibility first.</span></span>
-              </div>
-              <div class="why-slide" data-i="4">
-                <span class="wi">声</span>
-                <span class="wd"><b><span data-jp>完全に、あなたのもの。</span><span data-en>Fully yours.</span></b> <span
-                    data-jp>アルゴリズムにも、他社の規約にも縛られない唯一の場所です。</span><span data-en>No algorithm, no platform rules to
-                    follow.</span></span>
-              </div>
-            </div>
-            <div class="why-dots" id="why-dots">
-              <i class="active"></i><i></i><i></i><i></i>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <script>
-      (function () {
-        var total = 4;
-        var idx = 1;
-        var duration = 4000;
-        var timer = null;
-
-        function activate(n) {
-          idx = n;
-          document.querySelectorAll('#why-stage .why-slide').forEach(function (el) {
-            el.classList.toggle('active', Number(el.dataset.i) === n);
-          });
-          document.querySelectorAll('#why-dots i').forEach(function (el, i) {
-            el.classList.toggle('active', i === n - 1);
-          });
-        }
-
-        function stop() { if (timer) { clearInterval(timer); timer = null; } }
-        function start() {
-          stop();
-          timer = setInterval(function () {
-            activate(idx >= total ? 1 : idx + 1);
-          }, duration);
-        }
-
-        start();
-
-        var section = document.getElementById('why');
-        if (section && 'IntersectionObserver' in window) {
-          var io = new IntersectionObserver(function (entries) {
-            entries.forEach(function (entry) {
-              if (entry.isIntersecting) start(); else stop();
-            });
-          }, { threshold: .2 });
-          io.observe(section);
-        }
-      })();
-    </script>
-  </section>
 
   <section id="services">
     <div class="gbg" aria-hidden="true">
