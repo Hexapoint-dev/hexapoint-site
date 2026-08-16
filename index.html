@@ -3398,13 +3398,34 @@
       margin-top: 12px
     }
 
-    .founder .flangs span {
+    .founder .flangs span,
+    .founder .flangs a {
       font-size: 12px;
       background: var(--mint);
       color: var(--emerald-deep);
       border: 1px solid var(--mint-2);
       padding: 5px 12px;
       border-radius: 30px
+    }
+
+    .founder .flangs a {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      text-decoration: none !important;
+      transition: .2s;
+    }
+
+    .founder .flangs a svg {
+      width: 12px;
+      height: 12px;
+      flex: 0 0 auto;
+    }
+
+    .founder .flangs a:hover {
+      background: var(--emerald-deep);
+      border-color: var(--emerald-deep);
+      color: #fff;
     }
 
     @media(max-width:560px) {
@@ -4875,6 +4896,8 @@
           <a href="#terms-open"><span data-jp>利用規約</span><span data-en>Terms &amp; Conditions</span></a>
           <a href="/terms.pdf" target="_blank" rel="noopener"><span data-jp>利用規約（PDF）</span><span data-en>Terms
               (PDF)</span></a>
+          <a href="/freelance-license.pdf" target="_blank" rel="noopener"><span data-jp>フリーランス許可証（PDF）</span><span
+              data-en>Freelance License (PDF)</span></a>
           <a href="#legal-open"><span data-jp>特定商取引法に基づく表記</span><span data-en>Legal Notice</span></a>
           <a href="#work"><span data-jp>実績</span><span data-en>Work</span></a>
         </div>
@@ -4980,7 +5003,10 @@
                 <span><span data-jp>日本語</span><span data-en>Japanese</span></span>
                 <span><span data-jp>英語</span><span data-en>English</span></span>
                 <span><span data-jp>アラビア語</span><span data-en>Arabic</span></span>
-                <span><span data-jp>政府公認ライセンス</span><span data-en>Licensed freelancer</span></span>
+                <a href="/freelance-license.pdf" target="_blank" rel="noopener" title="Saudi government-authorized freelance license"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+                    <circle cx="8" cy="6.2" r="4" />
+                    <path d="M5.6 9.7L4.2 14l3.8-2 3.8 2-1.4-4.3" />
+                  </svg><span data-jp>政府公認ライセンス（証明書）</span><span data-en>Licensed Freelancer (Certificate)</span></a>
               </div>
             </div>
           </div>
@@ -5699,6 +5725,18 @@
       height: 13px;
       flex: 0 0 auto;
     }
+
+    a.trust-badge {
+      text-decoration: none !important;
+      cursor: pointer;
+      transition: .2s;
+    }
+
+    a.trust-badge:hover {
+      background: var(--emerald-deep);
+      border-color: var(--emerald-deep);
+      color: #fff;
+    }
   </style>
 
   <div id="order-modal-overlay">
@@ -5776,6 +5814,10 @@
               <rect x="3" y="7" width="10" height="7" rx="1.5" />
               <path d="M5 7V5a3 3 0 016 0v2" />
             </svg><span data-jp>SSL暗号化通信</span><span data-en>SSL Encrypted</span></span>
+          <a class="trust-badge" href="/freelance-license.pdf" target="_blank" rel="noopener"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+              <circle cx="8" cy="6.2" r="4" />
+              <path d="M5.6 9.7L4.2 14l3.8-2 3.8 2-1.4-4.3" />
+            </svg><span data-jp>政府公認フリーランス</span><span data-en>Licensed Freelancer</span></a>
         </div>
         <button type="button" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:6px" id="om-bank-submit"
           onclick="submitBankOrder()" disabled><span data-jp>注文内容を送信 →</span><span data-en>Send order details →</span></button>
@@ -5799,6 +5841,10 @@
               <rect x="1.5" y="4" width="13" height="9" rx="1.5" />
               <path d="M1.5 6.5h13" />
             </svg><span data-jp>カード情報は非保持</span><span data-en>Card details never stored by us</span></span>
+          <a class="trust-badge" href="/freelance-license.pdf" target="_blank" rel="noopener"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+              <circle cx="8" cy="6.2" r="4" />
+              <path d="M5.6 9.7L4.2 14l3.8-2 3.8 2-1.4-4.3" />
+            </svg><span data-jp>政府公認フリーランス</span><span data-en>Licensed Freelancer</span></a>
         </div>
         <div id="paypal-button-container">
           <paypal-button hidden></paypal-button>
