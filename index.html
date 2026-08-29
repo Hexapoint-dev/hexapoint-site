@@ -6601,11 +6601,25 @@
         document.getElementById('om-step-method').style.display = '';
       };
 
-      // Stripe uses a hosted Checkout page: the browser is redirected away to
-      // Stripe entirely (no SDK on this page), then back via success_url/cancel_url.
+      // Stripe uses a hosted Checkout page, opened in a popup window so the buyer
+      // completes payment without leaving this page. The popup is opened
+      // synchronously (still inside this click handler) with a blank URL first,
+      // then navigated once we know the real Checkout URL — opening it later,
+      // after the fetch resolves, is what gets popups blocked by browsers.
       window.chooseMethodStripe = function () {
         var btn = document.getElementById('om-method-stripe-btn');
         if (btn) { btn.disabled = true; btn.style.opacity = '.6'; }
+
+        var popupW = 480, popupH = 760;
+        var left = Math.max(0, (window.screen.width - popupW) / 2 + (window.screenX || 0));
+        var top = Math.max(0, (window.screen.height - popupH) / 2 + (window.screenY || 0));
+        var popup = window.open('', 'stripe_checkout_popup',
+          'width=' + popupW + ',height=' + popupH + ',left=' + left + ',top=' + top +
+          ',menubar=no,toolbar=no,location=yes,resizable=yes,scrollbars=yes');
+
+        function resetBtn() {
+          if (btn) { btn.disabled = false; btn.style.opacity = ''; }
+        }
 
         fetch('/api/stripe-create-checkout', {
           method: 'POST',
@@ -6614,12 +6628,46 @@
         })
           .then(function (res) { return res.json(); })
           .then(function (data) {
-            if (!data.url) throw new Error('create checkout failed');
-            window.location.href = data.url;
+            if (!data.url || !data.sessionId) throw new Error('create checkout failed');
+
+            if (!popup || popup.closed) {
+              // Popup was blocked by the browser — fall back to a full-page redirect.
+              window.location.href = data.url;
+              return;
+            }
+
+            popup.location.href = data.url;
+
+            // Poll for the popup closing (either the buyer finished paying and the
+            // success page auto-closed it, or they just closed it manually) and
+            // only then ask our server — never the popup itself — what actually
+            // happened, the same way the full-redirect return-handler below does.
+            var pollTimer = setInterval(function () {
+              if (popup.closed) {
+                clearInterval(pollTimer);
+                fetch('/api/stripe-confirm-order', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ sessionId: data.sessionId })
+                })
+                  .then(function (res) { return res.json(); })
+                  .then(function (result) {
+                    hideAllSteps();
+                    document.getElementById(result.ok ? 'om-success' : 'om-error').classList.add('show');
+                  })
+                  .catch(function (e) {
+                    console.error('Stripe confirm error:', e);
+                    hideAllSteps();
+                    document.getElementById('om-error').classList.add('show');
+                  })
+                  .finally(resetBtn);
+              }
+            }, 700);
           })
           .catch(function (e) {
             console.error('Stripe start error:', e);
-            if (btn) { btn.disabled = false; btn.style.opacity = ''; }
+            if (popup && !popup.closed) { try { popup.close(); } catch (e2) { /* ignore */ } }
+            resetBtn();
             hideAllSteps();
             document.getElementById('om-error').classList.add('show');
             if (typeof turnstile !== 'undefined') {
@@ -6631,10 +6679,24 @@
       // Handle the buyer being redirected back from Stripe's hosted Checkout page.
       // Never trusts the query string alone — /api/stripe-confirm-order re-verifies
       // the session directly with Stripe before treating the order as paid.
+      //
+      // This same code runs whether Stripe redirected the popup window (normal
+      // case) or the main tab (popup-blocked fallback case) — when it's the
+      // popup, window.opener points back at the main tab, so we auto-close after
+      // a moment; the main tab's own poll loop (see chooseMethodStripe above)
+      // independently re-confirms and shows the result there too.
       (function () {
         var params = new URLSearchParams(window.location.search);
         var stripeOrder = params.get('stripe_order');
         var sessionId = params.get('session_id');
+        var inPopup = !!window.opener;
+
+        function closeIfPopup(delayMs) {
+          if (!inPopup) return;
+          setTimeout(function () {
+            try { window.close(); } catch (e) { /* ignore */ }
+          }, delayMs);
+        }
 
         if (stripeOrder === 'success' && sessionId) {
           fetch('/api/stripe-confirm-order', {
@@ -6654,6 +6716,7 @@
               document.getElementById(result.ok ? 'om-success' : 'om-error').classList.add('show');
               document.getElementById('order-modal-overlay').classList.add('show');
               document.body.style.overflow = 'hidden';
+              closeIfPopup(2000);
             })
             .catch(function (e) {
               console.error('Stripe confirm error:', e);
@@ -6663,12 +6726,14 @@
               document.getElementById('om-error').classList.add('show');
               document.getElementById('order-modal-overlay').classList.add('show');
               document.body.style.overflow = 'hidden';
+              closeIfPopup(2500);
             })
             .finally(function () {
               window.history.replaceState(null, '', window.location.pathname);
             });
         } else if (stripeOrder === 'cancel') {
           window.history.replaceState(null, '', window.location.pathname);
+          closeIfPopup(300);
         }
       })();
     })();
