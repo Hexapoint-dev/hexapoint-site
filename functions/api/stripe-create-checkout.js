@@ -105,7 +105,7 @@ export async function onRequestPost({ request, env }) {
       return jsonResponse({ ok: false, error: "stripe_create_failed" }, 502);
     }
 
-    return jsonResponse({ url: session.url });
+    return jsonResponse({ url: session.url, sessionId: session.id });
   } catch (err) {
     console.error("stripe create-checkout error:", err);
     return jsonResponse({ ok: false, error: "server_error" }, 500);
