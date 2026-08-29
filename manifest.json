@@ -1,0 +1,12 @@
+{
+  "name": "HexaPoint",
+  "short_name": "HexaPoint",
+  "icons": [
+    { "src": "/favicon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/favicon-512.png", "sizes": "512x512", "type": "image/png" }
+  ],
+  "theme_color": "#e8631f",
+  "background_color": "#fbf9f6",
+  "display": "standalone",
+  "start_url": "/"
+}

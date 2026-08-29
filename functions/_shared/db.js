@@ -1,0 +1,214 @@
+// Shared D1 helpers for the `orders` table. Used by the payment flows
+// (stripe-confirm-order.js, stripe-webhook.js, bank-order.js) to record every
+// order, and by the admin panel (functions/api/admin/*) to list/view/edit/
+// delete/create orders.
+//
+// D1 binding name: DB (Cloudflare Pages -> Settings -> Functions -> D1 database bindings).
+// Schema: migrations/0001_orders.sql
+
+export function jsonResponse(obj, status = 200) {
+  return new Response(JSON.stringify(obj), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
+const SORT_COLUMNS = new Set(["created_at", "amount", "status", "buyer_name"]);
+
+function buildInsertStatement(env, { orderId, planId, planNameJa, planNameEn, amount, paymentMethod, status, buyer, notes }, onConflictDoNothing) {
+  const sql = `
+    INSERT INTO orders (
+      order_id, plan_id, plan_name_ja, plan_name_en, amount, payment_method, status,
+      buyer_name, buyer_phone, buyer_email, buyer_address, notes
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ${onConflictDoNothing ? "ON CONFLICT(order_id) DO NOTHING" : ""}
+  `;
+  return env.DB.prepare(sql).bind(
+    orderId,
+    planId,
+    planNameJa,
+    planNameEn,
+    amount,
+    paymentMethod,
+    status,
+    buyer.name,
+    buyer.phone,
+    buyer.email,
+    buyer.address,
+    notes || ""
+  );
+}
+
+// Used by the payment flows. Idempotent (a duplicate webhook/capture retry for
+// the same order_id is a silent no-op, so it never clobbers a status an admin
+// may have already changed) and never throws — a DB failure must not block the
+// customer-facing payment flow, the same way a Sheets failure never did.
+export async function insertOrder(env, data) {
+  if (!env.DB) {
+    console.error("D1 binding DB not configured, skipping order insert");
+    return { ok: false, error: "not_configured" };
+  }
+  try {
+    await buildInsertStatement(env, data, true).run();
+    return { ok: true };
+  } catch (err) {
+    console.error("D1 insertOrder failed:", err);
+    return { ok: false, error: String(err) };
+  }
+}
+
+// Used by the admin "add order" feature. A duplicate order_id is a real error
+// here (not silently ignored) since this is a direct admin action.
+export async function createOrder(env, data) {
+  const orderId = data.orderId || `MANUAL-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
+  const row = { ...data, orderId };
+  const result = await buildInsertStatement(env, row, false).run();
+  const id = result?.meta?.last_row_id;
+  return getOrder(env, id);
+}
+
+// Shared WHERE-clause builder for the orders list/export/stats-adjacent queries.
+// Never string-concatenates values — always returns `?` placeholders + a params array.
+function buildOrderFilters({ status, search, dateFrom, dateTo }) {
+  const where = [];
+  const params = [];
+  if (status) {
+    where.push("status = ?");
+    params.push(status);
+  }
+  if (search) {
+    where.push("(buyer_name LIKE ? OR buyer_email LIKE ? OR order_id LIKE ?)");
+    const like = `%${search}%`;
+    params.push(like, like, like);
+  }
+  if (dateFrom) {
+    where.push("created_at >= ?");
+    params.push(`${dateFrom} 00:00:00`);
+  }
+  if (dateTo) {
+    where.push("created_at <= ?");
+    params.push(`${dateTo} 23:59:59`);
+  }
+  return { whereSql: where.length ? `WHERE ${where.join(" AND ")}` : "", params };
+}
+
+export async function listOrders(env, { status, search, dateFrom, dateTo, sort, dir, page, limit } = {}) {
+  const sortCol = SORT_COLUMNS.has(sort) ? sort : "created_at";
+  const sortDir = String(dir).toLowerCase() === "asc" ? "ASC" : "DESC";
+  const pageNum = Math.max(1, parseInt(page, 10) || 1);
+  const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 25));
+  const offset = (pageNum - 1) * limitNum;
+
+  const { whereSql, params } = buildOrderFilters({ status, search, dateFrom, dateTo });
+
+  const listSql = `SELECT * FROM orders ${whereSql} ORDER BY ${sortCol} ${sortDir} LIMIT ? OFFSET ?`;
+  const countSql = `SELECT COUNT(*) AS total FROM orders ${whereSql}`;
+
+  const [listResult, countResult] = await Promise.all([
+    env.DB.prepare(listSql).bind(...params, limitNum, offset).all(),
+    env.DB.prepare(countSql).bind(...params).first(),
+  ]);
+
+  return {
+    orders: listResult.results || [],
+    total: countResult ? countResult.total : 0,
+    page: pageNum,
+    limit: limitNum,
+  };
+}
+
+// Same filters as listOrders, but no pagination — used by the CSV export, which
+// needs every matching row, not one page of them.
+export async function listOrdersForExport(env, { status, search, dateFrom, dateTo, sort, dir } = {}) {
+  const sortCol = SORT_COLUMNS.has(sort) ? sort : "created_at";
+  const sortDir = String(dir).toLowerCase() === "asc" ? "ASC" : "DESC";
+  const { whereSql, params } = buildOrderFilters({ status, search, dateFrom, dateTo });
+  const sql = `SELECT * FROM orders ${whereSql} ORDER BY ${sortCol} ${sortDir}`;
+  const result = await env.DB.prepare(sql).bind(...params).all();
+  return result.results || [];
+}
+
+// KPI tiles for the admin dashboard header. All four queries are parameterless
+// (no user input), run in parallel.
+export async function getStats(env) {
+  const [revenueRow, pendingBankRow, monthRow, customersRow] = await Promise.all([
+    env.DB.prepare("SELECT COALESCE(SUM(amount),0) AS total FROM orders WHERE status = 'paid'").first(),
+    env.DB.prepare("SELECT COUNT(*) AS c FROM orders WHERE status = 'pending' AND payment_method = 'bank'").first(),
+    env.DB.prepare("SELECT COUNT(*) AS c FROM orders WHERE created_at >= date('now','start of month')").first(),
+    env.DB.prepare("SELECT COUNT(DISTINCT buyer_email) AS c FROM orders").first(),
+  ]);
+  return {
+    totalRevenuePaid: revenueRow ? revenueRow.total : 0,
+    pendingBankCount: pendingBankRow ? pendingBankRow.c : 0,
+    ordersThisMonth: monthRow ? monthRow.c : 0,
+    totalCustomers: customersRow ? customersRow.c : 0,
+  };
+}
+
+// ---- order_notes (multi-entry note log, migrations/0002_order_notes.sql) ----
+// Separate from the legacy single `orders.notes` column (still supported via
+// updateOrder's whitelist, untouched, kept for backward compatibility).
+
+export async function addOrderNote(env, orderId, note) {
+  const trimmed = String(note || "").trim().slice(0, 2000);
+  if (!trimmed) return { ok: false, error: "empty_note" };
+  const result = await env.DB.prepare("INSERT INTO order_notes (order_id, note) VALUES (?, ?)")
+    .bind(orderId, trimmed)
+    .run();
+  const id = result?.meta?.last_row_id;
+  const row = await env.DB.prepare("SELECT * FROM order_notes WHERE id = ?").bind(id).first();
+  return { ok: true, note: row };
+}
+
+export async function listOrderNotes(env, orderId) {
+  const result = await env.DB.prepare("SELECT * FROM order_notes WHERE order_id = ? ORDER BY created_at ASC")
+    .bind(orderId)
+    .all();
+  return result.results || [];
+}
+
+export async function getOrder(env, id) {
+  if (!id) return null;
+  const row = await env.DB.prepare("SELECT * FROM orders WHERE id = ?").bind(id).first();
+  return row || null;
+}
+
+const UPDATABLE_COLUMNS = new Set([
+  "status",
+  "buyer_name",
+  "buyer_phone",
+  "buyer_email",
+  "buyer_address",
+  "notes",
+  "plan_id",
+  "plan_name_ja",
+  "plan_name_en",
+  "amount",
+]);
+
+export async function updateOrder(env, id, patch) {
+  const existing = await getOrder(env, id);
+  if (!existing) return null;
+
+  const setClauses = ["updated_at = datetime('now')"];
+  const params = [];
+  for (const key of Object.keys(patch || {})) {
+    if (!UPDATABLE_COLUMNS.has(key)) continue;
+    setClauses.push(`${key} = ?`);
+    params.push(patch[key]);
+  }
+
+  if (setClauses.length === 1) {
+    // Nothing whitelisted to update — return the row unchanged.
+    return existing;
+  }
+
+  params.push(id);
+  await env.DB.prepare(`UPDATE orders SET ${setClauses.join(", ")} WHERE id = ?`).bind(...params).run();
+  return getOrder(env, id);
+}
+
+export async function deleteOrder(env, id) {
+  const result = await env.DB.prepare("DELETE FROM orders WHERE id = ?").bind(id).run();
+  return { ok: true, deleted: result?.meta?.changes || 0 };
+}

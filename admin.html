@@ -1,0 +1,1274 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>注文管理 | HexaPoint Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet"
+  href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap">
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+<style>
+  :root {
+    --ink: #0e1633;
+    --paper: #fbf9f6;
+    --cream: #fff;
+    --emerald: #f5912a;
+    --emerald-deep: #e8631f;
+    --coral: #e63548;
+    --coral-soft: #ffe0e3;
+    --line: rgba(14, 22, 51, .12);
+    --line-strong: rgba(14, 22, 51, .22);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Zen Kaku Gothic New", sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .mono { font-family: "DM Mono", monospace; }
+
+  header.top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding: 20px 28px;
+    border-bottom: 1px solid var(--line);
+    background: var(--cream);
+  }
+
+  header.top h1 {
+    font-family: "Shippori Mincho", serif;
+    font-size: 22px;
+    margin: 0;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1.5px solid var(--ink);
+    background: var(--ink);
+    color: var(--cream);
+    border-radius: 999px;
+    padding: 9px 18px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--ink);
+  }
+
+  .btn-danger {
+    background: var(--coral);
+    border-color: var(--coral);
+  }
+
+  .btn:disabled { opacity: .4; cursor: default; }
+
+  main { padding: 24px 28px 60px; max-width: 1280px; margin: 0 auto; }
+
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+  }
+
+  .toolbar input[type="search"],
+  .toolbar select {
+    border: 1.5px solid var(--line-strong);
+    border-radius: 10px;
+    padding: 9px 12px;
+    font-size: 13px;
+    font-family: inherit;
+    background: var(--cream);
+    color: var(--ink);
+  }
+
+  .toolbar input[type="search"] { min-width: 240px; }
+
+  #error-banner {
+    display: none;
+    background: var(--coral-soft);
+    color: var(--coral);
+    border: 1px solid var(--coral);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 13px;
+    margin-bottom: 16px;
+  }
+
+  #error-banner.show { display: block; }
+
+  .table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--cream);
+  }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+
+  th, td {
+    padding: 11px 14px;
+    text-align: left;
+    border-bottom: 1px solid var(--line);
+    white-space: nowrap;
+  }
+
+  th {
+    font-weight: 700;
+    color: var(--ink);
+    opacity: .7;
+    font-size: 12px;
+    letter-spacing: .03em;
+    user-select: none;
+    position: sticky;
+    top: 0;
+    background: var(--cream);
+  }
+
+  th.sortable { cursor: pointer; }
+  th.sortable:hover { opacity: 1; }
+  th .arrow { opacity: .5; font-size: 10px; margin-left: 3px; }
+
+  tbody tr { cursor: pointer; }
+  tbody tr:hover { background: var(--paper); }
+  tbody tr:last-child td { border-bottom: none; }
+
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .badge-pending { background: var(--line); color: var(--ink); }
+  .badge-paid { background: var(--emerald); color: #fff; }
+  .badge-refunded { background: var(--coral-soft); color: var(--coral); }
+  .badge-cancelled { background: var(--coral); color: #fff; }
+
+  .row-actions button {
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--ink);
+    opacity: .6;
+    padding: 4px 6px;
+    font-family: inherit;
+  }
+  .row-actions button:hover { opacity: 1; }
+
+  .empty-state, .loading-state {
+    padding: 40px 20px;
+    text-align: center;
+    opacity: .5;
+    font-size: 13px;
+  }
+
+  .pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin-top: 18px;
+    font-size: 13px;
+  }
+
+  /* ---- modal ---- */
+  .overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(14, 22, 51, .55);
+    z-index: 999;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .overlay.show { display: flex; }
+
+  .modal {
+    background: var(--paper);
+    border-radius: 20px;
+    width: 100%;
+    max-width: 560px;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 28px;
+    position: relative;
+  }
+
+  .modal h2 {
+    font-family: "Shippori Mincho", serif;
+    font-size: 19px;
+    margin: 0 0 4px;
+  }
+
+  .modal .sub { font-size: 12px; opacity: .55; margin-bottom: 18px; }
+
+  .modal .close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1.5px solid var(--line);
+    background: var(--cream);
+    cursor: pointer;
+    font-size: 15px;
+  }
+
+  .field { margin-bottom: 14px; }
+  .field label {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    opacity: .65;
+    margin-bottom: 5px;
+  }
+  .field input, .field select, .field textarea {
+    width: 100%;
+    border: 1.5px solid var(--line-strong);
+    border-radius: 10px;
+    padding: 9px 12px;
+    font-size: 13px;
+    font-family: inherit;
+    background: var(--cream);
+    color: var(--ink);
+  }
+  .field textarea { min-height: 70px; resize: vertical; }
+
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .modal-meta {
+    font-size: 11px;
+    opacity: .5;
+    margin: 14px 0;
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 22px;
+  }
+  .modal-actions .btn { flex: 1; justify-content: center; }
+
+  .modal-error {
+    display: none;
+    background: var(--coral-soft);
+    color: var(--coral);
+    border-radius: 10px;
+    padding: 8px 12px;
+    font-size: 12px;
+    margin-bottom: 12px;
+  }
+  .modal-error.show { display: block; }
+
+  /* ---- login screen ---- */
+  #login-screen {
+    display: none;
+    min-height: 100vh;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  #login-screen.show { display: flex; }
+
+  .login-card {
+    background: var(--cream);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    width: 100%;
+    max-width: 380px;
+    padding: 32px 28px;
+    text-align: center;
+  }
+
+  .login-card h1 {
+    font-family: "Shippori Mincho", serif;
+    font-size: 20px;
+    margin: 0 0 22px;
+  }
+
+  .login-card .field { text-align: left; }
+
+  .login-card .cf-turnstile { margin: 16px 0; display: flex; justify-content: center; }
+
+  .login-card .btn { width: 100%; justify-content: center; margin-top: 4px; }
+
+  #dashboard-screen { display: none; }
+  #dashboard-screen.show { display: block; }
+
+  /* ---- logo ---- */
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand img.logo { height: 34px; width: auto; display: block; }
+  .login-card img.logo { height: 40px; width: auto; margin: 0 auto 16px; display: block; }
+
+  /* ---- stats tiles ---- */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 22px;
+  }
+  .stat-tile {
+    background: var(--cream);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 16px 18px;
+  }
+  .stat-tile .num { font-family: "DM Mono", monospace; font-size: 24px; font-weight: 500; color: var(--ink); }
+  .stat-tile .label { font-size: 11px; opacity: .6; margin-top: 4px; }
+
+  /* ---- bulk action bar ---- */
+  #bulk-bar {
+    display: none;
+    align-items: center;
+    gap: 12px;
+    background: var(--paper);
+    border: 1px solid var(--line-strong);
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-bottom: 14px;
+    font-size: 13px;
+    flex-wrap: wrap;
+  }
+  #bulk-bar.show { display: flex; }
+  #bulk-bar select { border: 1.5px solid var(--line-strong); border-radius: 8px; padding: 6px 10px; font-family: inherit; background: var(--cream); }
+
+  /* ---- renewal badge ---- */
+  .renewal-note { display: block; font-size: 10px; margin-top: 3px; opacity: .7; white-space: nowrap; }
+  .renewal-note.warn { color: var(--coral); opacity: 1; font-weight: 700; }
+
+  /* ---- notes thread ---- */
+  .notes-thread { max-height: 160px; overflow-y: auto; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; margin-bottom: 10px; background: var(--cream); }
+  .notes-thread .note-item { padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 12.5px; }
+  .notes-thread .note-item:last-child { border-bottom: none; }
+  .notes-thread .note-time { display: block; font-size: 10px; opacity: .5; margin-bottom: 2px; }
+  .notes-thread .empty { opacity: .5; font-size: 12px; padding: 6px 0; }
+  .legacy-note { font-size: 12px; opacity: .7; background: var(--paper); border-radius: 8px; padding: 8px 10px; margin-bottom: 10px; }
+  .notes-add-row { display: flex; gap: 8px; align-items: flex-start; }
+  .notes-add-row textarea { flex: 1; min-height: 44px; }
+  .notes-add-row button { white-space: nowrap; }
+
+  /* ---- responsive ---- */
+  @media (max-width: 720px) {
+    header.top { padding: 14px 16px; }
+    main { padding: 16px 14px 40px; }
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+    .toolbar { flex-direction: column; align-items: stretch; }
+    .toolbar input[type="search"], .toolbar select, .toolbar input[type="date"] { min-width: 0; width: 100%; }
+    .btn { min-height: 40px; }
+
+    .table-wrap { border: none; background: none; overflow-x: visible; }
+    table, thead, tbody, th, td, tr { display: block; }
+    thead { display: none; }
+    tbody tr {
+      background: var(--cream);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      margin-bottom: 12px;
+      padding: 6px 12px;
+    }
+    td {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      white-space: normal;
+      text-align: right;
+      border-bottom: 1px solid var(--line);
+      padding: 9px 0;
+    }
+    td:last-child { border-bottom: none; }
+    td::before {
+      content: attr(data-label);
+      font-weight: 700;
+      opacity: .6;
+      font-size: 11px;
+      text-align: left;
+      flex-shrink: 0;
+    }
+    td.checkbox-cell { justify-content: flex-start; }
+    td.checkbox-cell::before { content: ''; }
+
+    .modal { max-width: 100%; width: 100%; height: 100%; max-height: 100%; border-radius: 0; padding: 20px 16px 30px; }
+    .overlay { padding: 0; }
+    .field-row { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="login-card">
+    <img src="/logo.webp" alt="HexaPoint" class="logo">
+    <h1>管理画面ログイン <span class="mono" style="font-size:12px;opacity:.5">Admin Login</span></h1>
+    <div class="modal-error" id="login-error"></div>
+    <div class="field">
+      <label>パスワード</label>
+      <input type="password" id="login-password" autocomplete="current-password">
+    </div>
+    <div class="cf-turnstile" id="login-turnstile" data-sitekey="0x4AAAAAAD8H_SMh5X5eLg1u"></div>
+    <button type="button" class="btn" id="login-submit" onclick="submitLogin()">ログイン</button>
+  </div>
+</div>
+
+<div id="dashboard-screen">
+<header class="top">
+  <div class="brand">
+    <img src="/logo.webp" alt="HexaPoint" class="logo">
+    <h1>注文管理 <span class="mono" style="font-size:13px;opacity:.5">Orders</span></h1>
+  </div>
+  <div style="display:flex;gap:10px;align-items:center">
+    <button type="button" class="btn" onclick="openAddModal()">+ 新規注文を追加</button>
+    <button type="button" class="btn btn-ghost" onclick="submitLogout()">ログアウト</button>
+  </div>
+</header>
+
+<main>
+  <div id="error-banner"></div>
+
+  <div class="stats-row" id="stats-row">
+    <div class="stat-tile"><div class="num mono" id="stat-revenue">—</div><div class="label">支払い済み合計</div></div>
+    <div class="stat-tile"><div class="num mono" id="stat-pending-bank">—</div><div class="label">銀行振込待ち</div></div>
+    <div class="stat-tile"><div class="num mono" id="stat-month">—</div><div class="label">今月の注文</div></div>
+    <div class="stat-tile"><div class="num mono" id="stat-customers">—</div><div class="label">顧客数</div></div>
+  </div>
+
+  <div class="toolbar">
+    <select id="filter-status" onchange="onFilterChange()">
+      <option value="">すべてのステータス</option>
+      <option value="pending">保留中 (Pending)</option>
+      <option value="paid">支払済 (Paid)</option>
+      <option value="refunded">返金済 (Refunded)</option>
+      <option value="cancelled">キャンセル (Cancelled)</option>
+    </select>
+    <input type="search" id="filter-search" placeholder="名前・メール・注文IDで検索…" oninput="onSearchInput()">
+    <input type="date" id="filter-date-from" onchange="onFilterChange()" title="開始日">
+    <input type="date" id="filter-date-to" onchange="onFilterChange()" title="終了日">
+    <button type="button" class="btn btn-ghost" onclick="exportCsv()">CSVエクスポート</button>
+  </div>
+
+  <div id="bulk-bar">
+    <span id="bulk-count" class="mono"></span>
+    <select id="bulk-status">
+      <option value="pending">保留中 (Pending)</option>
+      <option value="paid">支払済 (Paid)</option>
+      <option value="refunded">返金済 (Refunded)</option>
+      <option value="cancelled">キャンセル (Cancelled)</option>
+    </select>
+    <button type="button" class="btn" onclick="applyBulkStatus()">適用</button>
+    <button type="button" class="btn btn-ghost" onclick="exportSelectedCsv()">選択をCSVで書き出す</button>
+    <button type="button" class="btn btn-ghost" onclick="clearSelection()">選択解除</button>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th class="checkbox-cell"><input type="checkbox" id="select-all" onchange="onSelectAllChange()"></th>
+          <th>Order ID</th>
+          <th>プラン</th>
+          <th class="sortable" data-sort="amount" onclick="onSortClick('amount')">金額<span class="arrow"></span></th>
+          <th>方法</th>
+          <th class="sortable" data-sort="status" onclick="onSortClick('status')">ステータス<span class="arrow"></span></th>
+          <th class="sortable" data-sort="buyer_name" onclick="onSortClick('buyer_name')">お客様名<span class="arrow"></span></th>
+          <th>メール</th>
+          <th class="sortable" data-sort="created_at" onclick="onSortClick('created_at')">作成日時<span class="arrow"></span></th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody id="orders-tbody">
+        <tr><td colspan="10" class="loading-state">読み込み中…</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="pagination">
+    <button type="button" class="btn btn-ghost" id="prev-page" onclick="changePage(-1)">← 前へ</button>
+    <span id="page-indicator" class="mono"></span>
+    <button type="button" class="btn btn-ghost" id="next-page" onclick="changePage(1)">次へ →</button>
+  </div>
+</main>
+
+<!-- ===== Detail / edit modal ===== -->
+<div class="overlay" id="detail-overlay">
+  <div class="modal">
+    <button type="button" class="close" onclick="closeDetailModal()">✕</button>
+    <h2>注文詳細</h2>
+    <div class="sub mono" id="detail-order-id"></div>
+    <div class="modal-error" id="detail-error"></div>
+
+    <div class="field">
+      <label>ステータス</label>
+      <select id="edit-status">
+        <option value="pending">保留中 (Pending)</option>
+        <option value="paid">支払済 (Paid)</option>
+        <option value="refunded">返金済 (Refunded)</option>
+        <option value="cancelled">キャンセル (Cancelled)</option>
+      </select>
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label>プランID</label>
+        <input type="text" id="edit-plan-id">
+      </div>
+      <div class="field">
+        <label>金額 (¥)</label>
+        <input type="number" id="edit-amount">
+      </div>
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label>プラン名 (JA)</label>
+        <input type="text" id="edit-plan-name-ja">
+      </div>
+      <div class="field">
+        <label>プラン名 (EN)</label>
+        <input type="text" id="edit-plan-name-en">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>お客様名</label>
+      <input type="text" id="edit-buyer-name">
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>電話番号</label>
+        <input type="text" id="edit-buyer-phone">
+      </div>
+      <div class="field">
+        <label>メールアドレス</label>
+        <input type="email" id="edit-buyer-email">
+      </div>
+    </div>
+    <div class="field">
+      <label>住所</label>
+      <textarea id="edit-buyer-address"></textarea>
+    </div>
+    <div class="field">
+      <label>メモ</label>
+      <div class="legacy-note" id="detail-legacy-note" style="display:none"></div>
+      <div class="notes-thread" id="notes-thread"><div class="empty">読み込み中…</div></div>
+      <div class="notes-add-row">
+        <textarea id="new-note-text" placeholder="新しいメモを追加…"></textarea>
+        <button type="button" class="btn btn-ghost" onclick="submitNewNote()">追加</button>
+      </div>
+    </div>
+
+    <div class="modal-meta mono">
+      <span id="detail-payment-method"></span>
+      <span id="detail-created-at"></span>
+      <span id="detail-updated-at"></span>
+    </div>
+
+    <div class="modal-actions">
+      <button type="button" class="btn btn-danger" onclick="deleteOrder()">削除</button>
+      <button type="button" class="btn" onclick="saveOrder()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Add order modal ===== -->
+<div class="overlay" id="add-overlay">
+  <div class="modal">
+    <button type="button" class="close" onclick="closeAddModal()">✕</button>
+    <h2>新規注文を追加</h2>
+    <div class="sub">手動で注文を記録します（支払い方法は "manual" になります）</div>
+    <div class="modal-error" id="add-error"></div>
+
+    <div class="field-row">
+      <div class="field">
+        <label>プランID <span class="mono">*</span></label>
+        <input type="text" id="add-plan-id" placeholder="basic / maintenance / annual">
+      </div>
+      <div class="field">
+        <label>金額 (¥) <span class="mono">*</span></label>
+        <input type="number" id="add-amount">
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>プラン名 (JA) <span class="mono">*</span></label>
+        <input type="text" id="add-plan-name-ja">
+      </div>
+      <div class="field">
+        <label>プラン名 (EN) <span class="mono">*</span></label>
+        <input type="text" id="add-plan-name-en">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>ステータス</label>
+      <select id="add-status">
+        <option value="pending">保留中 (Pending)</option>
+        <option value="paid">支払済 (Paid)</option>
+        <option value="refunded">返金済 (Refunded)</option>
+        <option value="cancelled">キャンセル (Cancelled)</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>お客様名 <span class="mono">*</span></label>
+      <input type="text" id="add-buyer-name">
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>電話番号 <span class="mono">*</span></label>
+        <input type="text" id="add-buyer-phone">
+      </div>
+      <div class="field">
+        <label>メールアドレス <span class="mono">*</span></label>
+        <input type="email" id="add-buyer-email">
+      </div>
+    </div>
+    <div class="field">
+      <label>住所 <span class="mono">*</span></label>
+      <textarea id="add-buyer-address"></textarea>
+    </div>
+    <div class="field">
+      <label>メモ</label>
+      <textarea id="add-notes"></textarea>
+    </div>
+
+    <div class="modal-actions">
+      <button type="button" class="btn" onclick="submitAddOrder()">追加する</button>
+    </div>
+  </div>
+</div>
+</div><!-- /#dashboard-screen -->
+
+<script>
+(function () {
+  var state = { status: '', search: '', dateFrom: '', dateTo: '', sort: 'created_at', dir: 'desc', page: 1, limit: 25 };
+  var currentOrders = [];
+  var currentOrderId = null;
+  var currentNotes = [];
+  var selectedIds = {};
+  var searchDebounce = null;
+
+  function fmtYen(n) {
+    return '¥' + Number(n || 0).toLocaleString('ja-JP');
+  }
+
+  function fmtDate(s) {
+    if (!s) return '';
+    try {
+      return new Intl.DateTimeFormat('ja-JP', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Tokyo' })
+        .format(new Date(s.replace(' ', 'T') + 'Z'));
+    } catch (e) {
+      return s;
+    }
+  }
+
+  function showError(msg) {
+    var el = document.getElementById('error-banner');
+    el.textContent = msg;
+    el.classList.add('show');
+  }
+
+  function clearError() {
+    document.getElementById('error-banner').classList.remove('show');
+  }
+
+  function statusLabel(status) {
+    return { pending: '保留中', paid: '支払済', refunded: '返金済', cancelled: 'キャンセル' }[status] || status;
+  }
+
+  function badgeHtml(status) {
+    var cls = { pending: 'badge-pending', paid: 'badge-paid', refunded: 'badge-refunded', cancelled: 'badge-cancelled' }[status] || 'badge-pending';
+    return '<span class="badge ' + cls + '">' + statusLabel(status) + '</span>';
+  }
+
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function updateSortArrows() {
+    document.querySelectorAll('th.sortable').forEach(function (th) {
+      var arrow = th.querySelector('.arrow');
+      if (th.dataset.sort === state.sort) {
+        arrow.textContent = state.dir === 'asc' ? '▲' : '▼';
+      } else {
+        arrow.textContent = '';
+      }
+    });
+  }
+
+  window.onSortClick = function (col) {
+    if (state.sort === col) {
+      state.dir = state.dir === 'asc' ? 'desc' : 'asc';
+    } else {
+      state.sort = col;
+      state.dir = 'desc';
+    }
+    state.page = 1;
+    fetchOrders();
+  };
+
+  window.onFilterChange = function () {
+    state.status = document.getElementById('filter-status').value;
+    state.dateFrom = document.getElementById('filter-date-from').value;
+    state.dateTo = document.getElementById('filter-date-to').value;
+    state.page = 1;
+    fetchOrders();
+  };
+
+  window.onSearchInput = function () {
+    clearTimeout(searchDebounce);
+    searchDebounce = setTimeout(function () {
+      state.search = document.getElementById('filter-search').value.trim();
+      state.page = 1;
+      fetchOrders();
+    }, 350);
+  };
+
+  window.changePage = function (delta) {
+    state.page = Math.max(1, state.page + delta);
+    fetchOrders();
+  };
+
+  function buildQuery() {
+    var params = new URLSearchParams();
+    if (state.status) params.set('status', state.status);
+    if (state.search) params.set('search', state.search);
+    if (state.dateFrom) params.set('dateFrom', state.dateFrom);
+    if (state.dateTo) params.set('dateTo', state.dateTo);
+    params.set('sort', state.sort);
+    params.set('dir', state.dir);
+    params.set('page', state.page);
+    params.set('limit', state.limit);
+    return params.toString();
+  }
+
+  function fetchStats() {
+    fetch('/api/admin/stats')
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (!data.ok) return;
+        document.getElementById('stat-revenue').textContent = fmtYen(data.totalRevenuePaid);
+        document.getElementById('stat-pending-bank').textContent = data.pendingBankCount;
+        document.getElementById('stat-month').textContent = data.ordersThisMonth;
+        document.getElementById('stat-customers').textContent = data.totalCustomers;
+      })
+      .catch(function (err) { console.error('fetchStats error:', err); });
+  }
+
+  function fetchOrders() {
+    clearError();
+    updateSortArrows();
+    var tbody = document.getElementById('orders-tbody');
+    tbody.innerHTML = '<tr><td colspan="10" class="loading-state">読み込み中…</td></tr>';
+
+    fetch('/api/admin/orders?' + buildQuery())
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (result) {
+        if (!result.ok || !result.data.ok) {
+          throw new Error((result.data && result.data.error) || 'request_failed');
+        }
+        currentOrders = result.data.orders;
+        renderTable(currentOrders);
+        renderPagination(result.data.total, result.data.page, result.data.limit);
+      })
+      .catch(function (err) {
+        console.error('fetchOrders error:', err);
+        showError('注文一覧の取得に失敗しました: ' + err.message);
+        tbody.innerHTML = '<tr><td colspan="10" class="empty-state">読み込みエラー</td></tr>';
+      });
+  }
+
+  function renewalBadgeHtml(o) {
+    if (o.plan_id !== 'annual' || !o.created_at) return '';
+    var created = new Date(o.created_at.replace(' ', 'T') + 'Z');
+    if (isNaN(created.getTime())) return '';
+    var renewal = new Date(created.getTime() + 365 * 24 * 60 * 60 * 1000);
+    var daysLeft = Math.ceil((renewal.getTime() - Date.now()) / (24 * 60 * 60 * 1000));
+    var warn = daysLeft <= 14;
+    var text = daysLeft >= 0 ? ('更新まで ' + daysLeft + '日') : ('更新超過 ' + Math.abs(daysLeft) + '日');
+    return '<span class="renewal-note' + (warn ? ' warn' : '') + '">' + text + '</span>';
+  }
+
+  function renderTable(orders) {
+    var tbody = document.getElementById('orders-tbody');
+    if (!orders.length) {
+      tbody.innerHTML = '<tr><td colspan="10" class="empty-state">注文がありません</td></tr>';
+      updateSelectAllState();
+      return;
+    }
+    tbody.innerHTML = orders.map(function (o) {
+      return '<tr onclick="openDetailModal(' + o.id + ')">' +
+        '<td class="checkbox-cell" data-label="" onclick="event.stopPropagation()"><input type="checkbox" class="row-check" value="' + o.id + '" onchange="onRowCheckChange()"></td>' +
+        '<td class="mono" data-label="Order ID">' + esc(o.order_id) + '</td>' +
+        '<td data-label="プラン">' + esc(o.plan_name_ja) + '</td>' +
+        '<td class="mono" data-label="金額">' + fmtYen(o.amount) + '</td>' +
+        '<td data-label="方法">' + esc(o.payment_method) + '</td>' +
+        '<td data-label="ステータス">' + badgeHtml(o.status) + '</td>' +
+        '<td data-label="お客様名">' + esc(o.buyer_name) + '</td>' +
+        '<td data-label="メール">' + esc(o.buyer_email) + '</td>' +
+        '<td class="mono" data-label="作成日時">' + esc(fmtDate(o.created_at)) + renewalBadgeHtml(o) + '</td>' +
+        '<td class="row-actions" data-label="操作" onclick="event.stopPropagation()">' +
+          '<button type="button" onclick="openDetailModal(' + o.id + ')">表示</button>' +
+        '</td>' +
+      '</tr>';
+    }).join('');
+    updateSelectAllState();
+  }
+
+  // ---- Bulk selection ----
+  window.onSelectAllChange = function () {
+    var checked = document.getElementById('select-all').checked;
+    document.querySelectorAll('.row-check').forEach(function (cb) {
+      cb.checked = checked;
+      if (checked) selectedIds[cb.value] = true; else delete selectedIds[cb.value];
+    });
+    updateBulkBar();
+  };
+
+  window.onRowCheckChange = function () {
+    document.querySelectorAll('.row-check').forEach(function (cb) {
+      if (cb.checked) selectedIds[cb.value] = true; else delete selectedIds[cb.value];
+    });
+    updateSelectAllState();
+    updateBulkBar();
+  };
+
+  function updateSelectAllState() {
+    var boxes = document.querySelectorAll('.row-check');
+    boxes.forEach(function (cb) { cb.checked = !!selectedIds[cb.value]; });
+    var all = boxes.length > 0 && Array.prototype.every.call(boxes, function (cb) { return selectedIds[cb.value]; });
+    var selAll = document.getElementById('select-all');
+    if (selAll) selAll.checked = all;
+    updateBulkBar();
+  }
+
+  function updateBulkBar() {
+    var ids = Object.keys(selectedIds);
+    var bar = document.getElementById('bulk-bar');
+    if (ids.length > 0) {
+      bar.classList.add('show');
+      document.getElementById('bulk-count').textContent = ids.length + '件選択中';
+    } else {
+      bar.classList.remove('show');
+    }
+  }
+
+  window.clearSelection = function () {
+    selectedIds = {};
+    document.querySelectorAll('.row-check').forEach(function (cb) { cb.checked = false; });
+    var selAll = document.getElementById('select-all');
+    if (selAll) selAll.checked = false;
+    updateBulkBar();
+  };
+
+  window.applyBulkStatus = function () {
+    var ids = Object.keys(selectedIds);
+    if (!ids.length) return;
+    var status = document.getElementById('bulk-status').value;
+    if (!confirm(ids.length + '件のステータスを「' + statusLabel(status) + '」に変更しますか？')) return;
+
+    var okCount = 0, failCount = 0;
+    Promise.all(ids.map(function (id) {
+      return fetch('/api/admin/orders/' + id, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: status })
+      }).then(function (res) { return res.json(); })
+        .then(function (data) { if (data && data.ok) okCount++; else failCount++; })
+        .catch(function () { failCount++; });
+    })).then(function () {
+      clearSelection();
+      fetchOrders();
+      fetchStats();
+      if (failCount > 0) {
+        showError('一括更新: 成功 ' + okCount + '件、失敗 ' + failCount + '件');
+      }
+    });
+  };
+
+  function csvFieldClient(v) {
+    var s = String(v == null ? '' : v);
+    if (/^[=+\-@]/.test(s)) s = "'" + s;
+    if (/[",\n\r]/.test(s)) s = '"' + s.replace(/"/g, '""') + '"';
+    return s;
+  }
+
+  function downloadCsv(rows, filenamePrefix) {
+    var header = ['Order ID', 'Plan', 'Amount', 'Payment Method', 'Status', 'Buyer Name', 'Email', 'Phone', 'Address', 'Notes', 'Created At'];
+    var lines = [header.map(csvFieldClient).join(',')];
+    rows.forEach(function (o) {
+      lines.push([o.order_id, o.plan_name_ja, o.amount, o.payment_method, o.status, o.buyer_name, o.buyer_email, o.buyer_phone, o.buyer_address, o.notes, o.created_at].map(csvFieldClient).join(','));
+    });
+    var csv = '﻿' + lines.join('\r\n');
+    var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = filenamePrefix + '-' + new Date().toISOString().slice(0, 10) + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  window.exportSelectedCsv = function () {
+    var rows = currentOrders.filter(function (o) { return selectedIds[o.id]; });
+    if (!rows.length) return;
+    downloadCsv(rows, 'orders-selected');
+  };
+
+  window.exportCsv = function () {
+    window.location.href = '/api/admin/orders-export?' + buildQuery();
+  };
+
+  function renderPagination(total, page, limit) {
+    var totalPages = Math.max(1, Math.ceil(total / limit));
+    document.getElementById('page-indicator').textContent = page + ' / ' + totalPages + '（全 ' + total + ' 件）';
+    document.getElementById('prev-page').disabled = page <= 1;
+    document.getElementById('next-page').disabled = page >= totalPages;
+  }
+
+  // ---- Detail / edit modal ----
+  window.openDetailModal = function (id) {
+    var order = currentOrders.find(function (o) { return o.id === id; });
+    if (!order) return;
+    currentOrderId = id;
+
+    document.getElementById('detail-order-id').textContent = order.order_id;
+    document.getElementById('edit-status').value = order.status;
+    document.getElementById('edit-plan-id').value = order.plan_id;
+    document.getElementById('edit-amount').value = order.amount;
+    document.getElementById('edit-plan-name-ja').value = order.plan_name_ja;
+    document.getElementById('edit-plan-name-en').value = order.plan_name_en;
+    document.getElementById('edit-buyer-name').value = order.buyer_name;
+    document.getElementById('edit-buyer-phone').value = order.buyer_phone;
+    document.getElementById('edit-buyer-email').value = order.buyer_email;
+    document.getElementById('edit-buyer-address').value = order.buyer_address;
+
+    var legacyEl = document.getElementById('detail-legacy-note');
+    if (order.notes) {
+      legacyEl.textContent = '以前のメモ: ' + order.notes;
+      legacyEl.style.display = '';
+    } else {
+      legacyEl.style.display = 'none';
+    }
+    document.getElementById('new-note-text').value = '';
+    loadNotes(id);
+
+    document.getElementById('detail-payment-method').textContent = '方法: ' + order.payment_method;
+    document.getElementById('detail-created-at').textContent = '作成: ' + fmtDate(order.created_at);
+    document.getElementById('detail-updated-at').textContent = '更新: ' + fmtDate(order.updated_at);
+    document.getElementById('detail-error').classList.remove('show');
+
+    document.getElementById('detail-overlay').classList.add('show');
+  };
+
+  // ---- Notes thread ----
+  function loadNotes(orderId) {
+    var threadEl = document.getElementById('notes-thread');
+    threadEl.innerHTML = '<div class="empty">読み込み中…</div>';
+    fetch('/api/admin/orders/' + orderId + '/notes')
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (!data.ok) throw new Error(data.error || 'request_failed');
+        currentNotes = data.notes || [];
+        renderNotes();
+      })
+      .catch(function (err) {
+        console.error('loadNotes error:', err);
+        threadEl.innerHTML = '<div class="empty">メモの取得に失敗しました</div>';
+      });
+  }
+
+  function renderNotes() {
+    var threadEl = document.getElementById('notes-thread');
+    if (!currentNotes.length) {
+      threadEl.innerHTML = '<div class="empty">メモはまだありません</div>';
+      return;
+    }
+    threadEl.innerHTML = currentNotes.map(function (n) {
+      return '<div class="note-item"><span class="note-time mono">' + esc(fmtDate(n.created_at)) + '</span>' + esc(n.note) + '</div>';
+    }).join('');
+    threadEl.scrollTop = threadEl.scrollHeight;
+  }
+
+  window.submitNewNote = function () {
+    if (!currentOrderId) return;
+    var textEl = document.getElementById('new-note-text');
+    var text = textEl.value.trim();
+    if (!text) return;
+
+    fetch('/api/admin/orders/' + currentOrderId + '/notes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ note: text })
+    })
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (result) {
+        if (!result.ok || !result.data.ok) {
+          throw new Error((result.data && result.data.error) || 'request_failed');
+        }
+        textEl.value = '';
+        currentNotes.push(result.data.note);
+        renderNotes();
+      })
+      .catch(function (err) {
+        console.error('submitNewNote error:', err);
+        var errEl = document.getElementById('detail-error');
+        errEl.textContent = 'メモの追加に失敗しました: ' + err.message;
+        errEl.classList.add('show');
+      });
+  };
+
+  window.closeDetailModal = function () {
+    document.getElementById('detail-overlay').classList.remove('show');
+    currentOrderId = null;
+  };
+
+  document.getElementById('detail-overlay').addEventListener('click', function (e) {
+    if (e.target === this) closeDetailModal();
+  });
+
+  window.saveOrder = function () {
+    if (!currentOrderId) return;
+    var errEl = document.getElementById('detail-error');
+    errEl.classList.remove('show');
+
+    var patch = {
+      status: document.getElementById('edit-status').value,
+      plan_id: document.getElementById('edit-plan-id').value.trim(),
+      amount: Number(document.getElementById('edit-amount').value),
+      plan_name_ja: document.getElementById('edit-plan-name-ja').value.trim(),
+      plan_name_en: document.getElementById('edit-plan-name-en').value.trim(),
+      buyer_name: document.getElementById('edit-buyer-name').value.trim(),
+      buyer_phone: document.getElementById('edit-buyer-phone').value.trim(),
+      buyer_email: document.getElementById('edit-buyer-email').value.trim(),
+      buyer_address: document.getElementById('edit-buyer-address').value.trim(),
+    };
+
+    fetch('/api/admin/orders/' + currentOrderId, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(patch)
+    })
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (result) {
+        if (!result.ok || !result.data.ok) {
+          throw new Error((result.data && result.data.error) || 'request_failed');
+        }
+        closeDetailModal();
+        fetchOrders();
+      })
+      .catch(function (err) {
+        console.error('saveOrder error:', err);
+        errEl.textContent = '保存に失敗しました: ' + err.message;
+        errEl.classList.add('show');
+      });
+  };
+
+  window.deleteOrder = function () {
+    if (!currentOrderId) return;
+    if (!confirm('この注文を削除しますか？この操作は取り消せません。')) return;
+
+    fetch('/api/admin/orders/' + currentOrderId, { method: 'DELETE' })
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (result) {
+        if (!result.ok || !result.data.ok) {
+          throw new Error((result.data && result.data.error) || 'request_failed');
+        }
+        closeDetailModal();
+        fetchOrders();
+      })
+      .catch(function (err) {
+        console.error('deleteOrder error:', err);
+        var errEl = document.getElementById('detail-error');
+        errEl.textContent = '削除に失敗しました: ' + err.message;
+        errEl.classList.add('show');
+      });
+  };
+
+  // ---- Add order modal ----
+  window.openAddModal = function () {
+    ['add-plan-id', 'add-amount', 'add-plan-name-ja', 'add-plan-name-en',
+     'add-buyer-name', 'add-buyer-phone', 'add-buyer-email', 'add-buyer-address', 'add-notes']
+      .forEach(function (id) { document.getElementById(id).value = ''; });
+    document.getElementById('add-status').value = 'pending';
+    document.getElementById('add-error').classList.remove('show');
+    document.getElementById('add-overlay').classList.add('show');
+  };
+
+  window.closeAddModal = function () {
+    document.getElementById('add-overlay').classList.remove('show');
+  };
+
+  document.getElementById('add-overlay').addEventListener('click', function (e) {
+    if (e.target === this) closeAddModal();
+  });
+
+  window.submitAddOrder = function () {
+    var errEl = document.getElementById('add-error');
+    errEl.classList.remove('show');
+
+    var payload = {
+      planId: document.getElementById('add-plan-id').value.trim(),
+      planNameJa: document.getElementById('add-plan-name-ja').value.trim(),
+      planNameEn: document.getElementById('add-plan-name-en').value.trim(),
+      amount: Number(document.getElementById('add-amount').value),
+      status: document.getElementById('add-status').value,
+      paymentMethod: 'manual',
+      notes: document.getElementById('add-notes').value,
+      buyer: {
+        name: document.getElementById('add-buyer-name').value.trim(),
+        phone: document.getElementById('add-buyer-phone').value.trim(),
+        email: document.getElementById('add-buyer-email').value.trim(),
+        address: document.getElementById('add-buyer-address').value.trim(),
+      }
+    };
+
+    fetch('/api/admin/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (result) {
+        if (!result.ok || !result.data.ok) {
+          throw new Error((result.data && result.data.error) || 'request_failed');
+        }
+        closeAddModal();
+        state.page = 1;
+        fetchOrders();
+      })
+      .catch(function (err) {
+        console.error('submitAddOrder error:', err);
+        errEl.textContent = '追加に失敗しました: ' + err.message;
+        errEl.classList.add('show');
+      });
+  };
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+      closeDetailModal();
+      closeAddModal();
+    }
+  });
+
+  // ---- Auth gate ----
+  function showLogin() {
+    document.getElementById('dashboard-screen').classList.remove('show');
+    document.getElementById('login-screen').classList.add('show');
+  }
+
+  function showDashboard() {
+    document.getElementById('login-screen').classList.remove('show');
+    document.getElementById('dashboard-screen').classList.add('show');
+    fetchOrders();
+    fetchStats();
+  }
+
+  window.submitLogin = function () {
+    var errEl = document.getElementById('login-error');
+    errEl.classList.remove('show');
+    var btn = document.getElementById('login-submit');
+    var password = document.getElementById('login-password').value;
+    var turnstileToken = (typeof turnstile !== 'undefined') ? turnstile.getResponse('#login-turnstile') : '';
+
+    if (!turnstileToken) {
+      errEl.textContent = 'ロボットではないことの確認を行ってください。';
+      errEl.classList.add('show');
+      return;
+    }
+
+    btn.disabled = true;
+    fetch('/api/admin/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: password, turnstileToken: turnstileToken })
+    })
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (result) {
+        btn.disabled = false;
+        if (!result.ok || !result.data.ok) {
+          var err = result.data && result.data.error;
+          if (err === 'too_many_attempts') {
+            errEl.textContent = '試行回数が多すぎます。しばらくしてから再度お試しください。';
+          } else if (err === 'invalid_password') {
+            errEl.textContent = 'パスワードが違います。';
+          } else {
+            errEl.textContent = 'ログインに失敗しました: ' + (err || 'unknown');
+          }
+          errEl.classList.add('show');
+          if (typeof turnstile !== 'undefined') {
+            try { turnstile.reset('#login-turnstile'); } catch (e) { /* ignore */ }
+          }
+          return;
+        }
+        document.getElementById('login-password').value = '';
+        showDashboard();
+      })
+      .catch(function (err) {
+        btn.disabled = false;
+        console.error('login error:', err);
+        errEl.textContent = 'ログインに失敗しました: ' + err.message;
+        errEl.classList.add('show');
+        if (typeof turnstile !== 'undefined') {
+          try { turnstile.reset('#login-turnstile'); } catch (e) { /* ignore */ }
+        }
+      });
+  };
+
+  window.submitLogout = function () {
+    fetch('/api/admin/logout', { method: 'POST' })
+      .catch(function (err) { console.error('logout error:', err); })
+      .then(function () { location.reload(); });
+  };
+
+  document.getElementById('login-password').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') submitLogin();
+  });
+
+  fetch('/api/admin/whoami')
+    .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+    .then(function (result) {
+      if (result.ok && result.data.ok) {
+        showDashboard();
+      } else {
+        showLogin();
+      }
+    })
+    .catch(function (err) {
+      console.error('whoami error:', err);
+      showLogin();
+    });
+})();
+</script>
+</body>
+</html>
