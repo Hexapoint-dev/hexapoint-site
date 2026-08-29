@@ -288,6 +288,58 @@
   }
   .modal-error.show { display: block; }
 
+  /* ---- live-update toast + status dot ---- */
+  #toast-stack {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+  }
+
+  .toast {
+    background: var(--ink);
+    color: var(--cream);
+    border-radius: 12px;
+    padding: 12px 18px;
+    font-size: 13px;
+    font-weight: 700;
+    box-shadow: 0 10px 30px -8px rgba(14, 22, 51, .4);
+    opacity: 0;
+    transform: translateY(-8px);
+    transition: opacity .25s, transform .25s;
+  }
+
+  .toast.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .live-dot-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    opacity: .6;
+    margin-inline-start: 8px;
+  }
+
+  .live-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--emerald);
+    animation: live-pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes live-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: .35; }
+  }
+
   /* ---- login screen ---- */
   #login-screen {
     display: none;
@@ -443,6 +495,7 @@
   <div class="brand">
     <img src="/logo.webp" alt="HexaPoint" class="logo">
     <h1>注文管理 <span class="mono" style="font-size:13px;opacity:.5">Orders</span></h1>
+    <span class="live-dot-wrap"><span class="live-dot"></span>リアルタイム更新中</span>
   </div>
   <div style="display:flex;gap:10px;align-items:center">
     <button type="button" class="btn" onclick="openAddModal()">+ 新規注文を追加</button>
@@ -664,6 +717,7 @@
     </div>
   </div>
 </div>
+<div id="toast-stack" aria-live="polite"></div>
 </div><!-- /#dashboard-screen -->
 
 <script>
@@ -783,11 +837,15 @@
       .catch(function (err) { console.error('fetchStats error:', err); });
   }
 
-  function fetchOrders() {
-    clearError();
-    updateSortArrows();
-    var tbody = document.getElementById('orders-tbody');
-    tbody.innerHTML = '<tr><td colspan="10" class="loading-state">読み込み中…</td></tr>';
+  // `silent` (used by the live-update poller below) skips the loading-state
+  // flicker and error banner, and — the whole point of polling — notices when
+  // a genuinely new order has shown up since the last check and toasts it.
+  function fetchOrders(silent) {
+    if (!silent) {
+      clearError();
+      updateSortArrows();
+      document.getElementById('orders-tbody').innerHTML = '<tr><td colspan="10" class="loading-state">読み込み中…</td></tr>';
+    }
 
     fetch('/api/admin/orders?' + buildQuery())
       .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
@@ -795,15 +853,69 @@
         if (!result.ok || !result.data.ok) {
           throw new Error((result.data && result.data.error) || 'request_failed');
         }
-        currentOrders = result.data.orders;
+        var orders = result.data.orders;
+        var maxId = orders.reduce(function (m, o) { return Math.max(m, o.id); }, 0);
+
+        if (silent && lastSeenMaxId !== null && maxId > lastSeenMaxId) {
+          showToast('🔔 新しい注文があります');
+          fetchStats();
+        }
+        lastSeenMaxId = maxId;
+
+        currentOrders = orders;
         renderTable(currentOrders);
         renderPagination(result.data.total, result.data.page, result.data.limit);
       })
       .catch(function (err) {
         console.error('fetchOrders error:', err);
-        showError('注文一覧の取得に失敗しました: ' + err.message);
-        tbody.innerHTML = '<tr><td colspan="10" class="empty-state">読み込みエラー</td></tr>';
+        if (!silent) {
+          showError('注文一覧の取得に失敗しました: ' + err.message);
+          document.getElementById('orders-tbody').innerHTML = '<tr><td colspan="10" class="empty-state">読み込みエラー</td></tr>';
+        }
       });
+  }
+
+  // ---- Live updates: silent background polling ----
+  var lastSeenMaxId = null;
+  var POLL_INTERVAL_MS = 15000;
+  var pollTimer = null;
+
+  function isAnyModalOpen() {
+    var d = document.getElementById('detail-overlay');
+    var a = document.getElementById('add-overlay');
+    return (d && d.classList.contains('show')) || (a && a.classList.contains('show'));
+  }
+
+  function pollForUpdates() {
+    if (document.hidden || isAnyModalOpen()) return;
+    fetchOrders(true);
+  }
+
+  function startPolling() {
+    stopPolling();
+    pollTimer = setInterval(pollForUpdates, POLL_INTERVAL_MS);
+  }
+
+  function stopPolling() {
+    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+  }
+
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden) pollForUpdates();
+  });
+
+  function showToast(message) {
+    var stack = document.getElementById('toast-stack');
+    if (!stack) return;
+    var el = document.createElement('div');
+    el.className = 'toast';
+    el.textContent = message;
+    stack.appendChild(el);
+    requestAnimationFrame(function () { el.classList.add('show'); });
+    setTimeout(function () {
+      el.classList.remove('show');
+      setTimeout(function () { el.remove(); }, 300);
+    }, 5000);
   }
 
   function renewalBadgeHtml(o) {
@@ -1185,6 +1297,7 @@
   function showLogin() {
     document.getElementById('dashboard-screen').classList.remove('show');
     document.getElementById('login-screen').classList.add('show');
+    stopPolling();
   }
 
   function showDashboard() {
@@ -1192,6 +1305,7 @@
     document.getElementById('dashboard-screen').classList.add('show');
     fetchOrders();
     fetchStats();
+    startPolling();
   }
 
   window.submitLogin = function () {
