@@ -33,6 +33,15 @@
 
 ---
 
+> **ملاحظة:** إن كنت أنشأت حساب Zoho Invoice ومؤسسة بعملة JPY بالفعل من محاولة سابقة،
+> يمكنك تخطي الخطوة 1 مباشرة للخطوة 2. الخطوة 2 أدناه أُعيد كتابتها بالكامل لتستخدم
+> طريقة **Server-based Application** بدل **Self Client** — في محاولة سابقة واجهنا خطأ
+> `invalid_code` متكررًا وغير قابل للتفسير مع Self Client رغم تجربة كل الاحتمالات
+> (منطقة الحساب، الجلسة، التوقيت، إعادة الإنشاء بالكامل...)، وهذه الطريقة البديلة
+> تعتمد على تدفق OAuth قياسي بموافقة فعلية عبر المتصفح بدل زر "توليد كود" الفوري الذي
+> بدا معطلاً لهذا الحساب تحديدًا — وهي الطريقة الأكثر موثوقية والمستخدمة فعليًا من
+> غالبية تكاملات Zoho الاحترافية.
+
 ## الخطوة 1 — إنشاء حساب Zoho Invoice (الباقة المجانية)
 
 1. اذهب إلى https://www.zoho.com/invoice/ واضغط **GET STARTED FREE** (أو سجّل دخول
@@ -66,115 +75,90 @@
 
 ---
 
-## الخطوة 2 — إنشاء Self Client في Zoho API Console
+## الخطوة 2 — إنشاء Server-based Application في Zoho API Console
 
-بما أن الفوترة تحدث تلقائيًا من السيرفر (بدون أي إنسان يضغط "تسجيل الدخول" في كل
-مرة)، نحتاج "Self Client" — طريقة Zoho الرسمية للوصول من سيرفر إلى سيرفر بدون
-واجهة OAuth تفاعلية.
+هذا التدفق يمر بموافقة فعلية عبر المتصفح مرة واحدة فقط (تسجيل دخولك وموافقتك
+الشخصية)، ثم يعطينا Refresh Token دائم نستخدمه بعدها من السيرفر تلقائيًا للأبد
+بدون أي تدخل بشري إضافي — نفس النتيجة النهائية التي كان يفترض أن يعطينا إياها
+Self Client، لكن عبر آلية مختلفة تمامًا لا تعتمد على زر "Generate Code" الفوري.
 
-### 2.1 — الحصول على Client ID و Client Secret
+### 2.1 — إنشاء الـ Client
 
-1. اذهب إلى `https://api-console.zoho.<DC>/` — استبدل `<DC>` بما لاحظته في
-   الخطوة 1.4 (مثلًا `api-console.zoho.com` أو `api-console.zoho.eu`).
-2. سجّل دخول بنفس حساب Zoho المستخدم لإنشاء المؤسسة في الخطوة 1.
-3. إن كانت أول مرة تستخدم فيها API Console، ستظهر صفحة ترحيبية — اضغط
-   **GET STARTED**.
-4. اضغط **ADD CLIENT** (زر في الأعلى، عادة بجانب "All Clients").
-5. ستظهر 4 بطاقات: Server-based Applications, Client-based Applications,
-   Mobile-based Applications, **Self Client**. اختر **Self Client**.
-6. اكتب أي اسم في **Client Name** (مثلًا `HexaPoint Site`) واضغط **CREATE**.
-7. بعد الإنشاء مباشرة، ستنتقل لصفحة الـ Client وسترى تبويب **Client Secret**
-   مفتوحًا افتراضيًا، فيه:
-   - **Client ID**: يبدأ بـ `1000.` متبوعًا بحروف/أرقام طويلة.
-   - **Client Secret**: سلسلة أطول من الحروف والأرقام.
+1. اذهب إلى `https://api-console.zoho.<DC>/` (بنفس الـ `<DC>` من الخطوة 1.4، على
+   الأغلب `com`) وسجّل دخول بنفس حساب Zoho.
+2. اضغط **ADD CLIENT**.
+3. اختر البطاقة الأولى **Server-based Applications** (وليس Self Client هذه المرة).
+4. املأ:
+   - **Client Name**: `HexaPoint Site`
+   - **Homepage URL**: `https://www.hexapoint-jp.com`
+   - **Authorized Redirect URIs**: `https://www.hexapoint-jp.com`
+     (نفس القيمة في الحقلين، والنطاق الحقيقي الحالي للموقع الآن)
+5. اضغط **CREATE**.
+6. في صفحة الـ Client الناتجة، تبويب **Client Secret** يعرض:
+   - **Client ID** (يبدأ بـ `1000.`)
+   - **Client Secret**
+   انسخهما — هما `ZOHO_CLIENT_ID` و `ZOHO_CLIENT_SECRET`. دائمان، يمكن الرجوع
+   إليهما لاحقًا من نفس الصفحة.
 
-   > هذان الحقلان **دائمان** — يمكنك الرجوع إليهما لاحقًا من نفس الصفحة (API
-   > Console → Self Client الذي أنشأته → تبويب Client Secret) دون الحاجة لإعادة
-   > إنشاء شيء، خلافًا للكود في الخطوة التالية الذي ينتهي خلال دقائق.
+### 2.2 — الموافقة عبر المتصفح والحصول على الكود
 
-انسخ القيمتين الآن — هما `ZOHO_CLIENT_ID` و `ZOHO_CLIENT_SECRET`.
+1. **جهّز** رابط الموافقة بنفسك بلصق الـ `CLIENT_ID` الذي نسخته للتو مكان
+   `<CLIENT_ID>` في هذا الرابط (لا تفتحه بعد):
 
-### 2.2 — توليد Authorization Code (صالح لدقائق فقط، استخدام واحد)
+   ```
+   https://accounts.zoho.com/oauth/v2/auth?scope=ZohoInvoice.fullaccess.all&client_id=<CLIENT_ID>&response_type=code&access_type=offline&redirect_uri=https://www.hexapoint-jp.com&prompt=consent
+   ```
 
-1. في نفس صفحة الـ Self Client، اضغط تبويب **Generate Code**.
-2. املأ الحقول:
-   - **Scope**: انسخ والصق بالضبط: `ZohoInvoice.fullaccess.all`
-   - **Time Duration**: اختر أعلى قيمة متاحة في القائمة (عادة `10 minutes`).
-   - **Scope Description**: أي نص، مثلًا `HexaPoint site integration`.
-3. اضغط **CREATE**.
-4. سيظهر مربع فيه **Authorization Code** طويل (يبدأ بـ `1000.` أيضًا). **انسخه
-   فورًا** — صالح لمرة استخدام واحدة فقط ولفترة قصيرة (الدقائق التي اخترتها)، وإن
-   انتهت المهلة أو استُخدم مرة، يجب توليد كود جديد بإعادة نفس الخطوات 2.2.
+   (استبدل `accounts.zoho.com` بـ `accounts.zoho.<DC>` إن كان حسابك في منطقة غير `com`.)
 
-### 2.3 — تبديل الكود بـ Refresh Token (خلال نفس الدقائق)
+2. الصق الرابط الكامل (بعد التعديل) في متصفحك وافتحه.
+3. سجّل دخول (إن لم تكن مسجلاً) بنفس حساب Zoho، ثم ستظهر شاشة موافقة رسمية من
+   Zoho تسألك السماح للتطبيق "HexaPoint Site" بالوصول لـ Zoho Invoice — اضغط
+   **Accept**.
+4. سيُعيد المتصفح توجيهك لرابط مثل:
+   `https://www.hexapoint-jp.com/?code=1000.xxxxxxxx...&location=us&accounts-server=https://accounts.zoho.com`
+   — **الصفحة قد تظهر فارغة أو "غير موجودة" (طبيعي، لا يوجد شيء فعلي بهذا
+   المسار)، هذا لا يهم**. المهم هو محتوى **شريط عنوان المتصفح نفسه**.
+5. انسخ من شريط العنوان القيمة الكاملة لباراميتر `code=` (تبدأ بـ `1000.` وتنتهي
+   عادة عند علامة `&location=`). هذا الكود صالح لدقائق قليلة فقط ولاستخدام واحد
+   — تابع للخطوة التالية فورًا.
 
-بمجرد نسخ الكود، بادله فورًا عبر الطرفية بطلب POST. استبدل القيم بين `<>`
-واحرص أن يكون النطاق `accounts.zoho.<DC>` بنفس الـ DC المستخدم في الخطوة 2.1
-(وليس بالضرورة `.com` إن كان حسابك في منطقة أخرى):
+### 2.3 — تبديل الكود بـ Refresh Token
 
-**PowerShell** (هذا هو الشِل الافتراضي في بيئتك):
+نفّذ فورًا (يجب أن يتطابق `redirect_uri` هنا حرفيًا مع ما استخدمته في رابط
+الموافقة أعلاه — هذا إلزامي لهذا النوع من الـ Client، بخلاف Self Client):
 
 ```powershell
 $r = Invoke-RestMethod -Method Post -Uri "https://accounts.zoho.com/oauth/v2/token" -Body @{
   grant_type    = "authorization_code"
   client_id     = "<CLIENT_ID>"
   client_secret = "<CLIENT_SECRET>"
-  code          = "<AUTHORIZATION_CODE>"
+  redirect_uri  = "https://www.hexapoint-jp.com"
+  code          = "<CODE_FROM_URL_BAR>"
 }
 $r | Format-List
 ```
 
-**bash / curl** (بديل):
-
-```bash
-curl -X POST "https://accounts.zoho.com/oauth/v2/token" \
-  -d "grant_type=authorization_code" \
-  -d "client_id=<CLIENT_ID>" \
-  -d "client_secret=<CLIENT_SECRET>" \
-  -d "code=<AUTHORIZATION_CODE>"
-```
-
-سيعيد الطلب JSON يحتوي:
-- `access_token` — مؤقت (ساعة تقريبًا)، لكن سنستخدمه فورًا في الخطوة التالية لجلب الـ Organization ID.
-- **`refresh_token`** — هذا هو المطلوب (`ZOHO_REFRESH_TOKEN`)، **دائم** ولا ينتهي
-  إلا إذا ألغيته يدويًا من Zoho أو أعدت توليد كود جديد لنفس الـ Self Client (كل
-  عملية تبديل ناجحة تصدر refresh token جديد يُلغي الأقدم ضمنيًا في بعض الحالات —
-  لذلك بعد نجاح هذه الخطوة، استخدم القيمة التي حصلت عليها هنا مباشرة في Cloudflare
-  ولا تكرر 2.2/2.3 لاحقًا بلا داعٍ).
+الاستجابة تحتوي `access_token` (مؤقت، صالح لساعة، نستخدمه فورًا في 2.4) و
+**`refresh_token`** — هذا هو `ZOHO_REFRESH_TOKEN` المطلوب، دائم.
 
 ### 2.4 — الحصول على Organization ID عبر نفس الـ access_token
-
-بدل البحث في واجهة Zoho، استخدم الـ `access_token` الذي ظهر للتو (صالح لساعة):
-
-**PowerShell:**
 
 ```powershell
 Invoke-RestMethod -Uri "https://www.zohoapis.com/invoice/v3/organizations" `
   -Headers @{ Authorization = "Zoho-oauthtoken <ACCESS_TOKEN>" }
 ```
 
-**bash / curl:**
-
-```bash
-curl -H "Authorization: Zoho-oauthtoken <ACCESS_TOKEN>" \
-  "https://www.zohoapis.com/invoice/v3/organizations"
-```
-
-(استبدل `zohoapis.com` بـ `zohoapis.<DC>` إن كان حسابك في منطقة غير `.com`.)
-
-الاستجابة تحتوي مصفوفة `organizations`، كل عنصر فيه `organization_id` —
-انسخ قيمة المؤسسة التي أنشأتها (غالبًا الوحيدة الظاهرة إن كان الحساب جديدًا)،
-تأكد أن `currency_code` بجانبها يساوي `JPY` (تأكيد إضافي أن الخطوة 1.3 نُفذت بشكل صحيح).
-
-هذه القيمة هي `ZOHO_ORGANIZATION_ID`.
+الاستجابة فيها مصفوفة `organizations` — انسخ `organization_id`، وتأكد أن
+`currency_code` بجانبها = `JPY`. هذه القيمة هي `ZOHO_ORGANIZATION_ID`.
 
 ### استكشاف الأخطاء الشائعة في هذه الخطوة
 
 | الخطأ | السبب المرجّح | الحل |
 |---|---|---|
-| `invalid_code` | الكود انتهت مدته أو استُخدم مرة سابقًا | ارجع لـ 2.2 وولّد كودًا جديدًا، ونفّذ 2.3 فورًا |
-| `invalid_client` | الـ Client ID/Secret خطأ، أو استخدمت نطاق `accounts.zoho.<DC>` مختلف عن الذي أنشأت فيه الـ Self Client | تأكد أن كل الروابط (api-console, accounts, zohoapis) تستخدم نفس `<DC>` من الخطوة 1.4 |
-| استجابة فارغة/404 من `/organizations` | الـ access_token انتهى (مرّت أكثر من ساعة) أو النطاق `zohoapis.<DC>` خطأ | كرر 2.3 للحصول على access_token جديد (لا حاجة لكود جديد إن ما زال الطلب يعمل، وإلا كرر 2.2 أيضًا) |
+| شاشة موافقة Zoho لا تظهر، أو خطأ "invalid redirect_uri" | قيمة Redirect URI في 2.1 لا تطابق حرفيًا ما في رابط 2.2 | تأكد أن كلاهما بالضبط `https://www.hexapoint-jp.com` (بدون `/` في النهاية) |
+| `invalid_code` عند التبديل | تأخرت في نسخ الكود من شريط العنوان، أو نسيت `redirect_uri` في طلب 2.3 | كرر من 2.2 (رابط موافقة جديد) وبادل فورًا، مع التأكد من وجود `redirect_uri` في الطلب |
+| `invalid_client` | الـ Client ID/Secret خطأ، أو نطاق `accounts.zoho.<DC>` غير مطابق لمكان إنشاء الـ Client | تأكد من تطابق `<DC>` في كل الروابط |
 
 ---
 
