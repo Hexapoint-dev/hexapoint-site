@@ -114,7 +114,7 @@ async function findOrCreateZohoContact(env, buyer) {
 // Creates the invoice, then immediately records a customer payment against
 // it (payment_mode "creditcard", since it was collected via Stripe) so it
 // shows as PAID in Zoho rather than sitting open/unpaid.
-async function createPaidZohoInvoice(env, { contactId, plan, amount, orderID }) {
+async function createPaidZohoInvoice(env, { contactId, plan, amount, orderID, buyer }) {
   const today = new Date().toISOString().slice(0, 10);
   // Zoho's reference_number field caps out at 50 characters — Stripe Checkout
   // Session IDs (cs_test_.../cs_live_...) routinely run 60+ chars, so they're
@@ -140,12 +140,6 @@ async function createPaidZohoInvoice(env, { contactId, plan, amount, orderID }) 
   });
   const invoice = invoiceRes.invoice;
 
-  if (String(env.ZOHO_AUTO_EMAIL_INVOICE).toLowerCase() === "true") {
-    await zohoFetch(env, `/invoices/${invoice.invoice_id}/status/sent`, { method: "POST" }).catch((err) =>
-      console.error("Zoho invoice mark-sent failed (non-fatal):", err)
-    );
-  }
-
   await zohoFetch(env, "/customerpayments", {
     method: "POST",
     body: {
@@ -157,6 +151,19 @@ async function createPaidZohoInvoice(env, { contactId, plan, amount, orderID }) 
       invoices: [{ invoice_id: invoice.invoice_id, amount_applied: amount }],
     },
   });
+
+  // Record the payment first (above) so the invoice already shows "Paid" by
+  // the time the buyer opens the emailed link — sending it before recording
+  // the payment would show them a not-yet-paid invoice for a moment.
+  if (String(env.ZOHO_AUTO_EMAIL_INVOICE).toLowerCase() === "true") {
+    // POST /invoices/{id}/email is Zoho's actual "send this invoice by email"
+    // endpoint — /status/sent (used here previously) only flips the status
+    // label in the Zoho UI and never emails anything.
+    await zohoFetch(env, `/invoices/${invoice.invoice_id}/email`, {
+      method: "POST",
+      body: { to_mail_ids: [buyer.email] },
+    }).catch((err) => console.error("Zoho invoice email failed (non-fatal):", err));
+  }
 
   return invoice;
 }
@@ -172,7 +179,7 @@ export async function createZohoInvoiceForOrder(env, { buyer, plan, orderID, amo
 
   try {
     const contactId = await findOrCreateZohoContact(env, buyer);
-    const invoice = await createPaidZohoInvoice(env, { contactId, plan, amount, orderID });
+    const invoice = await createPaidZohoInvoice(env, { contactId, plan, amount, orderID, buyer });
     return { ok: true, invoiceId: invoice.invoice_id, invoiceNumber: invoice.invoice_number };
   } catch (err) {
     console.error("Zoho invoice creation failed for order", orderID, err);
