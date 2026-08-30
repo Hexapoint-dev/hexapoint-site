@@ -108,8 +108,8 @@ export async function sendOrderConfirmation(env, { buyer, plan, orderID, amount 
         <tr>
           <td style="padding:18px 36px 28px 36px;">
             <div style="font-family:${SANS};font-size:11px;color:${INK};opacity:.45;line-height:1.6;">
-              このメールは hexapoint.pages.dev の支払いフォームから自動送信されました。<br>
-              This message was sent automatically after a successful payment on hexapoint.pages.dev.
+              このメールは www.hexapoint-jp.com の支払いフォームから自動送信されました。<br>
+              This message was sent automatically after a successful payment on www.hexapoint-jp.com.
             </div>
           </td>
         </tr>
@@ -276,8 +276,8 @@ export async function sendBankOrderNotification(env, { buyer, plan, orderID, amo
         <tr>
           <td style="padding:18px 36px 28px 36px;">
             <div style="font-family:${SANS};font-size:11px;color:${INK};opacity:.45;line-height:1.6;">
-              このメールは hexapoint.pages.dev の注文フォーム（銀行振込選択時）から自動送信されました。<br>
-              This message was sent automatically when a Client chose bank transfer on hexapoint.pages.dev.
+              このメールは www.hexapoint-jp.com の注文フォーム（銀行振込選択時）から自動送信されました。<br>
+              This message was sent automatically when a Client chose bank transfer on www.hexapoint-jp.com.
             </div>
           </td>
         </tr>

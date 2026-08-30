@@ -5,7 +5,7 @@
 // for reliable fulfillment, not just a nice-to-have).
 //
 // Register this URL in the Stripe Dashboard -> Developers/Workbench -> Webhooks:
-//   https://hexapoint.pages.dev/api/stripe-webhook
+//   https://www.hexapoint-jp.com/api/stripe-webhook
 // Subscribe at least to: checkout.session.completed
 // (optionally also checkout.session.async_payment_succeeded for delayed payment
 // methods, and checkout.session.async_payment_failed if you want failure logging).

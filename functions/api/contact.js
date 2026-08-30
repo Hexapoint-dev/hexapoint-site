@@ -166,8 +166,8 @@ function buildEmail({ name, email, service, message, receivedAt }) {
         <tr>
           <td style="padding:18px 36px 28px 36px;">
             <div style="font-family:${SANS};font-size:11px;color:${INK};opacity:.45;line-height:1.6;">
-              このメールは hexapoint.pages.dev のお問い合わせフォームから自動送信されました。<br>
-              This message was sent automatically from the contact form on hexapoint.pages.dev.
+              このメールは www.hexapoint-jp.com のお問い合わせフォームから自動送信されました。<br>
+              This message was sent automatically from the contact form on www.hexapoint-jp.com.
             </div>
           </td>
         </tr>

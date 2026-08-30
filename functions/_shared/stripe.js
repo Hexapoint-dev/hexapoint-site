@@ -118,6 +118,7 @@ export async function confirmStripeSession(env, session) {
 
   const { sendOrderConfirmation } = await import("./email.js");
   const { insertOrder } = await import("./db.js");
+  const { createZohoInvoiceForOrder } = await import("./zoho.js");
 
   const already = await env.ORDERS_KV.get(`emailed:${orderID}`);
   if (!already) {
@@ -137,6 +138,17 @@ export async function confirmStripeSession(env, session) {
       await env.ORDERS_KV.put(`emailed:${orderID}`, "1", { expirationTtl: 60 * 60 * 24 * 7 });
     } else {
       console.error("Order confirmation email failed for order", orderID, emailResult.error);
+    }
+  }
+
+  // Separate idempotency key from `emailed:` above — the two run independently
+  // so a retry never creates a duplicate Zoho invoice even if the email step
+  // already succeeded (or vice versa) on an earlier attempt.
+  const alreadyInvoiced = await env.ORDERS_KV.get(`invoiced:${orderID}`);
+  if (!alreadyInvoiced) {
+    const invoiceResult = await createZohoInvoiceForOrder(env, { buyer, plan, orderID, amount });
+    if (invoiceResult.ok) {
+      await env.ORDERS_KV.put(`invoiced:${orderID}`, invoiceResult.invoiceId, { expirationTtl: 60 * 60 * 24 * 7 });
     }
   }
 

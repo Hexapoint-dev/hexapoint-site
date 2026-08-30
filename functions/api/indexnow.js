@@ -18,14 +18,14 @@
 //                      so that strangers cannot spam submissions on your behalf)
 //
 // Optional:
-//   SITE_ORIGIN       https://hexapoint.pages.dev
+//   SITE_ORIGIN       https://www.hexapoint-jp.com
 //                     Only needed if you later attach a custom domain and want
 //                     submissions to use it. Defaults to the request's own origin.
 // ----------------------------------------------------------------------------
 //
 // USAGE
 //   Submit the homepage:
-//     https://hexapoint.pages.dev/api/indexnow?secret=YOUR_SECRET
+//     https://www.hexapoint-jp.com/api/indexnow?secret=YOUR_SECRET
 //
 //   Submit specific pages:
 //     POST /api/indexnow?secret=YOUR_SECRET

@@ -1,8 +1,10 @@
 // Shared auth helpers for the admin panel (admin.html + functions/api/admin/*).
 //
-// Cloudflare Access can't protect this site (it runs on the bare hexapoint.pages.dev
-// domain with no custom domain attached, and Access self-hosted apps require a zone
-// you own), so the admin panel has its own built-in password login instead.
+// Originally written when the site ran on the bare hexapoint.pages.dev domain,
+// where Cloudflare Access self-hosted apps aren't available (they require a zone
+// you own). Now that www.hexapoint-jp.com is attached as a custom domain, Access
+// could be layered in front of /admin.html as an extra option — but this built-in
+// password login still works standalone and hasn't been replaced.
 //
 // Session model: a stateless, HMAC-signed cookie — no KV/D1 session table needed.
 // The cookie value is `${expiresAtMs}.${signature}`, where signature = HMAC-SHA256
