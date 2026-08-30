@@ -121,7 +121,11 @@ export async function onRequest(context) {
     detail = (await res.text()).slice(0, 500);
   } catch (err) {
     console.error("IndexNow request failed:", err);
-    return json({ ok: false, error: "upstream_unreachable" }, 502);
+    // Deliberately 200 (not 502): Cloudflare's edge swallows the body of any
+    // 5xx response from a Pages Function and substitutes its own generic
+    // "Bad Gateway" HTML page, which would hide this JSON entirely from the
+    // caller. `ok: false` in the body is the real signal here, not the status.
+    return json({ ok: false, error: "upstream_unreachable" }, 200);
   }
 
   // IndexNow returns 200 (accepted) or 202 (accepted, key validation pending).
@@ -138,7 +142,7 @@ export async function onRequest(context) {
       ...(rejected.length ? { rejected } : {}),
       ...(accepted ? {} : { detail }),
     },
-    accepted ? 200 : 502
+    200
   );
 }
 
