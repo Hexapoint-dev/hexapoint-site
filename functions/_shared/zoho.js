@@ -118,11 +118,11 @@ function buildInvoiceEmailContent({ buyer, plan, orderID, amount }) {
 
   const row = (labelJp, labelEn, value) => `
     <tr>
-      <td style="padding:16px 0;border-bottom:1px solid ${LINE};">
-        <div style="font-family:${SANS};font-size:12px;letter-spacing:.08em;color:${INK};opacity:.5;margin-bottom:5px;">
+      <td style="padding:14px 0;border-bottom:1px solid ${LINE};">
+        <div style="font-family:${SANS};font-size:11px;letter-spacing:.06em;color:${INK};opacity:.5;margin-bottom:4px;">
           ${labelJp} / ${labelEn}
         </div>
-        <div style="font-family:${SANS};font-size:17px;font-weight:700;color:${INK};line-height:1.4;">
+        <div style="font-family:${SANS};font-size:15px;font-weight:700;color:${INK};line-height:1.5;word-break:break-word;">
           ${esc(value)}
         </div>
       </td>
@@ -140,64 +140,68 @@ function buildInvoiceEmailContent({ buyer, plan, orderID, amount }) {
   <!--[if mso]>
   <style>* { font-family: Arial, sans-serif !important; }</style>
   <![endif]-->
+  <style>
+    @media only screen and (max-width:480px) {
+      .hp-card { padding-left:16px !important; padding-right:16px !important; }
+    }
+  </style>
 </head>
 <body style="margin:0;padding:0;background:${PAPER};">
   <div style="display:none;max-height:0;overflow:hidden;opacity:0;">
     ${esc(buyer.name)} 様、HexaPoint のご請求書を添付しております。ご確認くださいませ。
   </div>
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${PAPER};padding:40px 16px;">
-    <tr><td align="center">
-      <table role="presentation" width="600" cellpadding="0" cellspacing="0"
-        style="max-width:600px;width:100%;background:#ffffff;border-radius:20px;overflow:hidden;border:1px solid ${LINE};box-shadow:0 24px 60px -30px rgba(14,22,51,.25);">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${PAPER};">
+    <tr><td align="center" style="padding:28px 12px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+        style="max-width:520px;width:100%;background:#ffffff;border-radius:20px;overflow:hidden;border:1px solid ${LINE};box-shadow:0 24px 60px -30px rgba(14,22,51,.25);">
 
         <tr><td style="height:8px;background:linear-gradient(90deg,${EMERALD},${EMERALD_DEEP});"></td></tr>
 
         <tr>
-          <td style="padding:40px 40px 4px 40px;">
+          <td class="hp-card" style="padding:28px 24px 4px 24px;">
             <table role="presentation" cellpadding="0" cellspacing="0">
               <tr>
-                <td style="padding-right:12px;">
-                  <img src="${LOGO_URL}" width="36" height="36" alt="HexaPoint"
-                       style="display:block;width:36px;height:36px;border-radius:10px;">
+                <td style="padding-right:10px;">
+                  <img src="${LOGO_URL}" width="32" height="32" alt="HexaPoint"
+                       style="display:block;width:32px;height:32px;border-radius:8px;">
                 </td>
-                <td style="font-family:${SANS};font-size:14px;letter-spacing:.14em;color:${EMERALD_DEEP};font-weight:700;">
+                <td style="font-family:${SANS};font-size:13px;letter-spacing:.12em;color:${EMERALD_DEEP};font-weight:700;">
                   HEXAPOINT
                 </td>
               </tr>
             </table>
-            <div style="font-family:${SERIF};font-size:30px;line-height:1.4;color:${INK};margin-top:22px;">
+            <div style="font-family:${SERIF};font-size:24px;line-height:1.45;color:${INK};margin-top:18px;">
               お支払いありがとうございます
             </div>
-            <div style="font-family:${SANS};font-size:15px;color:${INK};opacity:.55;margin-top:6px;">
+            <div style="font-family:${SANS};font-size:14px;color:${INK};opacity:.55;margin-top:5px;">
               Thank you for your payment
             </div>
           </td>
         </tr>
 
         <tr>
-          <td style="padding:20px 40px 0 40px;">
-            <div style="font-family:${SANS};font-size:15px;line-height:1.9;color:${INK};opacity:.85;">
+          <td class="hp-card" style="padding:16px 24px 0 24px;">
+            <div style="font-family:${SANS};font-size:14.5px;line-height:1.9;color:${INK};opacity:.85;">
               ${esc(buyer.name)} 様<br>
               この度は HexaPoint のサービスをご利用いただき、誠にありがとうございます。<br>
               ご請求書（PDF）を本メールに添付しておりますので、ご確認くださいませ。
             </div>
-            <div style="font-family:${SANS};font-size:14px;line-height:1.8;color:${INK};opacity:.55;margin-top:12px;">
-              Dear ${esc(buyer.name)},<br>
-              Thank you for choosing HexaPoint. Your official invoice (PDF) is attached to this email.
+            <div style="font-family:${SANS};font-size:13px;line-height:1.8;color:${INK};opacity:.55;margin-top:10px;">
+              Dear ${esc(buyer.name)}, thank you for choosing HexaPoint. Your official invoice (PDF) is attached to this email.
             </div>
           </td>
         </tr>
 
         <tr>
-          <td style="padding:28px 40px 0 40px;">
+          <td class="hp-card" style="padding:22px 24px 0 24px;">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
               style="background:${MINT};border:1px solid ${MINT_2};border-radius:16px;">
               <tr>
-                <td align="center" style="padding:26px 20px;">
-                  <div style="font-family:${SANS};font-size:12px;letter-spacing:.1em;color:${EMERALD_DEEP};font-weight:700;">
+                <td align="center" style="padding:20px 16px;">
+                  <div style="font-family:${SANS};font-size:11px;letter-spacing:.08em;color:${EMERALD_DEEP};font-weight:700;">
                     お支払い金額 / AMOUNT PAID
                   </div>
-                  <div style="font-family:${SERIF};font-size:38px;color:${INK};margin-top:8px;">
+                  <div style="font-family:${SERIF};font-size:32px;color:${INK};margin-top:6px;">
                     ¥${Number(amount).toLocaleString("ja-JP")}
                   </div>
                 </td>
@@ -207,7 +211,7 @@ function buildInvoiceEmailContent({ buyer, plan, orderID, amount }) {
         </tr>
 
         <tr>
-          <td style="padding:8px 40px 0 40px;">
+          <td class="hp-card" style="padding:6px 24px 0 24px;">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
               ${row("プラン", "Plan", `${plan.nameJa} / ${plan.nameEn}`)}
               ${row("注文ID", "Order ID", orderID)}
@@ -216,8 +220,8 @@ function buildInvoiceEmailContent({ buyer, plan, orderID, amount }) {
         </tr>
 
         <tr>
-          <td style="padding:32px 40px 8px 40px;">
-            <div style="font-family:${SANS};font-size:13.5px;line-height:1.9;color:${INK};opacity:.6;">
+          <td class="hp-card" style="padding:24px 24px 8px 24px;">
+            <div style="font-family:${SANS};font-size:13px;line-height:1.9;color:${INK};opacity:.6;">
               ご不明な点がございましたら、いつでもお気軽にご連絡ください。<br>
               If you have any questions about this invoice, please don't hesitate to reach out.
             </div>
@@ -225,10 +229,10 @@ function buildInvoiceEmailContent({ buyer, plan, orderID, amount }) {
         </tr>
 
         <tr>
-          <td align="center" style="padding:20px 40px 40px 40px;">
+          <td class="hp-card" align="center" style="padding:16px 24px 32px 24px;">
             <a href="mailto:info@hexapoint-jp.com"
-               style="display:inline-block;font-family:${SANS};font-size:15px;font-weight:700;color:#ffffff;
-                      background:${EMERALD_DEEP};text-decoration:none;padding:16px 34px;border-radius:999px;
+               style="display:inline-block;font-family:${SANS};font-size:14.5px;font-weight:700;color:#ffffff;
+                      background:${EMERALD_DEEP};text-decoration:none;padding:14px 28px;border-radius:999px;
                       box-shadow:0 18px 40px -18px rgba(232,99,31,.55);">
               HexaPoint に連絡する / Contact HexaPoint →
             </a>
@@ -238,7 +242,7 @@ function buildInvoiceEmailContent({ buyer, plan, orderID, amount }) {
         <tr><td style="height:1px;background:${LINE};"></td></tr>
 
         <tr>
-          <td style="padding:22px 40px 32px 40px;">
+          <td class="hp-card" style="padding:18px 24px 28px 24px;">
             <div style="font-family:${SANS};font-size:11px;color:${INK};opacity:.4;line-height:1.7;">
               このメールは www.hexapoint-jp.com でのお支払い完了に伴い自動送信されました。<br>
               This message was sent automatically after your payment on www.hexapoint-jp.com.
@@ -247,7 +251,7 @@ function buildInvoiceEmailContent({ buyer, plan, orderID, amount }) {
         </tr>
 
       </table>
-      <div style="font-family:${SANS};font-size:11px;color:${INK};opacity:.35;margin-top:20px;">
+      <div style="font-family:${SANS};font-size:11px;color:${INK};opacity:.35;margin-top:16px;">
         © ${new Date().getFullYear()} HexaPoint
       </div>
     </td></tr>
