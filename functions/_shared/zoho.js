@@ -85,6 +85,129 @@ async function zohoFetch(env, path, { method = "GET", body } = {}) {
   return data;
 }
 
+function esc(s) {
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+// Custom subject + HTML body for the "send invoice" email — overrides Zoho's
+// own generic default template so the customer gets something that actually
+// looks like it came from HexaPoint. Same color tokens / fonts as the Resend
+// emails in email.js, so every email the customer receives feels consistent.
+// Zoho still attaches the invoice PDF itself; this is just the wrapper.
+function buildInvoiceEmailContent({ buyer, plan, orderID, amount }) {
+  const INK = "#0e1633";
+  const PAPER = "#fbf9f6";
+  const MINT = "#fff1df";
+  const MINT_2 = "#ffd9b0";
+  const EMERALD = "#f5912a";
+  const EMERALD_DEEP = "#e8631f";
+  const LINE = "#e3e0da";
+  const SERIF = "'Hiragino Mincho ProN','Yu Mincho',Georgia,serif";
+  const SANS = "'Hiragino Kaku Gothic ProN','Yu Gothic','Helvetica Neue',Arial,sans-serif";
+
+  const row = (labelJp, labelEn, value) => `
+    <tr>
+      <td style="padding:10px 0;border-bottom:1px solid ${LINE};">
+        <div style="font-family:${SANS};font-size:11px;letter-spacing:.06em;color:${INK};opacity:.55;margin-bottom:3px;">
+          ${labelJp} / ${labelEn}
+        </div>
+        <div style="font-family:${SANS};font-size:15px;font-weight:600;color:${INK};">
+          ${esc(value)}
+        </div>
+      </td>
+    </tr>`;
+
+  const subject = `【HexaPoint】ご請求書送付のお知らせ / Your Invoice — ${plan.nameJa}`;
+
+  const html = `<!DOCTYPE html>
+<html lang="ja">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:${PAPER};">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${PAPER};padding:32px 16px;">
+    <tr><td align="center">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0"
+        style="max-width:600px;width:100%;background:#ffffff;border-radius:18px;overflow:hidden;border:1px solid ${LINE};">
+
+        <tr><td style="height:6px;background:linear-gradient(90deg,${EMERALD},${EMERALD_DEEP});"></td></tr>
+
+        <tr>
+          <td style="padding:32px 36px 8px 36px;">
+            <div style="font-family:${SANS};font-size:13px;letter-spacing:.12em;color:${EMERALD_DEEP};font-weight:700;">
+              HEXAPOINT
+            </div>
+            <div style="font-family:${SERIF};font-size:26px;color:${INK};margin-top:8px;">
+              お支払いありがとうございます<span style="opacity:.5;font-size:15px;display:block;margin-top:4px;">Thank you for your payment</span>
+            </div>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:8px 36px 0 36px;">
+            <div style="font-family:${SANS};font-size:14px;line-height:1.9;color:${INK};opacity:.8;">
+              ${esc(buyer.name)} 様<br>
+              この度は HexaPoint のサービスをご利用いただき、誠にありがとうございます。
+              ご請求書（PDF）を本メールに添付しております。ご確認くださいませ。
+            </div>
+            <div style="font-family:${SANS};font-size:13px;line-height:1.8;color:${INK};opacity:.6;margin-top:10px;">
+              Dear ${esc(buyer.name)},<br>
+              Thank you for your business with HexaPoint. Your official invoice (PDF) is attached to this email.
+            </div>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:20px 36px 0 36px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+              ${row("プラン", "Plan", `${plan.nameJa} / ${plan.nameEn}`)}
+              ${row("金額", "Amount", `¥${Number(amount).toLocaleString("ja-JP")}`)}
+              ${row("注文ID", "Order ID", orderID)}
+            </table>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:24px 36px 8px 36px;">
+            <div style="font-family:${SANS};font-size:13px;line-height:1.9;color:${INK};background:${MINT};
+                        border:1px solid ${MINT_2};border-radius:14px;padding:16px 20px;">
+              ご不明な点がございましたら、いつでもお気軽にご連絡ください。<br>
+              <span style="opacity:.7;">If you have any questions about this invoice, please don't hesitate to reach out.</span>
+            </div>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:24px 36px 32px 36px;">
+            <a href="mailto:info@hexapoint-jp.com"
+               style="display:inline-block;font-family:${SANS};font-size:14px;font-weight:700;color:#ffffff;
+                      background:${EMERALD_DEEP};text-decoration:none;padding:13px 26px;border-radius:999px;">
+              HexaPoint に連絡する / Contact HexaPoint →
+            </a>
+          </td>
+        </tr>
+
+        <tr><td style="height:1px;background:${LINE};"></td></tr>
+
+        <tr>
+          <td style="padding:18px 36px 28px 36px;">
+            <div style="font-family:${SANS};font-size:11px;color:${INK};opacity:.45;line-height:1.6;">
+              このメールは www.hexapoint-jp.com でのお支払い完了に伴い自動送信されました。<br>
+              This message was sent automatically after your payment on www.hexapoint-jp.com.
+            </div>
+          </td>
+        </tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+
+  return { subject, html };
+}
+
 // Finds a Zoho contact by the buyer's email, or creates one. Reused across
 // repeat customers so they accumulate under one contact instead of a fresh
 // duplicate contact per order.
@@ -158,10 +281,12 @@ async function createPaidZohoInvoice(env, { contactId, plan, amount, orderID, bu
   if (String(env.ZOHO_AUTO_EMAIL_INVOICE).toLowerCase() === "true") {
     // POST /invoices/{id}/email is Zoho's actual "send this invoice by email"
     // endpoint — /status/sent (used here previously) only flips the status
-    // label in the Zoho UI and never emails anything.
+    // label in the Zoho UI and never emails anything. subject/body below
+    // override Zoho's own generic template with HexaPoint's branded design.
+    const { subject, html } = buildInvoiceEmailContent({ buyer, plan, orderID, amount });
     await zohoFetch(env, `/invoices/${invoice.invoice_id}/email`, {
       method: "POST",
-      body: { to_mail_ids: [buyer.email] },
+      body: { to_mail_ids: [buyer.email], subject, body: html },
     }).catch((err) => console.error("Zoho invoice email failed (non-fatal):", err));
   }
 
