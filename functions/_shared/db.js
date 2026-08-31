@@ -103,10 +103,16 @@ export async function listOrders(env, { status, search, dateFrom, dateTo, sort, 
 
   const listSql = `SELECT * FROM orders ${whereSql} ORDER BY ${sortCol} ${sortDir} LIMIT ? OFFSET ?`;
   const countSql = `SELECT COUNT(*) AS total FROM orders ${whereSql}`;
+  // Grouped by payment_method (not just a single total) so the admin UI can
+  // apply the Stripe fee % only to the "stripe" bucket when estimating net
+  // revenue for whatever filters are currently applied — bank/manual orders
+  // never pass through Stripe, so they carry no fee.
+  const summarySql = `SELECT payment_method, COUNT(*) AS count, COALESCE(SUM(amount),0) AS total FROM orders ${whereSql} GROUP BY payment_method`;
 
-  const [listResult, countResult] = await Promise.all([
+  const [listResult, countResult, summaryResult] = await Promise.all([
     env.DB.prepare(listSql).bind(...params, limitNum, offset).all(),
     env.DB.prepare(countSql).bind(...params).first(),
+    env.DB.prepare(summarySql).bind(...params).all(),
   ]);
 
   return {
@@ -114,6 +120,7 @@ export async function listOrders(env, { status, search, dateFrom, dateTo, sort, 
     total: countResult ? countResult.total : 0,
     page: pageNum,
     limit: limitNum,
+    summaryByMethod: summaryResult.results || [],
   };
 }
 
@@ -125,6 +132,46 @@ export async function listOrdersForExport(env, { status, search, dateFrom, dateT
   const { whereSql, params } = buildOrderFilters({ status, search, dateFrom, dateTo });
   const sql = `SELECT * FROM orders ${whereSql} ORDER BY ${sortCol} ${sortDir}`;
   const result = await env.DB.prepare(sql).bind(...params).all();
+  return result.results || [];
+}
+
+// ---- Finance / Accounts tab aggregates (functions/api/admin/finance.js) ----
+// All parameterless (no user input beyond a hardcoded LIMIT), safe to run in
+// parallel with each other and with getStats().
+
+export async function getRevenueByPlan(env) {
+  const result = await env.DB.prepare(
+    `SELECT plan_id, plan_name_ja, plan_name_en, COUNT(*) AS count, COALESCE(SUM(amount),0) AS total
+     FROM orders WHERE status = 'paid' GROUP BY plan_id ORDER BY total DESC`
+  ).all();
+  return result.results || [];
+}
+
+export async function getRevenueByMethod(env) {
+  const result = await env.DB.prepare(
+    `SELECT payment_method, COUNT(*) AS count, COALESCE(SUM(amount),0) AS total
+     FROM orders WHERE status = 'paid' GROUP BY payment_method ORDER BY total DESC`
+  ).all();
+  return result.results || [];
+}
+
+// Last 12 calendar months (including the current, partial one), oldest first.
+// Months with zero paid orders simply don't appear — the caller fills gaps.
+export async function getMonthlyRevenue(env) {
+  const result = await env.DB.prepare(
+    `SELECT strftime('%Y-%m', created_at) AS month, COUNT(*) AS count, COALESCE(SUM(amount),0) AS total
+     FROM orders
+     WHERE status = 'paid' AND created_at >= date('now', 'start of month', '-11 months')
+     GROUP BY month ORDER BY month ASC`
+  ).all();
+  return result.results || [];
+}
+
+export async function getTopCustomers(env, limit = 5) {
+  const result = await env.DB.prepare(
+    `SELECT buyer_name, buyer_email, COUNT(*) AS orders, COALESCE(SUM(amount),0) AS total
+     FROM orders WHERE status = 'paid' GROUP BY buyer_email ORDER BY total DESC LIMIT ?`
+  ).bind(Math.min(20, Math.max(1, limit))).all();
   return result.results || [];
 }
 

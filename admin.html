@@ -395,6 +395,176 @@
   }
   .stat-tile .num { font-family: "DM Mono", monospace; font-size: 24px; font-weight: 500; color: var(--ink); }
   .stat-tile .label { font-size: 11px; opacity: .6; margin-top: 4px; }
+  .stat-tile.accent { border-color: var(--emerald); background: linear-gradient(180deg, rgba(245,145,42,.08), transparent); }
+  .stat-tile .sub-note { font-size: 10.5px; opacity: .5; margin-top: 6px; }
+
+  /* ---- tabs ---- */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--line);
+    border-radius: 12px;
+    padding: 4px;
+    width: fit-content;
+    margin-bottom: 20px;
+  }
+  .tabs button {
+    border: none;
+    background: transparent;
+    color: var(--ink);
+    opacity: .55;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 8px 18px;
+    border-radius: 9px;
+    cursor: pointer;
+  }
+  .tabs button.active {
+    background: var(--cream);
+    opacity: 1;
+    box-shadow: 0 2px 8px -2px rgba(14, 22, 51, .25);
+  }
+  .tab-view { display: none; }
+  .tab-view.active { display: block; }
+
+  /* ---- finance tab ---- */
+  .fin-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .fin-card {
+    background: var(--cream);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 18px 20px;
+  }
+  .fin-card h3 {
+    font-family: "Shippori Mincho", serif;
+    font-size: 15px;
+    margin: 0 0 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .fin-card h3 .count { font-family: "DM Mono", monospace; font-size: 11px; opacity: .45; font-weight: 400; }
+
+  .fee-settings {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .fee-settings label { font-size: 12px; font-weight: 700; opacity: .65; }
+  .fee-settings input {
+    width: 80px;
+    border: 1.5px solid var(--line-strong);
+    border-radius: 10px;
+    padding: 8px 10px;
+    font-family: "DM Mono", monospace;
+    font-size: 14px;
+    background: var(--paper);
+    color: var(--ink);
+    text-align: right;
+  }
+  .fee-settings .fee-hint { font-size: 11px; opacity: .5; flex-basis: 100%; }
+  .fee-saved-note { font-size: 11px; color: var(--emerald-deep); font-weight: 700; opacity: 0; transition: opacity .3s; }
+  .fee-saved-note.show { opacity: 1; }
+
+  .bar-row { margin-bottom: 14px; }
+  .bar-row:last-child { margin-bottom: 0; }
+  .bar-row .bar-head {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12.5px;
+    margin-bottom: 5px;
+  }
+  .bar-row .bar-head .amt { font-family: "DM Mono", monospace; font-weight: 500; }
+  .bar-row .bar-track {
+    height: 9px;
+    background: var(--paper);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .bar-row .bar-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--emerald), var(--emerald-deep));
+  }
+  .bar-row .bar-fill.method-bank { background: linear-gradient(90deg, #4f86e8, #3a68c2); }
+  .bar-row .bar-fill.method-manual { background: linear-gradient(90deg, #9aa0b4, #6b7189); }
+
+  .trend-chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    height: 140px;
+    padding-top: 8px;
+  }
+  .trend-chart .trend-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+    justify-content: flex-end;
+    gap: 6px;
+  }
+  .trend-chart .trend-bar {
+    width: 100%;
+    max-width: 26px;
+    border-radius: 5px 5px 2px 2px;
+    background: linear-gradient(180deg, var(--emerald), var(--emerald-deep));
+    min-height: 3px;
+    position: relative;
+  }
+  .trend-chart .trend-col.current .trend-bar { background: linear-gradient(180deg, #4f86e8, #3a68c2); }
+  .trend-chart .trend-label { font-size: 10px; opacity: .55; white-space: nowrap; }
+  .trend-chart .trend-val { font-size: 9.5px; opacity: 0; font-family: "DM Mono", monospace; transition: opacity .15s; white-space: nowrap; }
+  .trend-chart .trend-col:hover .trend-val { opacity: .8; }
+
+  .top-cust-list { list-style: none; margin: 0; padding: 0; }
+  .top-cust-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 13px;
+  }
+  .top-cust-list li:last-child { border-bottom: none; }
+  .top-cust-list .rank {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--paper);
+    display: inline-flex; align-items: center; justify-content: center;
+    font-family: "DM Mono", monospace;
+    font-size: 11px;
+    flex-shrink: 0;
+  }
+  .top-cust-list .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .top-cust-list .name small { display: block; opacity: .5; font-size: 10.5px; }
+  .top-cust-list .amt { font-family: "DM Mono", monospace; font-weight: 500; white-space: nowrap; }
+
+  /* ---- orders-tab fee summary strip ---- */
+  .fee-summary-strip {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+  .fee-summary-strip .fs-tile {
+    border: 1px dashed var(--line-strong);
+    border-radius: 12px;
+    padding: 12px 16px;
+    background: var(--paper);
+  }
+  .fee-summary-strip .fs-tile .num { font-family: "DM Mono", monospace; font-size: 18px; font-weight: 500; }
+  .fee-summary-strip .fs-tile .label { font-size: 10.5px; opacity: .6; margin-top: 3px; }
+  .fee-summary-strip .fs-tile.net { border-style: solid; border-color: var(--emerald); background: linear-gradient(180deg, rgba(245,145,42,.08), transparent); }
 
   /* ---- bulk action bar ---- */
   #bulk-bar {
@@ -471,6 +641,10 @@
     .modal { max-width: 100%; width: 100%; height: 100%; max-height: 100%; border-radius: 0; padding: 20px 16px 30px; }
     .overlay { padding: 0; }
     .field-row { grid-template-columns: 1fr; }
+
+    .fin-grid { grid-template-columns: 1fr; }
+    .fee-summary-strip { grid-template-columns: 1fr; }
+    .trend-chart { height: 110px; }
   }
 </style>
 </head>
@@ -506,11 +680,33 @@
 <main>
   <div id="error-banner"></div>
 
+  <div class="tabs">
+    <button type="button" class="active" id="tab-btn-orders" onclick="switchTab('orders')">注文 <span class="mono" style="font-size:10px;opacity:.7">Orders</span></button>
+    <button type="button" id="tab-btn-finance" onclick="switchTab('finance')">会計 <span class="mono" style="font-size:10px;opacity:.7">Accounts</span></button>
+  </div>
+
+<div id="view-orders" class="tab-view active">
+
   <div class="stats-row" id="stats-row">
     <div class="stat-tile"><div class="num mono" id="stat-revenue">—</div><div class="label">支払い済み合計</div></div>
     <div class="stat-tile"><div class="num mono" id="stat-pending-bank">—</div><div class="label">銀行振込待ち</div></div>
     <div class="stat-tile"><div class="num mono" id="stat-month">—</div><div class="label">今月の注文</div></div>
     <div class="stat-tile"><div class="num mono" id="stat-customers">—</div><div class="label">顧客数</div></div>
+  </div>
+
+  <div class="fee-summary-strip" id="fee-summary-strip">
+    <div class="fs-tile">
+      <div class="num mono" id="fs-gross">—</div>
+      <div class="label">現在の絞り込み条件の合計 / Gross (filtered)</div>
+    </div>
+    <div class="fs-tile">
+      <div class="num mono" id="fs-fee">—</div>
+      <div class="label">Stripe手数料概算 (<span id="fs-fee-pct">3.6</span>%) / Est. Stripe fee</div>
+    </div>
+    <div class="fs-tile net">
+      <div class="num mono" id="fs-net">—</div>
+      <div class="label">手数料差引後の純額 / Net after fees</div>
+    </div>
   </div>
 
   <div class="toolbar">
@@ -567,6 +763,57 @@
     <span id="page-indicator" class="mono"></span>
     <button type="button" class="btn btn-ghost" id="next-page" onclick="changePage(1)">次へ →</button>
   </div>
+
+</div><!-- /#view-orders -->
+
+<div id="view-finance" class="tab-view">
+
+  <div class="fin-card" style="margin-bottom:16px;">
+    <h3>Stripe手数料率の設定 <span class="mono" style="font-size:11px;opacity:.5">Fee rate</span></h3>
+    <div class="fee-settings">
+      <label>手数料率</label>
+      <input type="number" id="fee-pct-input" step="0.1" min="0" max="20" value="3.6">
+      <span class="mono" style="font-size:13px;opacity:.7">%</span>
+      <button type="button" class="btn btn-ghost" onclick="saveFeePct()">保存</button>
+      <span class="fee-saved-note" id="fee-saved-note">✓ 保存しました</span>
+      <div class="fee-hint">
+        銀行振込・手動登録の注文には手数料はかからないものとして計算されます。この率はこのブラウザにのみ保存され、実際の請求には影響しません（見積もり専用）。<br>
+        <span style="opacity:.75">Bank-transfer and manually-added orders are assumed fee-free. Saved only in this browser — for estimation, not actual billing.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats-row" id="fin-stats-row" style="grid-template-columns:repeat(4,1fr);">
+    <div class="stat-tile accent"><div class="num mono" id="fin-gross">—</div><div class="label">総売上（支払済み全期間）/ Gross Revenue</div></div>
+    <div class="stat-tile"><div class="num mono" id="fin-fee">—</div><div class="label">Stripe手数料概算（全期間）/ Est. Total Fees</div></div>
+    <div class="stat-tile accent"><div class="num mono" id="fin-net">—</div><div class="label">純利益概算（全期間）/ Est. Net Revenue</div></div>
+    <div class="stat-tile"><div class="num mono" id="fin-avg">—</div><div class="label">平均注文単価 / Avg Order Value</div><div class="sub-note" id="fin-mom">—</div></div>
+  </div>
+
+  <div class="fin-grid">
+    <div class="fin-card">
+      <h3>プラン別売上 <span class="mono" style="font-size:11px;opacity:.5">Revenue by Plan</span></h3>
+      <div id="fin-by-plan"><div class="loading-state">読み込み中…</div></div>
+    </div>
+    <div class="fin-card">
+      <h3>支払い方法別 <span class="mono" style="font-size:11px;opacity:.5">By Payment Method</span></h3>
+      <div id="fin-by-method"><div class="loading-state">読み込み中…</div></div>
+    </div>
+  </div>
+
+  <div class="fin-grid">
+    <div class="fin-card">
+      <h3>月別売上推移（過去12ヶ月）<span class="mono" style="font-size:11px;opacity:.5">Last 12 Months</span></h3>
+      <div id="fin-trend"><div class="loading-state">読み込み中…</div></div>
+    </div>
+    <div class="fin-card">
+      <h3>上位顧客 <span class="mono" style="font-size:11px;opacity:.5">Top Customers</span></h3>
+      <ul class="top-cust-list" id="fin-top-customers"><li class="loading-state" style="border:none;">読み込み中…</li></ul>
+    </div>
+  </div>
+
+</div><!-- /#view-finance -->
+
 </main>
 
 <!-- ===== Detail / edit modal ===== -->
@@ -743,6 +990,25 @@
     }
   }
 
+  // ---- Stripe fee % (estimate only — never sent to the server, purely a
+  // client-side "what-if" the owner types in themselves and adjusts as their
+  // actual negotiated Stripe rate changes) ----
+  var FEE_PCT_KEY = 'hp_admin_stripe_fee_pct';
+  function getFeePct() {
+    var raw = null;
+    try { raw = localStorage.getItem(FEE_PCT_KEY); } catch (e) { /* private mode etc. */ }
+    var n = parseFloat(raw);
+    return Number.isFinite(n) && n >= 0 ? n : 3.6;
+  }
+  function setFeePct(n) {
+    try { localStorage.setItem(FEE_PCT_KEY, String(n)); } catch (e) { /* ignore */ }
+  }
+  // "stripe" orders carry the fee; bank/manual/anything else don't, since
+  // they never pass through Stripe at all.
+  function netAfterFee(method, gross, feePct) {
+    return method === 'stripe' ? gross * (1 - feePct / 100) : gross;
+  }
+
   function showError(msg) {
     var el = document.getElementById('error-banner');
     el.textContent = msg;
@@ -865,6 +1131,7 @@
         currentOrders = orders;
         renderTable(currentOrders);
         renderPagination(result.data.total, result.data.page, result.data.limit);
+        renderFeeSummary(result.data.summaryByMethod || []);
       })
       .catch(function (err) {
         console.error('fetchOrders error:', err);
@@ -1066,6 +1333,169 @@
     document.getElementById('page-indicator').textContent = page + ' / ' + totalPages + '（全 ' + total + ' 件）';
     document.getElementById('prev-page').disabled = page <= 1;
     document.getElementById('next-page').disabled = page >= totalPages;
+  }
+
+  // ---- Orders-tab fee summary strip: respects whatever filters (status /
+  // search / date range) are currently applied, since summaryByMethod comes
+  // from listOrders() using the exact same WHERE clause as the table itself. ----
+  var lastSummaryByMethod = [];
+  function renderFeeSummary(summaryByMethod) {
+    lastSummaryByMethod = summaryByMethod;
+    var feePct = getFeePct();
+    document.getElementById('fs-fee-pct').textContent = feePct;
+
+    var gross = 0, fee = 0, net = 0;
+    summaryByMethod.forEach(function (row) {
+      var rowTotal = row.total || 0;
+      gross += rowTotal;
+      var rowNet = netAfterFee(row.payment_method, rowTotal, feePct);
+      net += rowNet;
+      if (row.payment_method === 'stripe') fee += rowTotal - rowNet;
+    });
+
+    document.getElementById('fs-gross').textContent = fmtYen(gross);
+    document.getElementById('fs-fee').textContent = '−' + fmtYen(fee);
+    document.getElementById('fs-net').textContent = fmtYen(net);
+  }
+
+  // ---- Tabs ----
+  window.switchTab = function (name) {
+    document.getElementById('view-orders').classList.toggle('active', name === 'orders');
+    document.getElementById('view-finance').classList.toggle('active', name === 'finance');
+    document.getElementById('tab-btn-orders').classList.toggle('active', name === 'orders');
+    document.getElementById('tab-btn-finance').classList.toggle('active', name === 'finance');
+    if (name === 'finance') fetchFinance();
+  };
+
+  window.saveFeePct = function () {
+    var n = parseFloat(document.getElementById('fee-pct-input').value);
+    if (!Number.isFinite(n) || n < 0) return;
+    setFeePct(n);
+    var note = document.getElementById('fee-saved-note');
+    note.classList.add('show');
+    setTimeout(function () { note.classList.remove('show'); }, 2000);
+    // Both tabs read the same rate — refresh whichever data is already loaded.
+    fetchFinance();
+    renderFeeSummary(lastSummaryByMethod);
+  };
+
+  // ---- Finance / Accounts tab ----
+  var MONTH_LABELS_JA = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+  var METHOD_LABELS = { stripe: 'Stripe', bank: '銀行振込 / Bank', manual: '手動登録 / Manual' };
+
+  function renderBarList(containerId, rows, opts) {
+    var el = document.getElementById(containerId);
+    if (!rows.length) {
+      el.innerHTML = '<div class="empty-state" style="padding:20px 0;">データがありません</div>';
+      return;
+    }
+    var max = Math.max.apply(null, rows.map(function (r) { return r.total; }));
+    el.innerHTML = rows.map(function (r) {
+      var pct = max > 0 ? Math.max(2, Math.round((r.total / max) * 100)) : 0;
+      var label = opts.label(r);
+      var fillClass = opts.fillClass ? opts.fillClass(r) : '';
+      return '<div class="bar-row">' +
+        '<div class="bar-head"><span>' + esc(label) + ' <span class="mono" style="opacity:.45;font-size:10.5px;">(' + r.count + ')</span></span>' +
+        '<span class="amt">' + fmtYen(r.total) + '</span></div>' +
+        '<div class="bar-track"><div class="bar-fill ' + fillClass + '" style="width:' + pct + '%"></div></div>' +
+      '</div>';
+    }).join('');
+  }
+
+  function renderTrendChart(monthly) {
+    // Fill in every one of the last 12 months, even ones with zero revenue,
+    // so the chart's x-axis is always a continuous 12-month strip.
+    var now = new Date();
+    var byMonth = {};
+    monthly.forEach(function (r) { byMonth[r.month] = r; });
+    var months = [];
+    for (var i = 11; i >= 0; i--) {
+      var d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      var key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+      months.push({ key: key, label: MONTH_LABELS_JA[d.getMonth()], row: byMonth[key], isCurrent: i === 0 });
+    }
+    var max = Math.max.apply(null, months.map(function (m) { return m.row ? m.row.total : 0; })) || 1;
+
+    var el = document.getElementById('fin-trend');
+    el.innerHTML = '<div class="trend-chart">' + months.map(function (m) {
+      var total = m.row ? m.row.total : 0;
+      var h = Math.max(3, Math.round((total / max) * 100));
+      return '<div class="trend-col' + (m.isCurrent ? ' current' : '') + '">' +
+        '<span class="trend-val">' + fmtYen(total) + '</span>' +
+        '<div class="trend-bar" style="height:' + h + '%"></div>' +
+        '<span class="trend-label">' + m.label + '</span>' +
+      '</div>';
+    }).join('') + '</div>';
+
+    // Month-over-month change, shown under the Avg Order Value tile — a
+    // quick "are we trending up or down" signal that's otherwise invisible
+    // in a table of raw totals.
+    var thisMonth = months[11].row ? months[11].row.total : 0;
+    var lastMonth = months[10].row ? months[10].row.total : 0;
+    var momEl = document.getElementById('fin-mom');
+    if (lastMonth > 0) {
+      var change = ((thisMonth - lastMonth) / lastMonth) * 100;
+      var sign = change >= 0 ? '+' : '';
+      momEl.textContent = '前月比 ' + sign + change.toFixed(0) + '% (今月 / this month so far)';
+      momEl.style.color = change >= 0 ? 'var(--emerald-deep)' : 'var(--coral)';
+    } else {
+      momEl.textContent = '前月比データなし';
+    }
+  }
+
+  function renderTopCustomers(rows) {
+    var el = document.getElementById('fin-top-customers');
+    if (!rows.length) {
+      el.innerHTML = '<li class="empty-state" style="border:none;">データがありません</li>';
+      return;
+    }
+    el.innerHTML = rows.map(function (r, i) {
+      return '<li><span class="rank mono">' + (i + 1) + '</span>' +
+        '<span class="name">' + esc(r.buyer_name) + '<small>' + esc(r.buyer_email) + ' · ' + r.orders + '件</small></span>' +
+        '<span class="amt">' + fmtYen(r.total) + '</span></li>';
+    }).join('');
+  }
+
+  function renderFinance(data) {
+    var feePct = getFeePct();
+    document.getElementById('fee-pct-input').value = feePct;
+
+    var gross = 0, net = 0;
+    data.byMethod.forEach(function (r) {
+      gross += r.total;
+      net += netAfterFee(r.payment_method, r.total, feePct);
+    });
+    var totalOrders = data.byMethod.reduce(function (s, r) { return s + r.count; }, 0);
+
+    document.getElementById('fin-gross').textContent = fmtYen(gross);
+    document.getElementById('fin-fee').textContent = '−' + fmtYen(gross - net);
+    document.getElementById('fin-net').textContent = fmtYen(net);
+    document.getElementById('fin-avg').textContent = fmtYen(totalOrders > 0 ? Math.round(gross / totalOrders) : 0);
+
+    renderBarList('fin-by-plan', data.byPlan, {
+      label: function (r) { return (r.plan_name_ja || r.plan_id) + ' / ' + (r.plan_name_en || ''); },
+    });
+    renderBarList('fin-by-method', data.byMethod, {
+      label: function (r) { return METHOD_LABELS[r.payment_method] || r.payment_method; },
+      fillClass: function (r) { return r.payment_method === 'bank' ? 'method-bank' : (r.payment_method === 'stripe' ? '' : 'method-manual'); },
+    });
+    renderTrendChart(data.monthly);
+    renderTopCustomers(data.topCustomers);
+  }
+
+  function fetchFinance() {
+    fetch('/api/admin/finance')
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (result) {
+        if (!result.ok || !result.data.ok) {
+          throw new Error((result.data && result.data.error) || 'request_failed');
+        }
+        renderFinance(result.data);
+      })
+      .catch(function (err) {
+        console.error('fetchFinance error:', err);
+        showError('会計データの取得に失敗しました: ' + err.message);
+      });
   }
 
   // ---- Detail / edit modal ----
