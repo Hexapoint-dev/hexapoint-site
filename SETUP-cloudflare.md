@@ -316,10 +316,11 @@ Webhooks で `https://www.hexapoint-jp.com/api/stripe-webhook` を登録（イ�
 注文は Google Sheets ではなく Cloudflare D1（本物のデータベース）に記録されます。
 Settings → Functions → D1 database bindings で、バインディング名 **`DB`** として
 D1 データベースをこの Pages プロジェクトに紐付けてください。バインド後、
-`migrations/0001_orders.sql` と `migrations/0002_order_notes.sql`（メモ機能追加分）を
-一度ずつ適用する必要があります
+`migrations/0001_orders.sql`・`migrations/0002_order_notes.sql`（メモ機能）・
+`migrations/0003_finance_features.sql`（Zoho請求書ステータス追跡＋管理操作履歴。
+会計/更新/履歴タブに必須）を一度ずつ適用する必要があります
 （`wrangler d1 execute <DB名> --file=migrations/0001_orders.sql --remote`、
-`0002_order_notes.sql` も同様に）。詳しい手順はチャットで案内します。
+`0002_order_notes.sql`・`0003_finance_features.sql` も同様に）。詳しい手順はチャットで案内します。
 
 **管理画面（`/admin.html` と `/api/admin/*`）の保護**
 

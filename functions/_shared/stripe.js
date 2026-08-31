@@ -117,7 +117,7 @@ export async function confirmStripeSession(env, session) {
   const amount = session.amount_total;
 
   const { sendOrderConfirmation } = await import("./email.js");
-  const { insertOrder } = await import("./db.js");
+  const { insertOrder, setOrderZohoStatus } = await import("./db.js");
   const { createZohoInvoiceForOrder } = await import("./zoho.js");
 
   const already = await env.ORDERS_KV.get(`emailed:${orderID}`);
@@ -150,6 +150,14 @@ export async function confirmStripeSession(env, session) {
     if (invoiceResult.ok) {
       await env.ORDERS_KV.put(`invoiced:${orderID}`, invoiceResult.invoiceId, { expirationTtl: 60 * 60 * 24 * 7 });
     }
+    // Recorded either way (success or failure) so the admin panel's order
+    // detail view always has a current answer, with a manual retry button
+    // for the failure case, instead of silence visible only in server logs.
+    await setOrderZohoStatus(env, orderID, {
+      zohoInvoiceId: invoiceResult.ok ? invoiceResult.invoiceId : "",
+      zohoStatus: invoiceResult.ok ? "created" : "failed",
+      zohoError: invoiceResult.ok ? "" : invoiceResult.error,
+    }).catch((err) => console.error("setOrderZohoStatus failed for order", orderID, err));
   }
 
   return { ok: true, status: "COMPLETED", orderID };

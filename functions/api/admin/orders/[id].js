@@ -4,7 +4,7 @@
 //
 // Protected by the admin panel's password login — see orders.js / admin-auth.js.
 
-import { getOrder, updateOrder, deleteOrder, jsonResponse } from "../../../_shared/db.js";
+import { getOrder, updateOrder, deleteOrder, logAdminAction, jsonResponse } from "../../../_shared/db.js";
 import { requireAdmin } from "../../../_shared/admin-auth.js";
 
 const UPDATABLE_FIELDS = [
@@ -61,6 +61,9 @@ export async function onRequestPatch({ request, env, params }) {
 
     const order = await updateOrder(env, params.id, patch);
     if (!order) return jsonResponse({ ok: false, error: "not_found" }, 404);
+
+    await logAdminAction(env, "order_updated", order.id, Object.keys(patch).join(", "));
+
     return jsonResponse({ ok: true, order });
   } catch (err) {
     console.error("admin update order error:", err);
@@ -74,8 +77,19 @@ export async function onRequestDelete({ request, env, params }) {
     if (!auth.ok) return jsonResponse({ ok: false, error: auth.error }, auth.status);
 
     if (!env.DB) return jsonResponse({ ok: false, error: "db_not_configured" }, 500);
+
+    // Fetched before deletion so the log entry is self-contained (order_id
+    // text + buyer name) rather than relying on a JOIN to a row that's about
+    // to stop existing.
+    const existing = await getOrder(env, params.id);
+
     const result = await deleteOrder(env, params.id);
     if (!result.deleted) return jsonResponse({ ok: false, error: "not_found" }, 404);
+
+    if (existing) {
+      await logAdminAction(env, "order_deleted", null, `${existing.order_id} / ${existing.buyer_name} / ¥${existing.amount}`);
+    }
+
     return jsonResponse({ ok: true });
   } catch (err) {
     console.error("admin delete order error:", err);

@@ -136,21 +136,71 @@ export async function listOrdersForExport(env, { status, search, dateFrom, dateT
 }
 
 // ---- Finance / Accounts tab aggregates (functions/api/admin/finance.js) ----
-// All parameterless (no user input beyond a hardcoded LIMIT), safe to run in
-// parallel with each other and with getStats().
+// getRevenueByPlan/getRevenueByMethod take an optional date range (the tab's
+// custom-range picker); getMonthlyRevenue/getTopCustomers/getYearOverYear
+// deliberately don't — they're fixed-window "context" views, documented as
+// such in the UI, kept simple rather than plumbing the range through every query.
 
-export async function getRevenueByPlan(env) {
+function buildRevenueDateFilter({ dateFrom, dateTo }) {
+  const where = [];
+  const params = [];
+  if (dateFrom) {
+    where.push("created_at >= ?");
+    params.push(`${dateFrom} 00:00:00`);
+  }
+  if (dateTo) {
+    where.push("created_at <= ?");
+    params.push(`${dateTo} 23:59:59`);
+  }
+  return { whereSql: where.length ? `AND ${where.join(" AND ")}` : "", params };
+}
+
+export async function getRevenueByPlan(env, { dateFrom, dateTo } = {}) {
+  const { whereSql, params } = buildRevenueDateFilter({ dateFrom, dateTo });
   const result = await env.DB.prepare(
     `SELECT plan_id, plan_name_ja, plan_name_en, COUNT(*) AS count, COALESCE(SUM(amount),0) AS total
-     FROM orders WHERE status = 'paid' GROUP BY plan_id ORDER BY total DESC`
-  ).all();
+     FROM orders WHERE status = 'paid' ${whereSql} GROUP BY plan_id ORDER BY total DESC`
+  ).bind(...params).all();
   return result.results || [];
 }
 
-export async function getRevenueByMethod(env) {
+export async function getRevenueByMethod(env, { dateFrom, dateTo } = {}) {
+  const { whereSql, params } = buildRevenueDateFilter({ dateFrom, dateTo });
   const result = await env.DB.prepare(
     `SELECT payment_method, COUNT(*) AS count, COALESCE(SUM(amount),0) AS total
-     FROM orders WHERE status = 'paid' GROUP BY payment_method ORDER BY total DESC`
+     FROM orders WHERE status = 'paid' ${whereSql} GROUP BY payment_method ORDER BY total DESC`
+  ).bind(...params).all();
+  return result.results || [];
+}
+
+// This calendar month vs. the same calendar month one year ago — for the
+// Finance tab's year-over-year comparison. Both figures are partial-month if
+// run before the month ends, same caveat as the existing month-over-month one.
+export async function getYearOverYear(env) {
+  const [thisMonthRow, lastYearRow] = await Promise.all([
+    env.DB.prepare(
+      `SELECT COALESCE(SUM(amount),0) AS total FROM orders
+       WHERE status = 'paid' AND strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now')`
+    ).first(),
+    env.DB.prepare(
+      `SELECT COALESCE(SUM(amount),0) AS total FROM orders
+       WHERE status = 'paid' AND strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now', '-1 year')`
+    ).first(),
+  ]);
+  return {
+    thisMonth: thisMonthRow ? thisMonthRow.total : 0,
+    sameMonthLastYear: lastYearRow ? lastYearRow.total : 0,
+  };
+}
+
+// Paid annual-plan orders, oldest first — the Renewals tab computes each
+// one's renewal date (created_at + 365 days) and days-remaining client-side,
+// then re-sorts by that so the soonest renewal always shows first regardless
+// of creation order (paid-late edge cases, admin-added historical orders...).
+export async function getUpcomingRenewals(env) {
+  const result = await env.DB.prepare(
+    `SELECT id, order_id, buyer_name, buyer_email, amount, created_at
+     FROM orders WHERE plan_id = 'annual' AND status = 'paid' ORDER BY created_at ASC`
   ).all();
   return result.results || [];
 }
@@ -258,4 +308,52 @@ export async function updateOrder(env, id, patch) {
 export async function deleteOrder(env, id) {
   const result = await env.DB.prepare("DELETE FROM orders WHERE id = ?").bind(id).run();
   return { ok: true, deleted: result?.meta?.changes || 0 };
+}
+
+// ---- Zoho invoice status (migrations/0003_finance_features.sql) ----
+// Written from two places: confirmStripeSession() right after attempting the
+// invoice (success or failure, so the admin panel always has a current
+// answer), and the admin panel's manual "retry" button for orders that
+// failed or predate this tracking. Keyed by order_id (the Stripe session ID
+// / TEXT identifier), not the numeric `id` — that's what confirmStripeSession
+// has on hand, before any row necessarily exists yet.
+export async function setOrderZohoStatus(env, orderId, { zohoInvoiceId, zohoStatus, zohoError }) {
+  await env.DB.prepare(
+    `UPDATE orders SET zoho_invoice_id = ?, zoho_status = ?, zoho_error = ?, updated_at = datetime('now') WHERE order_id = ?`
+  ).bind(zohoInvoiceId || "", zohoStatus || "", String(zohoError || "").slice(0, 500), orderId).run();
+}
+
+// ---- Admin audit log (migrations/0003_finance_features.sql) ----
+// Never throws — a logging failure must not block the action being logged.
+export async function logAdminAction(env, action, orderId, detail) {
+  if (!env.DB) return;
+  try {
+    await env.DB.prepare("INSERT INTO admin_audit_log (action, order_id, detail) VALUES (?, ?, ?)")
+      .bind(action, orderId || null, String(detail || "").slice(0, 500))
+      .run();
+  } catch (err) {
+    console.error("logAdminAction failed:", err);
+  }
+}
+
+export async function listAuditLog(env, { page, limit } = {}) {
+  const pageNum = Math.max(1, parseInt(page, 10) || 1);
+  const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 30));
+  const offset = (pageNum - 1) * limitNum;
+
+  const [listResult, countResult] = await Promise.all([
+    env.DB.prepare(
+      `SELECT a.id, a.action, a.order_id, a.detail, a.created_at, o.order_id AS order_ref
+       FROM admin_audit_log a LEFT JOIN orders o ON o.id = a.order_id
+       ORDER BY a.created_at DESC LIMIT ? OFFSET ?`
+    ).bind(limitNum, offset).all(),
+    env.DB.prepare("SELECT COUNT(*) AS total FROM admin_audit_log").first(),
+  ]);
+
+  return {
+    logs: listResult.results || [],
+    total: countResult ? countResult.total : 0,
+    page: pageNum,
+    limit: limitNum,
+  };
 }

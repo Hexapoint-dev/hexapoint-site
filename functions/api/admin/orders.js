@@ -4,7 +4,7 @@
 // Protected by the admin panel's password login (functions/_shared/admin-auth.js)
 // via requireAdmin() below — see SETUP-cloudflare.md for the required env vars.
 
-import { listOrders, createOrder, jsonResponse } from "../../_shared/db.js";
+import { listOrders, createOrder, logAdminAction, jsonResponse } from "../../_shared/db.js";
 import { requireAdmin } from "../../_shared/admin-auth.js";
 
 export async function onRequestGet({ request, env }) {
@@ -76,6 +76,8 @@ export async function onRequestPost({ request, env }) {
       buyer,
       notes,
     });
+
+    await logAdminAction(env, "order_created", order.id, `${planId} / ¥${amount} / ${status}`);
 
     return jsonResponse({ ok: true, order }, 201);
   } catch (err) {
