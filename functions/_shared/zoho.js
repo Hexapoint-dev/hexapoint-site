@@ -293,11 +293,14 @@ async function findOrCreateZohoContact(env, buyer) {
 // shows as PAID in Zoho rather than sitting open/unpaid.
 async function createPaidZohoInvoice(env, { contactId, plan, amount, orderID, buyer }) {
   const today = new Date().toISOString().slice(0, 10);
-  // Zoho's reference_number field caps out at 50 characters — Stripe Checkout
-  // Session IDs (cs_test_.../cs_live_...) routinely run 60+ chars, so they're
-  // truncated here. The full orderID is still preserved everywhere else
-  // (line item description below, D1 orders table, KV idempotency key).
-  const referenceNumber = orderID.slice(0, 50);
+  // Stripe Checkout Session IDs (cs_test_.../cs_live_...) are 60+ raw
+  // characters — meaningless to a customer and unprofessional-looking on an
+  // invoice PDF. The full orderID is already the D1 orders.order_id column
+  // (linked 1:1 with this Zoho invoice via zoho_invoice_id), so it doesn't
+  // need to appear on the customer-facing document at all — this short,
+  // readable stand-in is just enough to cross-reference in /admin.html's
+  // order search (which matches partial order_id) if ever needed by phone/email.
+  const referenceNumber = `HXPT-${orderID.slice(-8).toUpperCase()}`;
 
   const invoiceRes = await zohoFetch(env, "/invoices", {
     method: "POST",
@@ -308,7 +311,6 @@ async function createPaidZohoInvoice(env, { contactId, plan, amount, orderID, bu
       line_items: [
         {
           name: `${plan.nameJa} / ${plan.nameEn}`,
-          description: `HexaPoint — Order ${orderID}`,
           rate: amount,
           quantity: 1,
         },
