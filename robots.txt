@@ -3,4 +3,4 @@ Allow: /
 Disallow: /admin.html
 Disallow: /api/
 
-Sitemap: https://www.hexapoint-jp.com/sitemap.xml
+Sitemap: https://hexapoint-jp.com/sitemap.xml
