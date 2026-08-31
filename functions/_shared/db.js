@@ -323,6 +323,23 @@ export async function setOrderZohoStatus(env, orderId, { zohoInvoiceId, zohoStat
   ).bind(zohoInvoiceId || "", zohoStatus || "", String(zohoError || "").slice(0, 500), orderId).run();
 }
 
+// ---- Lookups/updates by order_id (the Stripe Checkout Session ID / TEXT
+// identifier), used by the Stripe webhook handlers for refund/dispute/
+// payment-failed events — those only have a Charge/PaymentIntent/Dispute
+// object on hand, resolved back to our order via the checkout session (see
+// findSessionByPaymentIntent in stripe.js), not the D1 numeric `id`. ----
+export async function getOrderByOrderId(env, orderId) {
+  if (!orderId) return null;
+  const row = await env.DB.prepare("SELECT * FROM orders WHERE order_id = ?").bind(orderId).first();
+  return row || null;
+}
+
+export async function updateOrderStatusByOrderId(env, orderId, status) {
+  await env.DB.prepare(
+    `UPDATE orders SET status = ?, updated_at = datetime('now') WHERE order_id = ?`
+  ).bind(status, orderId).run();
+}
+
 // ---- Admin audit log (migrations/0003_finance_features.sql) ----
 // Never throws — a logging failure must not block the action being logged.
 export async function logAdminAction(env, action, orderId, detail) {

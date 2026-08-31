@@ -9,6 +9,125 @@ function esc(s) {
     .replace(/>/g, "&gt;");
 }
 
+// Generic branded notification to the site owner (CONTACT_TO) — used by the
+// Stripe webhook handlers for refunds, disputes, and failed payments, so
+// those don't each need their own full HTML template. `rows` is an array of
+// [labelJp, labelEn, value] triples, same shape as the row() helpers below.
+// `urgent` swaps the accent from the usual brand orange to coral/red for
+// time-sensitive alerts (disputes) that need to stand out in an inbox.
+export async function sendOwnerAlert(env, { subject, title, titleEn, rows, urgent }) {
+  if (!env.RESEND_API_KEY || !env.CONTACT_TO || !env.CONTACT_FROM) {
+    console.error("Resend not configured, skipping owner alert email");
+    return { ok: false, error: "not_configured" };
+  }
+
+  const receivedAt = new Intl.DateTimeFormat("ja-JP", {
+    timeZone: "Asia/Tokyo",
+    dateStyle: "long",
+    timeStyle: "short",
+  }).format(new Date());
+
+  const INK = "#0e1633";
+  const PAPER = "#fbf9f6";
+  const ACCENT = urgent ? "#e63548" : "#f5912a";
+  const ACCENT_DEEP = urgent ? "#c81f34" : "#e8631f";
+  const LINE = "#e3e0da";
+  const SANS = "'Hiragino Kaku Gothic ProN','Yu Gothic','Helvetica Neue',Arial,sans-serif";
+  const SERIF = "'Hiragino Mincho ProN','Yu Mincho',Georgia,serif";
+
+  const row = (labelJp, labelEn, value) => `
+    <tr>
+      <td style="padding:10px 0;border-bottom:1px solid ${LINE};">
+        <div style="font-family:${SANS};font-size:11px;letter-spacing:.06em;color:${INK};opacity:.55;margin-bottom:3px;">
+          ${esc(labelJp)} / ${esc(labelEn)}
+        </div>
+        <div style="font-family:${SANS};font-size:15px;font-weight:600;color:${INK};">
+          ${esc(value)}
+        </div>
+      </td>
+    </tr>`;
+
+  const html = `<!DOCTYPE html>
+<html lang="ja">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:${PAPER};">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${PAPER};padding:32px 16px;">
+    <tr><td align="center">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0"
+        style="max-width:600px;width:100%;background:#ffffff;border-radius:18px;overflow:hidden;border:1px solid ${LINE};">
+
+        <tr><td style="height:6px;background:linear-gradient(90deg,${ACCENT},${ACCENT_DEEP});"></td></tr>
+
+        <tr>
+          <td style="padding:32px 36px 8px 36px;">
+            <div style="font-family:${SANS};font-size:13px;letter-spacing:.12em;color:${ACCENT_DEEP};font-weight:700;">
+              HEXAPOINT${urgent ? " — 要対応 / ACTION REQUIRED" : ""}
+            </div>
+            <div style="font-family:${SERIF};font-size:22px;color:${INK};margin-top:6px;">
+              ${esc(title)}<span style="opacity:.5;font-size:14px;display:block;margin-top:2px;">${esc(titleEn)}</span>
+            </div>
+            <div style="font-family:${SANS};font-size:12px;color:${INK};opacity:.5;margin-top:8px;">
+              ${esc(receivedAt)} 受信
+            </div>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:16px 36px 8px 36px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+              ${rows.map(([labelJp, labelEn, value]) => row(labelJp, labelEn, value)).join("")}
+            </table>
+          </td>
+        </tr>
+
+        <tr><td style="height:1px;background:${LINE};"></td></tr>
+
+        <tr>
+          <td style="padding:18px 36px 28px 36px;">
+            <div style="font-family:${SANS};font-size:11px;color:${INK};opacity:.45;line-height:1.6;">
+              このメールは Stripe からのイベントに応じて自動送信されました。<br>
+              This message was sent automatically in response to a Stripe event.
+            </div>
+          </td>
+        </tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+
+  const text = `${title} / ${titleEn}\n${receivedAt}\n\n` +
+    rows.map(([labelJp, labelEn, value]) => `${labelJp} / ${labelEn}: ${value}`).join("\n") + "\n";
+
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${env.RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: env.CONTACT_FROM,
+        to: env.CONTACT_TO,
+        subject,
+        html,
+        text,
+      }),
+    });
+
+    if (!res.ok) {
+      const detail = await res.text();
+      console.error("Resend owner alert error:", res.status, detail);
+      return { ok: false, error: `resend_${res.status}` };
+    }
+    return { ok: true };
+  } catch (err) {
+    console.error("Owner alert email request failed:", err);
+    return { ok: false, error: String(err) };
+  }
+}
+
 export async function sendOrderConfirmation(env, { buyer, plan, orderID, amount }) {
   if (!env.RESEND_API_KEY || !env.CONTACT_TO || !env.CONTACT_FROM) {
     console.error("Resend not configured, skipping order confirmation email");

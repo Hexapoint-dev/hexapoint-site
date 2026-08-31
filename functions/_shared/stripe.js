@@ -162,3 +162,174 @@ export async function confirmStripeSession(env, session) {
 
   return { ok: true, status: "COMPLETED", orderID };
 }
+
+// ---- Post-payment event handlers (charge/dispute/payment-intent events) ----
+// These don't carry our own orderKey/order_id directly the way a Checkout
+// Session does — they're resolved back to the Checkout Session (and from
+// there, our D1 order row) via the underlying payment_intent. Every handler
+// below is wrapped in its own try/catch and never throws: a webhook handler
+// failing here must not turn into a 500 that makes Stripe retry forever.
+
+async function findSessionByPaymentIntent(env, paymentIntentId) {
+  if (!paymentIntentId) return null;
+  const res = await fetch(
+    `${stripeApiBase()}/checkout/sessions?payment_intent=${encodeURIComponent(paymentIntentId)}`,
+    { headers: { Authorization: stripeAuthHeader(env) } }
+  );
+  if (!res.ok) return null;
+  const data = await res.json().catch(() => null);
+  return (data && data.data && data.data[0]) || null;
+}
+
+// charge.refunded — keeps D1's order status in sync when a refund happens
+// directly in the Stripe Dashboard, which our own admin panel has no way of
+// knowing about otherwise. Without this, the Finance tab's revenue figures
+// would silently drift from reality every time a refund is issued.
+export async function handleChargeRefunded(env, charge) {
+  try {
+    const session = await findSessionByPaymentIntent(env, charge.payment_intent);
+    if (!session) {
+      console.error("charge.refunded: no matching checkout session for payment_intent", charge.payment_intent);
+      return;
+    }
+    const orderId = session.id;
+
+    const { getOrderByOrderId, updateOrderStatusByOrderId, logAdminAction } = await import("./db.js");
+    const order = await getOrderByOrderId(env, orderId);
+    if (!order) return;
+
+    await updateOrderStatusByOrderId(env, orderId, "refunded");
+    await logAdminAction(env, "stripe_refund_synced", order.id, `¥${charge.amount_refunded || charge.amount}`);
+
+    const { sendOwnerAlert } = await import("./email.js");
+    await sendOwnerAlert(env, {
+      subject: `【HexaPoint】返金が処理されました / Refund processed — ${order.plan_name_ja}`,
+      title: "返金が処理されました",
+      titleEn: "A refund was processed",
+      urgent: false,
+      rows: [
+        ["注文ID", "Order ID", orderId],
+        ["お客様", "Customer", order.buyer_name],
+        ["返金額", "Refunded amount", `¥${Number(charge.amount_refunded || charge.amount).toLocaleString("ja-JP")}`],
+      ],
+    });
+  } catch (err) {
+    console.error("handleChargeRefunded failed:", err);
+  }
+}
+
+// charge.dispute.created — the highest-stakes event here: disputes have a
+// strict response deadline (missing it forfeits the money automatically),
+// so this fires an immediate, visually distinct ("urgent") email, and drops
+// a note on the order itself so the deadline is visible right in /admin.html
+// without digging through the Stripe Dashboard.
+export async function handleDisputeCreated(env, dispute) {
+  try {
+    const session = await findSessionByPaymentIntent(env, dispute.payment_intent);
+    const orderId = session ? session.id : null;
+
+    const dueBy = dispute.evidence_details && dispute.evidence_details.due_by
+      ? new Intl.DateTimeFormat("ja-JP", { timeZone: "Asia/Tokyo", dateStyle: "long" }).format(new Date(dispute.evidence_details.due_by * 1000))
+      : "不明 / Unknown";
+
+    let order = null;
+    if (orderId) {
+      const { getOrderByOrderId, addOrderNote } = await import("./db.js");
+      order = await getOrderByOrderId(env, orderId);
+      if (order) {
+        await addOrderNote(
+          env,
+          order.id,
+          `⚠️ Stripeで異議申し立て（チャージバック）が開始されました。理由: ${dispute.reason}。金額: ¥${dispute.amount}。対応期限: ${dueBy}`
+        );
+      }
+    }
+
+    const { sendOwnerAlert } = await import("./email.js");
+    await sendOwnerAlert(env, {
+      subject: "【緊急】Stripeで異議申し立てが発生しました / URGENT: Stripe dispute opened",
+      title: "至急ご対応ください：異議申し立てが発生しました",
+      titleEn: "Action required: a dispute was opened",
+      urgent: true,
+      rows: [
+        ["注文ID", "Order ID", orderId || "不明 / unknown"],
+        ["お客様", "Customer", order ? order.buyer_name : "不明 / unknown"],
+        ["金額", "Amount", `¥${Number(dispute.amount).toLocaleString("ja-JP")}`],
+        ["理由", "Reason", dispute.reason],
+        ["対応期限", "Respond by", dueBy],
+      ],
+    });
+  } catch (err) {
+    console.error("handleDisputeCreated failed:", err);
+  }
+}
+
+// checkout.session.async_payment_failed — a Checkout Session's own
+// client_reference_id/metadata already carries orderKey, so this doesn't
+// need the payment_intent lookup the charge/dispute handlers do.
+export async function handleAsyncPaymentFailed(env, session) {
+  try {
+    const orderKey = session.client_reference_id || (session.metadata && session.metadata.orderKey);
+    if (!orderKey) return;
+    const raw = await env.ORDERS_KV.get(`buyer:${orderKey}`);
+    if (!raw) return;
+    const parsed = JSON.parse(raw);
+    const plan = PLANS[parsed.planId];
+
+    const { sendOwnerAlert } = await import("./email.js");
+    await sendOwnerAlert(env, {
+      subject: `【HexaPoint】お支払いが失敗しました / Payment failed — ${plan ? plan.nameJa : parsed.planId}`,
+      title: "お支払いが失敗しました",
+      titleEn: "A payment attempt failed",
+      urgent: false,
+      rows: [
+        ["お客様", "Customer", parsed.name],
+        ["メール", "Email", parsed.email],
+        ["プラン", "Plan", plan ? `${plan.nameJa} / ${plan.nameEn}` : parsed.planId],
+      ],
+    });
+  } catch (err) {
+    console.error("handleAsyncPaymentFailed failed:", err);
+  }
+}
+
+// payment_intent.payment_failed — needs orderKey copied onto the
+// PaymentIntent itself at checkout-creation time (see payment_intent_data in
+// stripe-create-checkout.js); Stripe doesn't propagate Checkout Session
+// metadata onto the PaymentIntent automatically. Silently returns for any
+// PaymentIntent that predates that change or wasn't created via our checkout.
+export async function handlePaymentIntentFailed(env, paymentIntent) {
+  try {
+    const orderKey = paymentIntent.metadata && paymentIntent.metadata.orderKey;
+    if (!orderKey) return;
+    const raw = await env.ORDERS_KV.get(`buyer:${orderKey}`);
+    if (!raw) return;
+    const parsed = JSON.parse(raw);
+    const plan = PLANS[parsed.planId];
+    const reason = (paymentIntent.last_payment_error && paymentIntent.last_payment_error.message) || "unknown";
+
+    const { sendOwnerAlert } = await import("./email.js");
+    await sendOwnerAlert(env, {
+      subject: `【HexaPoint】カード決済が失敗しました / Card payment failed — ${plan ? plan.nameJa : parsed.planId}`,
+      title: "カード決済が失敗しました",
+      titleEn: "A card payment failed",
+      urgent: false,
+      rows: [
+        ["お客様", "Customer", parsed.name],
+        ["メール", "Email", parsed.email],
+        ["プラン", "Plan", plan ? `${plan.nameJa} / ${plan.nameEn}` : parsed.planId],
+        ["失敗理由", "Failure reason", reason],
+      ],
+    });
+  } catch (err) {
+    console.error("handlePaymentIntentFailed failed:", err);
+  }
+}
+
+// checkout.session.expired — an abandoned checkout, low-stakes/high-volume
+// (every browsed-but-unpaid session eventually fires this ~24h later), so
+// this only logs rather than emailing the owner for every single one.
+export function handleCheckoutExpired(session) {
+  const orderKey = session.client_reference_id || (session.metadata && session.metadata.orderKey);
+  console.log("checkout.session.expired (abandoned checkout):", orderKey || session.id);
+}

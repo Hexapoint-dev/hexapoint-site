@@ -2,15 +2,30 @@
 // Reliable, server-to-server fallback. Stripe calls this endpoint whenever a
 // Checkout Session completes, independent of whether the buyer's browser is
 // still open when payment finishes (Stripe's own docs call this a requirement
-// for reliable fulfillment, not just a nice-to-have).
+// for reliable fulfillment, not just a nice-to-have) — plus a handful of
+// post-payment events (refunds, disputes, failed payments) that keep the
+// admin panel and the owner's inbox in sync with what actually happened.
 //
 // Register this URL in the Stripe Dashboard -> Developers/Workbench -> Webhooks:
 //   https://www.hexapoint-jp.com/api/stripe-webhook
-// Subscribe at least to: checkout.session.completed
-// (optionally also checkout.session.async_payment_succeeded for delayed payment
-// methods, and checkout.session.async_payment_failed if you want failure logging).
+// Subscribe to:
+//   checkout.session.completed              (required — fulfillment)
+//   checkout.session.async_payment_succeeded (delayed payment methods)
+//   checkout.session.async_payment_failed    (delayed payment methods failing)
+//   checkout.session.expired                 (abandoned checkout — logged only)
+//   charge.refunded                          (keeps D1 order status in sync)
+//   charge.dispute.created                   (urgent owner alert)
+//   payment_intent.payment_failed            (card declined etc.)
 
-import { verifyStripeSignature, confirmStripeSession } from "../_shared/stripe.js";
+import {
+  verifyStripeSignature,
+  confirmStripeSession,
+  handleChargeRefunded,
+  handleDisputeCreated,
+  handleAsyncPaymentFailed,
+  handlePaymentIntentFailed,
+  handleCheckoutExpired,
+} from "../_shared/stripe.js";
 
 export async function onRequestPost({ request, env }) {
   try {
@@ -35,16 +50,34 @@ export async function onRequestPost({ request, env }) {
     // ------------------------------------------------------------
 
     const event = JSON.parse(rawBody);
+    const obj = event.data.object;
 
-    if (event.type === "checkout.session.completed" || event.type === "checkout.session.async_payment_succeeded") {
-      const session = event.data.object;
-      const result = await confirmStripeSession(env, session);
-      if (!result.ok) {
-        console.error("Stripe webhook: order not confirmable", session.id, result.error || result.status);
+    switch (event.type) {
+      case "checkout.session.completed":
+      case "checkout.session.async_payment_succeeded": {
+        const result = await confirmStripeSession(env, obj);
+        if (!result.ok) {
+          console.error("Stripe webhook: order not confirmable", obj.id, result.error || result.status);
+        }
+        break;
       }
+      case "checkout.session.async_payment_failed":
+        await handleAsyncPaymentFailed(env, obj);
+        break;
+      case "checkout.session.expired":
+        handleCheckoutExpired(obj);
+        break;
+      case "charge.refunded":
+        await handleChargeRefunded(env, obj);
+        break;
+      case "charge.dispute.created":
+        await handleDisputeCreated(env, obj);
+        break;
+      case "payment_intent.payment_failed":
+        await handlePaymentIntentFailed(env, obj);
+        break;
+      // Any other subscribed event type is a no-op here by design.
     }
-    // checkout.session.async_payment_failed / other event types can be handled
-    // here later the same way if you want automatic notifications for those too.
 
     return new Response("ok", { status: 200 });
   } catch (err) {

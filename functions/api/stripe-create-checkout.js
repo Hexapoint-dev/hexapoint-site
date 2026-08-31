@@ -81,6 +81,11 @@ export async function onRequestPost({ request, env }) {
       cancel_url: `${origin}/?stripe_order=cancel`,
       client_reference_id: orderKey,
       metadata: { orderKey },
+      // Stripe does NOT copy Checkout Session metadata onto the underlying
+      // PaymentIntent automatically — this is set explicitly so the
+      // payment_intent.payment_failed webhook handler (stripe.js) can
+      // resolve orderKey without an extra API round-trip.
+      payment_intent_data: { metadata: { orderKey } },
       customer_email: buyer.email,
     });
 
