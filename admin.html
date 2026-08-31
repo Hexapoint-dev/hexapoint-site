@@ -566,6 +566,19 @@
   .fee-summary-strip .fs-tile .label { font-size: 10.5px; opacity: .6; margin-top: 3px; }
   .fee-summary-strip .fs-tile.net { border-style: solid; border-color: var(--emerald); background: linear-gradient(180deg, rgba(245,145,42,.08), transparent); }
   .fee-summary-strip .fs-tile.tax { border-style: solid; border-color: #4f86e8; }
+  .fee-summary-strip.tax-hidden { grid-template-columns: repeat(3, 1fr); }
+  .fee-summary-strip.tax-hidden .fs-tile.tax { display: none; }
+
+  .tax-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 400;
+    opacity: .7;
+    cursor: pointer;
+  }
+  .tax-toggle input { accent-color: var(--emerald-deep); cursor: pointer; }
 
   /* ---- quick filter chips ---- */
   .quick-filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
@@ -910,13 +923,21 @@
   </div>
 
   <div class="fin-card" style="margin-bottom:16px;">
-    <h3>消費税内訳（10%）<span class="mono" style="font-size:11px;opacity:.5">Consumption Tax Breakdown</span></h3>
-    <div style="display:flex;gap:28px;flex-wrap:wrap;font-size:13px;">
-      <div><div class="sub-note" style="margin:0;">税抜売上 / Ex-tax</div><div class="mono" id="fin-tax-pretax" style="font-size:17px;">—</div></div>
-      <div><div class="sub-note" style="margin:0;">消費税額 / Tax (10%)</div><div class="mono" id="fin-tax-amount" style="font-size:17px;">—</div></div>
-      <div><div class="sub-note" style="margin:0;">税込合計 / Incl. tax</div><div class="mono" id="fin-tax-total" style="font-size:17px;">—</div></div>
+    <h3>
+      <span>消費税内訳（10%）<span class="mono" style="font-size:11px;opacity:.5">Consumption Tax Breakdown</span></span>
+      <label class="tax-toggle">
+        <input type="checkbox" id="tax-toggle-input" checked onchange="onTaxToggleChange()">
+        <span>表示する / Show</span>
+      </label>
+    </h3>
+    <div id="tax-breakdown-body">
+      <div style="display:flex;gap:28px;flex-wrap:wrap;font-size:13px;">
+        <div><div class="sub-note" style="margin:0;">税抜売上 / Ex-tax</div><div class="mono" id="fin-tax-pretax" style="font-size:17px;">—</div></div>
+        <div><div class="sub-note" style="margin:0;">消費税額 / Tax (10%)</div><div class="mono" id="fin-tax-amount" style="font-size:17px;">—</div></div>
+        <div><div class="sub-note" style="margin:0;">税込合計 / Incl. tax</div><div class="mono" id="fin-tax-total" style="font-size:17px;">—</div></div>
+      </div>
+      <div class="fee-hint" style="margin-top:8px;">表示価格は税込であると仮定して逆算した概算です。実際の税務処理は税理士にご確認ください。 / Estimated by working backward from tax-inclusive prices — confirm with your accountant for actual filings.</div>
     </div>
-    <div class="fee-hint" style="margin-top:8px;">表示価格は税込であると仮定して逆算した概算です。実際の税務処理は税理士にご確認ください。 / Estimated by working backward from tax-inclusive prices — confirm with your accountant for actual filings.</div>
   </div>
 
   <div class="fin-grid">
@@ -1150,6 +1171,39 @@
   // Japan's consumption tax is 10% and displayed prices are tax-inclusive —
   // used to back out the tax-exclusive portion of any tax-inclusive total.
   var TAX_RATE = 0.10;
+
+  // Whether to show the consumption-tax breakdown at all (Finance tab card +
+  // the 4th tile in the Orders tab summary strip). Saved per-browser, same
+  // pattern as the Stripe fee %.
+  var TAX_SHOW_KEY = 'hp_admin_tax_breakdown_shown';
+  function isTaxBreakdownEnabled() {
+    var raw = null;
+    try { raw = localStorage.getItem(TAX_SHOW_KEY); } catch (e) { /* private mode etc. */ }
+    return raw === null ? true : raw === '1'; // defaults on — matches the behavior before this toggle existed
+  }
+  function setTaxBreakdownEnabled(on) {
+    try { localStorage.setItem(TAX_SHOW_KEY, on ? '1' : '0'); } catch (e) { /* ignore */ }
+  }
+
+  window.onTaxToggleChange = function () {
+    var on = document.getElementById('tax-toggle-input').checked;
+    setTaxBreakdownEnabled(on);
+    applyTaxVisibility();
+    // Turning it back on: the math was skipped entirely while off, so the
+    // tiles would otherwise still show stale "—" placeholders until the next
+    // full data refresh — recompute immediately from whatever's cached.
+    if (on) {
+      if (lastSummaryByMethod.length) renderFeeSummary(lastSummaryByMethod);
+      if (lastFinanceData) renderTaxBreakdown(lastFinanceData.byMethod.reduce(function (s, r) { return s + r.total; }, 0));
+    }
+  };
+
+  function applyTaxVisibility() {
+    var on = isTaxBreakdownEnabled();
+    document.getElementById('tax-toggle-input').checked = on;
+    document.getElementById('tax-breakdown-body').style.display = on ? '' : 'none';
+    document.getElementById('fee-summary-strip').classList.toggle('tax-hidden', !on);
+  }
 
   // ---- Stripe fee % (estimate only — never sent to the server, purely a
   // client-side "what-if" the owner types in themselves and adjusts as their
@@ -1582,9 +1636,11 @@
     document.getElementById('fs-fee').textContent = '−' + fmtYen(fee);
     document.getElementById('fs-net').textContent = fmtYen(net);
 
-    var pretax = gross / (1 + TAX_RATE);
-    document.getElementById('fs-tax').textContent = fmtYen(Math.round(gross - pretax));
-    document.getElementById('fs-pretax').textContent = fmtYen(Math.round(pretax));
+    if (isTaxBreakdownEnabled()) {
+      var pretax = gross / (1 + TAX_RATE);
+      document.getElementById('fs-tax').textContent = fmtYen(Math.round(gross - pretax));
+      document.getElementById('fs-pretax').textContent = fmtYen(Math.round(pretax));
+    }
   }
 
   // ---- Tabs ----
@@ -1701,6 +1757,7 @@
   };
 
   function renderTaxBreakdown(grossTotal) {
+    if (!isTaxBreakdownEnabled()) return; // toggle off: skip the math entirely, not just hide it
     var pretax = grossTotal / (1 + TAX_RATE);
     var tax = grossTotal - pretax;
     document.getElementById('fin-tax-pretax').textContent = fmtYen(Math.round(pretax));
@@ -2194,6 +2251,7 @@
     fetchOrders();
     fetchStats();
     updateNotifButton();
+    applyTaxVisibility();
     startPolling();
   }
 

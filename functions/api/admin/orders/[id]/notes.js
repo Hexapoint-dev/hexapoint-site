@@ -6,7 +6,7 @@
 // Protected by the admin panel's password login via requireAdmin(), same as
 // every other admin handler.
 
-import { addOrderNote, listOrderNotes, jsonResponse } from "../../../../_shared/db.js";
+import { addOrderNote, listOrderNotes, logAdminAction, jsonResponse } from "../../../../_shared/db.js";
 import { requireAdmin } from "../../../../_shared/admin-auth.js";
 
 export async function onRequestGet({ request, env, params }) {
@@ -34,6 +34,8 @@ export async function onRequestPost({ request, env, params }) {
     const body = await request.json();
     const result = await addOrderNote(env, params.id, body.note);
     if (!result.ok) return jsonResponse({ ok: false, error: result.error }, 400);
+
+    await logAdminAction(env, "note_added", params.id, (body.note || "").toString().slice(0, 100));
 
     return jsonResponse({ ok: true, note: result.note }, 201);
   } catch (err) {
