@@ -2601,6 +2601,47 @@
       max-width: 380px
     }
 
+    .quick-tips {
+      list-style: none;
+      margin: 16px 0 30px;
+      display: grid;
+      gap: 14px;
+      max-width: 400px
+    }
+
+    .quick-tips li {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      font-size: 14px;
+      line-height: 1.6;
+      opacity: .85
+    }
+
+    .quick-tips .qti {
+      flex: none;
+      width: 30px;
+      height: 30px;
+      border-radius: 9px;
+      background: var(--mint);
+      color: var(--emerald-deep);
+      display: grid;
+      place-items: center;
+      margin-top: 1px
+    }
+
+    .quick-tips .qti svg {
+      width: 16px;
+      height: 16px
+    }
+
+    /* Extra breathing room for the LINE verification-badge disclaimer when it
+       appears in the contact info column — .line-note is shared with the
+       pricing cards' inline notes, so this is scoped to .cinfo only. */
+    .cinfo .line-note {
+      margin-top: 16px
+    }
+
     .cmethods {
       display: grid;
       gap: 14px
@@ -4929,9 +4970,24 @@
       <div class="contact-grid">
         <div class="cinfo reveal">
           <h3><span data-jp>直接つながる。</span><span data-en>Reach me directly.</span></h3>
-          <p class="csub"><span data-jp>急ぎのご相談は、WhatsAppやLINEが早いです。</span><span data-en>For anything urgent, WhatsApp or
-              LINE gets the fastest reply.</span></p>
-          <p class="csub"><span data-jp>サウジアラビアを拠点にしているため時差（約4〜6時間）はありますが、メールやLINEには基本的に24時間以内にご返信します。</span><span data-en>There's roughly a 4–6 hour time difference since I'm based in Saudi Arabia, but I reply to email and LINE within 24 hours.</span></p>
+          <ul class="quick-tips">
+            <li>
+              <span class="qti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" stroke-linejoin="round" />
+                </svg></span>
+              <span><span data-jp>急ぎのご相談は、WhatsAppやLINEが早いです。</span><span data-en>For anything urgent, WhatsApp or
+                  LINE gets the fastest reply.</span></span>
+            </li>
+            <li>
+              <span class="qti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M12 7v5l3 3" stroke-linecap="round" stroke-linejoin="round" />
+                </svg></span>
+              <span><span data-jp>サウジアラビアを拠点にしているため時差（約4〜6時間）はありますが、メールやLINEには基本的に24時間以内にご返信します。</span><span
+                  data-en>There's roughly a 4–6 hour time difference since I'm based in Saudi Arabia, but I reply to
+                  email and LINE within 24 hours.</span></span>
+            </li>
+          </ul>
           <div class="cmethods">
             <a class="cm" href="mailto:info@hexapoint-jp.com">
               <span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -4979,7 +5035,7 @@
                     past work &amp; reviews</span></span></span>
             </a>
           </div>
-          <div class="line-badge" style="margin-top:14px">
+          <div class="line-badge" style="margin-top:24px">
             <a href="https://lin.ee/7sWjUV4" target="_blank" rel="noopener"><img
                 src="https://scdn.line-apps.com/n/line_add_friends/btn/ja.png" alt="友だち追加" height="36"
                 border="0"></a>
