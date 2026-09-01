@@ -1,7 +1,7 @@
 // POST /api/bank-order
 // Called by the frontend order modal when the Client chooses "Bank Transfer"
 // instead of Stripe. No money moves here — this just records the intent to
-// pay by bank transfer and notifies the owner, using the same PLANS table
+// pay by bank transfer and notifies the owner, using the same plan catalog
 // (and therefore the same trusted, server-side prices) as the Stripe flow.
 //
 // The order is logged to the same D1 `orders` table as Stripe orders via
@@ -9,7 +9,7 @@
 // awaiting bank-transfer confirmation, distinguishable from completed Stripe
 // payments (status "paid") in the same table.
 
-import { PLANS, jsonResponse } from "../_shared/plans.js";
+import { getPlan, jsonResponse } from "../_shared/plans.js";
 import { verifyTurnstile } from "../_shared/turnstile.js";
 import { sendBankOrderNotification } from "../_shared/email.js";
 import { insertOrder } from "../_shared/db.js";
@@ -21,7 +21,7 @@ export async function onRequestPost({ request, env }) {
     const buyerRaw = body.buyer || {};
     const turnstileToken = (body.turnstileToken || "").toString();
 
-    const plan = PLANS[planId];
+    const plan = await getPlan(env, planId);
     if (!plan) return jsonResponse({ ok: false, error: "invalid_plan" }, 400);
 
     const buyer = {

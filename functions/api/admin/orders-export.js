@@ -68,6 +68,8 @@ export async function onRequestGet({ request, env }) {
       search: url.searchParams.get("search") || undefined,
       dateFrom: url.searchParams.get("dateFrom") || undefined,
       dateTo: url.searchParams.get("dateTo") || undefined,
+      planId: url.searchParams.get("planId") || undefined,
+      paymentMethod: url.searchParams.get("paymentMethod") || undefined,
       sort: url.searchParams.get("sort") || undefined,
       dir: url.searchParams.get("dir") || undefined,
     });

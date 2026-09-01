@@ -787,6 +787,8 @@
     <button type="button" id="tab-btn-renewals" onclick="switchTab('renewals')">更新 <span class="mono" style="font-size:10px;opacity:.7">Renewals</span></button>
     <button type="button" id="tab-btn-finance" onclick="switchTab('finance')">会計 <span class="mono" style="font-size:10px;opacity:.7">Accounts</span></button>
     <button type="button" id="tab-btn-history" onclick="switchTab('history')">履歴 <span class="mono" style="font-size:10px;opacity:.7">History</span></button>
+    <button type="button" id="tab-btn-customers" onclick="switchTab('customers')">顧客 <span class="mono" style="font-size:10px;opacity:.7">Customers</span></button>
+    <button type="button" id="tab-btn-plans" onclick="switchTab('plans')">プラン <span class="mono" style="font-size:10px;opacity:.7">Plans</span></button>
   </div>
 
 <div id="view-orders" class="tab-view active">
@@ -835,6 +837,15 @@
     <input type="search" id="filter-search" placeholder="名前・メール・注文IDで検索…" oninput="onSearchInput()">
     <input type="date" id="filter-date-from" onchange="onFilterChange()" title="開始日">
     <input type="date" id="filter-date-to" onchange="onFilterChange()" title="終了日">
+    <select id="filter-plan" onchange="onFilterChange()">
+      <option value="">すべてのプラン</option>
+    </select>
+    <select id="filter-payment-method" onchange="onFilterChange()">
+      <option value="">すべての支払方法</option>
+      <option value="stripe">Stripe</option>
+      <option value="bank">銀行振込</option>
+      <option value="manual">手動登録</option>
+    </select>
     <button type="button" class="btn btn-ghost" onclick="exportCsv()">CSVエクスポート</button>
   </div>
 
@@ -975,7 +986,10 @@
 
 <div id="view-history" class="tab-view">
   <div class="fin-card">
-    <h3>管理操作履歴 <span class="mono" style="font-size:11px;opacity:.5">Admin Action History</span></h3>
+    <h3>
+      <span>管理操作履歴 <span class="mono" style="font-size:11px;opacity:.5">Admin Action History</span></span>
+      <button type="button" class="btn btn-danger" style="font-size:11px;padding:6px 14px;" onclick="clearHistory()">全履歴を削除 / Clear all</button>
+    </h3>
     <div id="history-list"><div class="loading-state">読み込み中…</div></div>
     <div class="pagination">
       <button type="button" class="btn btn-ghost" id="history-prev" onclick="changeHistoryPage(-1)">← 前へ</button>
@@ -984,6 +998,72 @@
     </div>
   </div>
 </div><!-- /#view-history -->
+
+<div id="view-customers" class="tab-view">
+  <div class="toolbar">
+    <input type="search" id="customer-search" placeholder="名前・メールで検索…" oninput="onCustomerSearchInput()">
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>お客様名</th>
+          <th>メール</th>
+          <th>電話番号</th>
+          <th>注文数</th>
+          <th>支払済合計</th>
+          <th>最終注文日</th>
+        </tr>
+      </thead>
+      <tbody id="customers-tbody">
+        <tr><td colspan="6" class="loading-state">読み込み中…</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="pagination">
+    <button type="button" class="btn btn-ghost" id="customers-prev" onclick="changeCustomersPage(-1)">← 前へ</button>
+    <span id="customers-page-indicator" class="mono"></span>
+    <button type="button" class="btn btn-ghost" id="customers-next" onclick="changeCustomersPage(1)">次へ →</button>
+  </div>
+</div><!-- /#view-customers -->
+
+<div id="view-plans" class="tab-view">
+  <div class="fin-card" style="margin-bottom:16px;">
+    <h3>プラン一覧 <span class="mono" style="font-size:11px;opacity:.5">Plans</span></h3>
+    <div class="fee-hint" style="margin-bottom:14px;">ここで編集した名前・価格は、次回のチェックアウトから即座に反映されます。プランID（annual等）は変更できません — 更新管理タブの判定に使われているためです。<br>
+      <span style="opacity:.75">Edits here take effect on the very next checkout. Plan IDs (e.g. "annual") can't be changed — the Renewals tab depends on them.</span></div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>プラン名 (JA)</th>
+            <th>プラン名 (EN)</th>
+            <th>価格 (¥)</th>
+            <th>有効</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="plans-tbody">
+          <tr><td colspan="6" class="loading-state">読み込み中…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="fin-card">
+    <h3>新規プランを追加 <span class="mono" style="font-size:11px;opacity:.5">Add Plan</span></h3>
+    <div class="modal-error" id="add-plan-error"></div>
+    <div class="field-row">
+      <div class="field"><label>プランID <span class="mono">*</span></label><input type="text" id="add-plan-id-field" placeholder="例: rush"></div>
+      <div class="field"><label>価格 (¥) <span class="mono">*</span></label><input type="number" id="add-plan-price"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>プラン名 (JA) <span class="mono">*</span></label><input type="text" id="add-plan-name-ja-field"></div>
+      <div class="field"><label>プラン名 (EN) <span class="mono">*</span></label><input type="text" id="add-plan-name-en-field"></div>
+    </div>
+    <button type="button" class="btn" onclick="submitAddPlan()">追加する</button>
+  </div>
+</div><!-- /#view-plans -->
 
 </main>
 
@@ -1010,6 +1090,14 @@
         <option value="refunded">返金済 (Refunded)</option>
         <option value="cancelled">キャンセル (Cancelled)</option>
       </select>
+    </div>
+    <div class="field">
+      <label>変更理由（返金・キャンセル時）/ Reason (for refund/cancel)</label>
+      <textarea id="edit-status-reason"></textarea>
+    </div>
+    <div class="field" style="display:flex;align-items:center;gap:8px;">
+      <input type="checkbox" id="edit-notify-customer" style="width:auto;">
+      <label style="margin:0;" for="edit-notify-customer">顧客にメールで通知する / Email the customer about this change</label>
     </div>
 
     <div class="field-row">
@@ -1142,12 +1230,22 @@
     </div>
   </div>
 </div>
+<!-- ===== Customer detail modal ===== -->
+<div class="overlay" id="customer-overlay">
+  <div class="modal">
+    <button type="button" class="close" onclick="closeCustomerModal()">✕</button>
+    <h2 id="customer-modal-name"></h2>
+    <div class="sub mono" id="customer-modal-email"></div>
+    <div id="customer-modal-orders"><div class="loading-state">読み込み中…</div></div>
+  </div>
+</div>
+
 <div id="toast-stack" aria-live="polite"></div>
 </div><!-- /#dashboard-screen -->
 
 <script>
 (function () {
-  var state = { status: '', search: '', dateFrom: '', dateTo: '', sort: 'created_at', dir: 'desc', page: 1, limit: 25 };
+  var state = { status: '', search: '', dateFrom: '', dateTo: '', planId: '', paymentMethod: '', sort: 'created_at', dir: 'desc', page: 1, limit: 25 };
   var currentOrders = [];
   var currentOrderId = null;
   var currentNotes = [];
@@ -1173,29 +1271,51 @@
   var TAX_RATE = 0.10;
 
   // Whether to show the consumption-tax breakdown at all (Finance tab card +
-  // the 4th tile in the Orders tab summary strip). Saved per-browser, same
-  // pattern as the Stripe fee %.
-  var TAX_SHOW_KEY = 'hp_admin_tax_breakdown_shown';
-  function isTaxBreakdownEnabled() {
-    var raw = null;
-    try { raw = localStorage.getItem(TAX_SHOW_KEY); } catch (e) { /* private mode etc. */ }
-    return raw === null ? true : raw === '1'; // defaults on — matches the behavior before this toggle existed
-  }
-  function setTaxBreakdownEnabled(on) {
-    try { localStorage.setItem(TAX_SHOW_KEY, on ? '1' : '0'); } catch (e) { /* ignore */ }
+  // the 4th tile in the Orders tab summary strip), and the Stripe fee %
+  // estimate — both server-backed via /api/admin/settings (migrations/
+  // 0005_admin_settings.sql) so they persist per-account instead of
+  // per-browser. Cached here in memory, populated by fetchSettings() on
+  // dashboard init (see showDashboard()).
+  var cachedTaxShown = true;
+  var cachedFeePct = 3.6;
+
+  function isTaxBreakdownEnabled() { return cachedTaxShown; }
+  function getFeePct() { return cachedFeePct; }
+
+  function fetchSettings() {
+    fetch('/api/admin/settings')
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (!data.ok) return;
+        cachedFeePct = data.feePct;
+        cachedTaxShown = data.taxBreakdownShown;
+        applyTaxVisibility();
+        if (lastSummaryByMethod.length) renderFeeSummary(lastSummaryByMethod);
+        if (lastFinanceData) renderFinance(lastFinanceData);
+      })
+      .catch(function (err) { console.error('fetchSettings error:', err); });
   }
 
   window.onTaxToggleChange = function () {
     var on = document.getElementById('tax-toggle-input').checked;
-    setTaxBreakdownEnabled(on);
-    applyTaxVisibility();
-    // Turning it back on: the math was skipped entirely while off, so the
-    // tiles would otherwise still show stale "—" placeholders until the next
-    // full data refresh — recompute immediately from whatever's cached.
-    if (on) {
-      if (lastSummaryByMethod.length) renderFeeSummary(lastSummaryByMethod);
-      if (lastFinanceData) renderTaxBreakdown(lastFinanceData.byMethod.reduce(function (s, r) { return s + r.total; }, 0));
-    }
+    fetch('/api/admin/settings', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ taxBreakdownShown: on })
+    })
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (data.ok) cachedTaxShown = data.taxBreakdownShown;
+        applyTaxVisibility();
+        // Turning it back on: the math was skipped entirely while off, so the
+        // tiles would otherwise still show stale "—" placeholders until the next
+        // full data refresh — recompute immediately from whatever's cached.
+        if (on) {
+          if (lastSummaryByMethod.length) renderFeeSummary(lastSummaryByMethod);
+          if (lastFinanceData) renderTaxBreakdown(lastFinanceData.byMethod.reduce(function (s, r) { return s + r.total; }, 0));
+        }
+      })
+      .catch(function (err) { console.error('onTaxToggleChange error:', err); });
   };
 
   function applyTaxVisibility() {
@@ -1203,20 +1323,6 @@
     document.getElementById('tax-toggle-input').checked = on;
     document.getElementById('tax-breakdown-body').style.display = on ? '' : 'none';
     document.getElementById('fee-summary-strip').classList.toggle('tax-hidden', !on);
-  }
-
-  // ---- Stripe fee % (estimate only — never sent to the server, purely a
-  // client-side "what-if" the owner types in themselves and adjusts as their
-  // actual negotiated Stripe rate changes) ----
-  var FEE_PCT_KEY = 'hp_admin_stripe_fee_pct';
-  function getFeePct() {
-    var raw = null;
-    try { raw = localStorage.getItem(FEE_PCT_KEY); } catch (e) { /* private mode etc. */ }
-    var n = parseFloat(raw);
-    return Number.isFinite(n) && n >= 0 ? n : 3.6;
-  }
-  function setFeePct(n) {
-    try { localStorage.setItem(FEE_PCT_KEY, String(n)); } catch (e) { /* ignore */ }
   }
   // "stripe" orders carry the fee; bank/manual/anything else don't, since
   // they never pass through Stripe at all.
@@ -1274,6 +1380,8 @@
     state.status = document.getElementById('filter-status').value;
     state.dateFrom = document.getElementById('filter-date-from').value;
     state.dateTo = document.getElementById('filter-date-to').value;
+    state.planId = document.getElementById('filter-plan').value;
+    state.paymentMethod = document.getElementById('filter-payment-method').value;
     state.page = 1;
     fetchOrders();
   };
@@ -1328,6 +1436,8 @@
     if (state.search) params.set('search', state.search);
     if (state.dateFrom) params.set('dateFrom', state.dateFrom);
     if (state.dateTo) params.set('dateTo', state.dateTo);
+    if (state.planId) params.set('planId', state.planId);
+    if (state.paymentMethod) params.set('paymentMethod', state.paymentMethod);
     params.set('sort', state.sort);
     params.set('dir', state.dir);
     params.set('page', state.page);
@@ -1396,7 +1506,8 @@
   function isAnyModalOpen() {
     var d = document.getElementById('detail-overlay');
     var a = document.getElementById('add-overlay');
-    return (d && d.classList.contains('show')) || (a && a.classList.contains('show'));
+    var c = document.getElementById('customer-overlay');
+    return (d && d.classList.contains('show')) || (a && a.classList.contains('show')) || (c && c.classList.contains('show'));
   }
 
   function pollForUpdates() {
@@ -1644,7 +1755,7 @@
   }
 
   // ---- Tabs ----
-  var TAB_NAMES = ['orders', 'renewals', 'finance', 'history'];
+  var TAB_NAMES = ['orders', 'renewals', 'finance', 'history', 'customers', 'plans'];
   window.switchTab = function (name) {
     TAB_NAMES.forEach(function (t) {
       document.getElementById('view-' + t).classList.toggle('active', t === name);
@@ -1653,18 +1764,30 @@
     if (name === 'finance') fetchFinance();
     if (name === 'renewals') fetchRenewals();
     if (name === 'history') fetchHistory();
+    if (name === 'customers') fetchCustomers();
+    if (name === 'plans') fetchPlansTab();
   };
 
   window.saveFeePct = function () {
     var n = parseFloat(document.getElementById('fee-pct-input').value);
     if (!Number.isFinite(n) || n < 0) return;
-    setFeePct(n);
-    var note = document.getElementById('fee-saved-note');
-    note.classList.add('show');
-    setTimeout(function () { note.classList.remove('show'); }, 2000);
-    // Both tabs read the same rate — refresh whichever data is already loaded.
-    fetchFinance();
-    renderFeeSummary(lastSummaryByMethod);
+    fetch('/api/admin/settings', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ feePct: n })
+    })
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (!data.ok) return;
+        cachedFeePct = data.feePct;
+        var note = document.getElementById('fee-saved-note');
+        note.classList.add('show');
+        setTimeout(function () { note.classList.remove('show'); }, 2000);
+        // Both tabs read the same rate — refresh whichever data is already loaded.
+        fetchFinance();
+        renderFeeSummary(lastSummaryByMethod);
+      })
+      .catch(function (err) { console.error('saveFeePct error:', err); });
   };
 
   // ---- Finance / Accounts tab ----
@@ -1921,6 +2044,9 @@
     order_created: '注文作成', order_updated: '注文更新', order_deleted: '注文削除',
     zoho_retry: 'Zoho再試行', note_added: 'メモ追加',
     stripe_refund_synced: 'Stripe返金を同期',
+    admin_login: 'ログイン成功', admin_login_failed: 'ログイン失敗', admin_logout: 'ログアウト',
+    audit_log_cleared: '履歴を全削除',
+    plan_created: 'プラン作成', plan_updated: 'プラン更新',
   };
 
   function renderHistory(logs) {
@@ -1961,14 +2087,233 @@
     fetchHistory();
   };
 
+  window.clearHistory = function () {
+    if (!confirm('操作履歴をすべて削除しますか？この操作は取り消せません。\n\nDelete all admin action history? This cannot be undone.')) return;
+    fetch('/api/admin/audit-log', { method: 'DELETE' })
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (result) {
+        if (!result.ok || !result.data.ok) {
+          throw new Error((result.data && result.data.error) || 'request_failed');
+        }
+        historyState.page = 1;
+        fetchHistory();
+      })
+      .catch(function (err) {
+        console.error('clearHistory error:', err);
+        showError('履歴の削除に失敗しました: ' + err.message);
+      });
+  };
+
+  // ---- Customers tab (aggregated view, grouped by buyer_email) ----
+  var customersState = { page: 1, limit: 25, search: '' };
+  var customerSearchDebounce = null;
+
+  function renderCustomersTable(customers) {
+    var tbody = document.getElementById('customers-tbody');
+    if (!customers.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="empty-state">顧客がいません</td></tr>';
+      return;
+    }
+    tbody.innerHTML = customers.map(function (c) {
+      var emailAttr = esc(c.buyer_email).replace(/'/g, "\\'");
+      return '<tr onclick="openCustomerModal(\'' + emailAttr + '\')" style="cursor:pointer;">' +
+        '<td data-label="お客様名">' + esc(c.buyer_name) + '</td>' +
+        '<td data-label="メール">' + esc(c.buyer_email) + '</td>' +
+        '<td data-label="電話番号">' + esc(c.buyer_phone) + '</td>' +
+        '<td class="mono" data-label="注文数">' + c.order_count + '</td>' +
+        '<td class="mono" data-label="支払済合計">' + fmtYen(c.total_paid) + '</td>' +
+        '<td class="mono" data-label="最終注文日">' + esc(fmtDate(c.last_order_at)) + '</td>' +
+      '</tr>';
+    }).join('');
+  }
+
+  function fetchCustomers() {
+    document.getElementById('customers-tbody').innerHTML = '<tr><td colspan="6" class="loading-state">読み込み中…</td></tr>';
+    var params = new URLSearchParams();
+    if (customersState.search) params.set('search', customersState.search);
+    params.set('page', customersState.page);
+    params.set('limit', customersState.limit);
+    fetch('/api/admin/customers?' + params.toString())
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (result) {
+        if (!result.ok || !result.data.ok) throw new Error((result.data && result.data.error) || 'request_failed');
+        renderCustomersTable(result.data.customers);
+        var totalPages = Math.max(1, Math.ceil(result.data.total / result.data.limit));
+        document.getElementById('customers-page-indicator').textContent = result.data.page + ' / ' + totalPages + '（全 ' + result.data.total + ' 件）';
+        document.getElementById('customers-prev').disabled = result.data.page <= 1;
+        document.getElementById('customers-next').disabled = result.data.page >= totalPages;
+      })
+      .catch(function (err) {
+        console.error('fetchCustomers error:', err);
+        document.getElementById('customers-tbody').innerHTML = '<tr><td colspan="6" class="empty-state">読み込みエラー</td></tr>';
+      });
+  }
+
+  window.onCustomerSearchInput = function () {
+    clearTimeout(customerSearchDebounce);
+    customerSearchDebounce = setTimeout(function () {
+      customersState.search = document.getElementById('customer-search').value.trim();
+      customersState.page = 1;
+      fetchCustomers();
+    }, 350);
+  };
+
+  window.changeCustomersPage = function (delta) {
+    customersState.page = Math.max(1, customersState.page + delta);
+    fetchCustomers();
+  };
+
+  window.openCustomerModal = function (email) {
+    document.getElementById('customer-modal-name').textContent = '顧客詳細';
+    document.getElementById('customer-modal-email').textContent = email;
+    document.getElementById('customer-modal-orders').innerHTML = '<div class="loading-state">読み込み中…</div>';
+    document.getElementById('customer-overlay').classList.add('show');
+
+    fetch('/api/admin/customers/' + encodeURIComponent(email))
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (!data.ok) throw new Error(data.error || 'request_failed');
+        if (data.orders.length) {
+          document.getElementById('customer-modal-name').textContent = data.orders[0].buyer_name;
+        }
+        var el = document.getElementById('customer-modal-orders');
+        if (!data.orders.length) {
+          el.innerHTML = '<div class="empty-state">注文がありません</div>';
+          return;
+        }
+        el.innerHTML = data.orders.map(function (o) {
+          return '<div class="renewal-list-item" style="cursor:pointer;" onclick="closeCustomerModal();openDetailModal(' + o.id + ')">' +
+            '<div class="r-main">' +
+              '<div class="r-name">' + esc(o.plan_name_ja) + '</div>' +
+              '<div class="r-sub">' + esc(o.order_id) + ' · ' + fmtYen(o.amount) + ' · ' + esc(fmtDate(o.created_at)) + '</div>' +
+            '</div>' +
+            badgeHtml(o.status) +
+          '</div>';
+        }).join('');
+      })
+      .catch(function (err) {
+        console.error('openCustomerModal error:', err);
+        document.getElementById('customer-modal-orders').innerHTML = '<div class="empty-state">読み込みエラー</div>';
+      });
+  };
+
+  window.closeCustomerModal = function () {
+    document.getElementById('customer-overlay').classList.remove('show');
+  };
+
+  document.getElementById('customer-overlay').addEventListener('click', function (e) {
+    if (e.target === this) closeCustomerModal();
+  });
+
+  // ---- Plans tab ----
+  function renderPlansTab(plans) {
+    var tbody = document.getElementById('plans-tbody');
+    if (!plans.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="empty-state">プランがありません</td></tr>';
+      return;
+    }
+    tbody.innerHTML = plans.map(function (p) {
+      var inputStyle = 'width:100%;min-width:120px;border:1.5px solid var(--line-strong);border-radius:8px;padding:6px 8px;font-family:inherit;background:var(--cream);color:var(--ink);';
+      return '<tr' + (p.active ? '' : ' style="opacity:.5;"') + '>' +
+        '<td class="mono" data-label="ID">' + esc(p.id) + '</td>' +
+        '<td data-label="プラン名 (JA)"><input type="text" id="plan-name-ja-' + esc(p.id) + '" value="' + esc(p.name_ja) + '" style="' + inputStyle + '"></td>' +
+        '<td data-label="プラン名 (EN)"><input type="text" id="plan-name-en-' + esc(p.id) + '" value="' + esc(p.name_en) + '" style="' + inputStyle + '"></td>' +
+        '<td data-label="価格 (¥)"><input type="number" id="plan-price-' + esc(p.id) + '" value="' + p.price_jpy + '" style="' + inputStyle + '"></td>' +
+        '<td data-label="有効"><input type="checkbox" id="plan-active-' + esc(p.id) + '"' + (p.active ? ' checked' : '') + '></td>' +
+        '<td data-label="操作"><button type="button" class="btn btn-ghost" style="font-size:12px;padding:6px 12px;" onclick="savePlanRow(\'' + esc(p.id) + '\')">保存</button></td>' +
+      '</tr>';
+    }).join('');
+  }
+
+  // Populates the Orders toolbar's plan filter <select> from the live plan
+  // catalog (active plans only), so it reflects any custom plans an admin adds
+  // instead of hardcoding basic/maintenance/annual.
+  function populatePlanFilterOptions(plans) {
+    var sel = document.getElementById('filter-plan');
+    var current = sel.value;
+    var options = '<option value="">すべてのプラン</option>';
+    plans.filter(function (p) { return p.active; }).forEach(function (p) {
+      options += '<option value="' + esc(p.id) + '">' + esc(p.name_ja) + '</option>';
+    });
+    sel.innerHTML = options;
+    sel.value = current;
+  }
+
+  function fetchPlansTab() {
+    document.getElementById('plans-tbody').innerHTML = '<tr><td colspan="6" class="loading-state">読み込み中…</td></tr>';
+    fetch('/api/admin/plans')
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (result) {
+        if (!result.ok || !result.data.ok) throw new Error((result.data && result.data.error) || 'request_failed');
+        renderPlansTab(result.data.plans);
+        populatePlanFilterOptions(result.data.plans);
+      })
+      .catch(function (err) {
+        console.error('fetchPlansTab error:', err);
+        document.getElementById('plans-tbody').innerHTML = '<tr><td colspan="6" class="empty-state">読み込みエラー</td></tr>';
+      });
+  }
+
+  window.savePlanRow = function (id) {
+    var nameJa = document.getElementById('plan-name-ja-' + id).value.trim();
+    var nameEn = document.getElementById('plan-name-en-' + id).value.trim();
+    var priceJPY = Number(document.getElementById('plan-price-' + id).value);
+    var active = document.getElementById('plan-active-' + id).checked;
+
+    fetch('/api/admin/plans/' + encodeURIComponent(id), {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nameJa: nameJa, nameEn: nameEn, priceJPY: priceJPY, active: active })
+    })
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (result) {
+        if (!result.ok || !result.data.ok) throw new Error((result.data && result.data.error) || 'request_failed');
+        showToast('✓ プランを保存しました: ' + id);
+        fetchPlansTab();
+      })
+      .catch(function (err) {
+        console.error('savePlanRow error:', err);
+        showError('プランの保存に失敗しました: ' + err.message);
+      });
+  };
+
+  window.submitAddPlan = function () {
+    var errEl = document.getElementById('add-plan-error');
+    errEl.classList.remove('show');
+    var payload = {
+      id: document.getElementById('add-plan-id-field').value.trim(),
+      nameJa: document.getElementById('add-plan-name-ja-field').value.trim(),
+      nameEn: document.getElementById('add-plan-name-en-field').value.trim(),
+      priceJPY: Number(document.getElementById('add-plan-price').value),
+    };
+    fetch('/api/admin/plans', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (result) {
+        if (!result.ok || !result.data.ok) throw new Error((result.data && result.data.error) || 'request_failed');
+        ['add-plan-id-field', 'add-plan-name-ja-field', 'add-plan-name-en-field', 'add-plan-price'].forEach(function (id) {
+          document.getElementById(id).value = '';
+        });
+        fetchPlansTab();
+      })
+      .catch(function (err) {
+        console.error('submitAddPlan error:', err);
+        errEl.textContent = '追加に失敗しました: ' + err.message;
+        errEl.classList.add('show');
+      });
+  };
+
   // ---- Detail / edit modal ----
-  window.openDetailModal = function (id) {
-    var order = currentOrders.find(function (o) { return o.id === id; });
-    if (!order) return;
-    currentOrderId = id;
+  function renderDetailModal(order) {
+    currentOrderId = order.id;
 
     document.getElementById('detail-order-id').textContent = order.order_id;
     document.getElementById('edit-status').value = order.status;
+    document.getElementById('edit-status-reason').value = order.status_reason || '';
+    document.getElementById('edit-notify-customer').checked = false;
     document.getElementById('edit-plan-id').value = order.plan_id;
     document.getElementById('edit-amount').value = order.amount;
     document.getElementById('edit-plan-name-ja').value = order.plan_name_ja;
@@ -1986,7 +2331,7 @@
       legacyEl.style.display = 'none';
     }
     document.getElementById('new-note-text').value = '';
-    loadNotes(id);
+    loadNotes(order.id);
 
     document.getElementById('detail-payment-method').textContent = '方法: ' + order.payment_method;
     document.getElementById('detail-created-at').textContent = '作成: ' + fmtDate(order.created_at);
@@ -1996,6 +2341,27 @@
     renderZohoStatus(order);
 
     document.getElementById('detail-overlay').classList.add('show');
+  }
+
+  // `id` is usually present in the current Orders-tab page (currentOrders),
+  // but the Customers tab can open an order from any page/filter — in that
+  // case, fall back to fetching it directly.
+  window.openDetailModal = function (id) {
+    var order = currentOrders.find(function (o) { return o.id === id; });
+    if (order) {
+      renderDetailModal(order);
+      return;
+    }
+    fetch('/api/admin/orders/' + id)
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (!data.ok) throw new Error(data.error || 'request_failed');
+        renderDetailModal(data.order);
+      })
+      .catch(function (err) {
+        console.error('openDetailModal fetch error:', err);
+        showError('注文の取得に失敗しました: ' + err.message);
+      });
   };
 
   // ---- Zoho invoice status + manual retry ----
@@ -2122,6 +2488,8 @@
 
     var patch = {
       status: document.getElementById('edit-status').value,
+      status_reason: document.getElementById('edit-status-reason').value.trim(),
+      notifyCustomer: document.getElementById('edit-notify-customer').checked,
       plan_id: document.getElementById('edit-plan-id').value.trim(),
       amount: Number(document.getElementById('edit-amount').value),
       plan_name_ja: document.getElementById('edit-plan-name-ja').value.trim(),
@@ -2236,6 +2604,7 @@
     if (e.key === 'Escape') {
       closeDetailModal();
       closeAddModal();
+      closeCustomerModal();
     }
   });
 
@@ -2251,6 +2620,8 @@
     document.getElementById('dashboard-screen').classList.add('show');
     fetchOrders();
     fetchStats();
+    fetchSettings();
+    fetchPlansTab();
     updateNotifButton();
     applyTaxVisibility();
     startPolling();

@@ -1,14 +1,14 @@
 // POST /api/stripe-create-checkout
 // Called by the frontend order modal when the buyer picks "Pay with Stripe" after
 // filling in name / phone / email / address. Creates a real Stripe Checkout Session
-// on the server (so the price always comes from PLANS, never from the browser) and
+// on the server (so the price always comes from getPlan(), never from the browser) and
 // stashes the buyer's info in KV, keyed by a random order key, so it can be recovered
 // later in stripe-confirm-order.js / stripe-webhook.js to send the confirmation email.
 //
 // Uses Stripe's hosted Checkout page (redirect), not Stripe.js/Elements — the
 // frontend just redirects the browser to the returned `url`.
 
-import { PLANS, jsonResponse } from "../_shared/plans.js";
+import { getPlan, jsonResponse } from "../_shared/plans.js";
 import { verifyTurnstile } from "../_shared/turnstile.js";
 import { stripeApiBase, stripeAuthHeader, toStripeForm } from "../_shared/stripe.js";
 
@@ -19,7 +19,7 @@ export async function onRequestPost({ request, env }) {
     const buyerRaw = body.buyer || {};
     const turnstileToken = (body.turnstileToken || "").toString();
 
-    const plan = PLANS[planId];
+    const plan = await getPlan(env, planId);
     if (!plan) return jsonResponse({ ok: false, error: "invalid_plan" }, 400);
 
     const buyer = {

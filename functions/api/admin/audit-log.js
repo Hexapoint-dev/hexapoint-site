@@ -6,7 +6,7 @@
 // Protected by the admin panel's password login — same requireAdmin() pattern
 // as every other admin handler.
 
-import { listAuditLog, jsonResponse } from "../../_shared/db.js";
+import { listAuditLog, clearAuditLog, logAdminAction, jsonResponse } from "../../_shared/db.js";
 import { requireAdmin } from "../../_shared/admin-auth.js";
 
 export async function onRequestGet({ request, env }) {
@@ -25,6 +25,26 @@ export async function onRequestGet({ request, env }) {
     return jsonResponse({ ok: true, ...result });
   } catch (err) {
     console.error("admin audit-log error:", err);
+    return jsonResponse({ ok: false, error: "server_error" }, 500);
+  }
+}
+
+// Wipes the entire admin audit log (History tab "clear all history" button).
+// Immediately writes one fresh entry recording the clear itself, so the log
+// never ends up with zero accountability trail for a destructive action.
+export async function onRequestDelete({ request, env }) {
+  try {
+    const auth = await requireAdmin(request, env);
+    if (!auth.ok) return jsonResponse({ ok: false, error: auth.error }, auth.status);
+
+    if (!env.DB) return jsonResponse({ ok: false, error: "db_not_configured" }, 500);
+
+    await clearAuditLog(env);
+    await logAdminAction(env, "audit_log_cleared", null, "");
+
+    return jsonResponse({ ok: true });
+  } catch (err) {
+    console.error("admin audit-log clear error:", err);
     return jsonResponse({ ok: false, error: "server_error" }, 500);
   }
 }

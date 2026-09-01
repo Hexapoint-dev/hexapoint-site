@@ -5,7 +5,7 @@
 // attempts per IP via the existing ORDERS_KV binding, and on success issues a
 // signed, HttpOnly session cookie.
 
-import { jsonResponse } from "../../_shared/db.js";
+import { jsonResponse, logAdminAction } from "../../_shared/db.js";
 import { verifyTurnstile } from "../../_shared/turnstile.js";
 import { timingSafeEqual, signSession, buildSessionCookieHeader, SESSION_TTL_SECONDS } from "../../_shared/admin-auth.js";
 
@@ -46,12 +46,15 @@ export async function onRequestPost({ request, env }) {
         const failCount = parseInt(failCountRaw, 10) || 0;
         await env.ORDERS_KV.put(failKey, String(failCount + 1), { expirationTtl: FAIL_WINDOW_SECONDS });
       }
+      await logAdminAction(env, "admin_login_failed", null, `ip: ${ip}`);
       return jsonResponse({ ok: false, error: "invalid_password" }, 401);
     }
 
     if (env.ORDERS_KV) {
       await env.ORDERS_KV.delete(failKey);
     }
+
+    await logAdminAction(env, "admin_login", null, `ip: ${ip}`);
 
     const expiresAtMs = Date.now() + SESSION_TTL_SECONDS * 1000;
     const token = await signSession(env, expiresAtMs);

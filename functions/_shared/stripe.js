@@ -3,9 +3,9 @@
 // a Stripe-hosted payment page and back, so no Stripe.js/Elements script is loaded
 // on our page at all (no CSP changes needed for this).
 //
-// Reuses the PLANS table from _shared/plans.js rather than duplicating it.
+// Reuses getPlan() from _shared/plans.js rather than duplicating the plan catalog.
 
-import { PLANS } from "./plans.js";
+import { getPlan } from "./plans.js";
 
 export function stripeApiBase() {
   return "https://api.stripe.com/v1";
@@ -107,7 +107,7 @@ export async function confirmStripeSession(env, session) {
   if (!raw) return { ok: false, error: "unknown_order" };
 
   const parsed = JSON.parse(raw);
-  const plan = PLANS[parsed.planId];
+  const plan = await getPlan(env, parsed.planId);
   if (!plan) return { ok: false, error: "unknown_plan" };
   const buyer = { name: parsed.name, phone: parsed.phone, email: parsed.email, address: parsed.address };
 
@@ -274,7 +274,7 @@ export async function handleAsyncPaymentFailed(env, session) {
     const raw = await env.ORDERS_KV.get(`buyer:${orderKey}`);
     if (!raw) return;
     const parsed = JSON.parse(raw);
-    const plan = PLANS[parsed.planId];
+    const plan = await getPlan(env, parsed.planId);
 
     const { sendOwnerAlert } = await import("./email.js");
     await sendOwnerAlert(env, {
@@ -305,7 +305,7 @@ export async function handlePaymentIntentFailed(env, paymentIntent) {
     const raw = await env.ORDERS_KV.get(`buyer:${orderKey}`);
     if (!raw) return;
     const parsed = JSON.parse(raw);
-    const plan = PLANS[parsed.planId];
+    const plan = await getPlan(env, parsed.planId);
     const reason = (paymentIntent.last_payment_error && paymentIntent.last_payment_error.message) || "unknown";
 
     const { sendOwnerAlert } = await import("./email.js");

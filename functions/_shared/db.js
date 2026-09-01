@@ -69,12 +69,20 @@ export async function createOrder(env, data) {
 
 // Shared WHERE-clause builder for the orders list/export/stats-adjacent queries.
 // Never string-concatenates values — always returns `?` placeholders + a params array.
-function buildOrderFilters({ status, search, dateFrom, dateTo }) {
+function buildOrderFilters({ status, search, dateFrom, dateTo, planId, paymentMethod }) {
   const where = [];
   const params = [];
   if (status) {
     where.push("status = ?");
     params.push(status);
+  }
+  if (planId) {
+    where.push("plan_id = ?");
+    params.push(planId);
+  }
+  if (paymentMethod) {
+    where.push("payment_method = ?");
+    params.push(paymentMethod);
   }
   if (search) {
     where.push("(buyer_name LIKE ? OR buyer_email LIKE ? OR order_id LIKE ?)");
@@ -92,14 +100,14 @@ function buildOrderFilters({ status, search, dateFrom, dateTo }) {
   return { whereSql: where.length ? `WHERE ${where.join(" AND ")}` : "", params };
 }
 
-export async function listOrders(env, { status, search, dateFrom, dateTo, sort, dir, page, limit } = {}) {
+export async function listOrders(env, { status, search, dateFrom, dateTo, planId, paymentMethod, sort, dir, page, limit } = {}) {
   const sortCol = SORT_COLUMNS.has(sort) ? sort : "created_at";
   const sortDir = String(dir).toLowerCase() === "asc" ? "ASC" : "DESC";
   const pageNum = Math.max(1, parseInt(page, 10) || 1);
   const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 25));
   const offset = (pageNum - 1) * limitNum;
 
-  const { whereSql, params } = buildOrderFilters({ status, search, dateFrom, dateTo });
+  const { whereSql, params } = buildOrderFilters({ status, search, dateFrom, dateTo, planId, paymentMethod });
 
   const listSql = `SELECT * FROM orders ${whereSql} ORDER BY ${sortCol} ${sortDir} LIMIT ? OFFSET ?`;
   const countSql = `SELECT COUNT(*) AS total FROM orders ${whereSql}`;
@@ -126,10 +134,10 @@ export async function listOrders(env, { status, search, dateFrom, dateTo, sort, 
 
 // Same filters as listOrders, but no pagination — used by the CSV export, which
 // needs every matching row, not one page of them.
-export async function listOrdersForExport(env, { status, search, dateFrom, dateTo, sort, dir } = {}) {
+export async function listOrdersForExport(env, { status, search, dateFrom, dateTo, planId, paymentMethod, sort, dir } = {}) {
   const sortCol = SORT_COLUMNS.has(sort) ? sort : "created_at";
   const sortDir = String(dir).toLowerCase() === "asc" ? "ASC" : "DESC";
-  const { whereSql, params } = buildOrderFilters({ status, search, dateFrom, dateTo });
+  const { whereSql, params } = buildOrderFilters({ status, search, dateFrom, dateTo, planId, paymentMethod });
   const sql = `SELECT * FROM orders ${whereSql} ORDER BY ${sortCol} ${sortDir}`;
   const result = await env.DB.prepare(sql).bind(...params).all();
   return result.results || [];
@@ -225,6 +233,54 @@ export async function getTopCustomers(env, limit = 5) {
   return result.results || [];
 }
 
+// ---- Aggregated customer view (admin panel "Customers" tab) ----
+// Grouped by buyer_email across ALL statuses (not just paid) — the admin
+// wants to see a customer's full order history, not only completed ones.
+export async function getCustomers(env, { search, page, limit } = {}) {
+  const pageNum = Math.max(1, parseInt(page, 10) || 1);
+  const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 25));
+  const offset = (pageNum - 1) * limitNum;
+
+  const where = [];
+  const params = [];
+  if (search) {
+    where.push("(buyer_name LIKE ? OR buyer_email LIKE ?)");
+    const like = `%${search}%`;
+    params.push(like, like);
+  }
+  const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
+
+  const listSql = `
+    SELECT buyer_email, MAX(buyer_name) AS buyer_name, MAX(buyer_phone) AS buyer_phone,
+      COUNT(*) AS order_count,
+      COALESCE(SUM(CASE WHEN status = 'paid' THEN amount ELSE 0 END), 0) AS total_paid,
+      MAX(created_at) AS last_order_at
+    FROM orders ${whereSql}
+    GROUP BY buyer_email
+    ORDER BY total_paid DESC
+    LIMIT ? OFFSET ?`;
+  const countSql = `SELECT COUNT(*) AS total FROM (SELECT 1 FROM orders ${whereSql} GROUP BY buyer_email)`;
+
+  const [listResult, countResult] = await Promise.all([
+    env.DB.prepare(listSql).bind(...params, limitNum, offset).all(),
+    env.DB.prepare(countSql).bind(...params).first(),
+  ]);
+
+  return {
+    customers: listResult.results || [],
+    total: countResult ? countResult.total : 0,
+    page: pageNum,
+    limit: limitNum,
+  };
+}
+
+export async function getCustomerOrders(env, email) {
+  const result = await env.DB.prepare("SELECT * FROM orders WHERE buyer_email = ? ORDER BY created_at DESC")
+    .bind(email)
+    .all();
+  return result.results || [];
+}
+
 // KPI tiles for the admin dashboard header. All four queries are parameterless
 // (no user input), run in parallel.
 export async function getStats(env) {
@@ -272,6 +328,7 @@ export async function getOrder(env, id) {
 
 const UPDATABLE_COLUMNS = new Set([
   "status",
+  "status_reason",
   "buyer_name",
   "buyer_phone",
   "buyer_email",
@@ -340,6 +397,23 @@ export async function updateOrderStatusByOrderId(env, orderId, status) {
   ).bind(status, orderId).run();
 }
 
+// ---- Admin settings (migrations/0005_admin_settings.sql) ----
+// Small key/value store — replaces the Stripe-fee-% and tax-breakdown-toggle
+// settings that used to live only in the admin panel's browser localStorage.
+export async function getSettings(env) {
+  const result = await env.DB.prepare("SELECT key, value FROM admin_settings").all();
+  const out = {};
+  for (const row of result.results || []) out[row.key] = row.value;
+  return out;
+}
+
+export async function setSetting(env, key, value) {
+  await env.DB.prepare(
+    `INSERT INTO admin_settings (key, value, updated_at) VALUES (?, ?, datetime('now'))
+     ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = datetime('now')`
+  ).bind(key, String(value)).run();
+}
+
 // ---- Admin audit log (migrations/0003_finance_features.sql) ----
 // Never throws — a logging failure must not block the action being logged.
 export async function logAdminAction(env, action, orderId, detail) {
@@ -373,4 +447,53 @@ export async function listAuditLog(env, { page, limit } = {}) {
     page: pageNum,
     limit: limitNum,
   };
+}
+
+export async function clearAuditLog(env) {
+  await env.DB.prepare("DELETE FROM admin_audit_log").run();
+}
+
+// ---- Plans catalog (migrations/0006_plans.sql) ----
+// Admin-editable plan list backing functions/_shared/plans.js's getPlan()/
+// listActivePlans(). listPlans() (below) returns ALL plans including
+// inactive ones, for the admin panel's Plans tab table — listActivePlans()
+// in plans.js is the public/checkout-facing subset.
+
+export async function listPlans(env) {
+  const result = await env.DB.prepare("SELECT * FROM plans ORDER BY sort_order ASC").all();
+  return result.results || [];
+}
+
+export async function getPlanRow(env, id) {
+  if (!id) return null;
+  const row = await env.DB.prepare("SELECT * FROM plans WHERE id = ?").bind(id).first();
+  return row || null;
+}
+
+export async function createPlan(env, { id, nameJa, nameEn, priceJPY, sortOrder }) {
+  await env.DB.prepare(
+    `INSERT INTO plans (id, name_ja, name_en, price_jpy, sort_order) VALUES (?, ?, ?, ?, ?)`
+  ).bind(id, nameJa, nameEn, priceJPY, sortOrder || 0).run();
+  return getPlanRow(env, id);
+}
+
+const PLAN_UPDATABLE_COLUMNS = new Set(["name_ja", "name_en", "price_jpy", "active", "sort_order"]);
+
+export async function updatePlan(env, id, patch) {
+  const existing = await getPlanRow(env, id);
+  if (!existing) return null;
+
+  const setClauses = ["updated_at = datetime('now')"];
+  const params = [];
+  for (const key of Object.keys(patch || {})) {
+    if (!PLAN_UPDATABLE_COLUMNS.has(key)) continue;
+    setClauses.push(`${key} = ?`);
+    params.push(patch[key]);
+  }
+
+  if (setClauses.length === 1) return existing;
+
+  params.push(id);
+  await env.DB.prepare(`UPDATE plans SET ${setClauses.join(", ")} WHERE id = ?`).bind(...params).run();
+  return getPlanRow(env, id);
 }

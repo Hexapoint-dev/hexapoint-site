@@ -446,3 +446,142 @@ export async function sendBankOrderNotification(env, { buyer, plan, orderID, amo
     return { ok: false, error: String(err) };
   }
 }
+
+// Sent to the BUYER (not the owner) when an admin manually changes an order's
+// status in the admin panel and opts in via the "notify customer" checkbox —
+// see functions/api/admin/orders/[id].js. Unlike the three functions above
+// (all owner-facing, buyer only ever cc'd via reply_to), this is the first
+// email in the codebase that puts the buyer in `to`.
+const STATUS_COPY = {
+  paid: { titleJa: "お支払いを確認しました", titleEn: "Payment Confirmed", accent: "#f5912a", accentDeep: "#e8631f" },
+  refunded: { titleJa: "返金のご連絡", titleEn: "Refund Processed", accent: "#e63548", accentDeep: "#c81f34" },
+  cancelled: { titleJa: "ご注文キャンセルのご連絡", titleEn: "Order Cancelled", accent: "#9aa0b4", accentDeep: "#6b7189" },
+};
+
+export async function sendCustomerStatusUpdate(env, { buyer, plan, orderID, amount, status }) {
+  if (!env.RESEND_API_KEY || !env.CONTACT_TO || !env.CONTACT_FROM) {
+    console.error("Resend not configured, skipping customer status update email");
+    return { ok: false, error: "not_configured" };
+  }
+  const copy = STATUS_COPY[status];
+  if (!copy) return { ok: false, error: "unsupported_status" };
+
+  const receivedAt = new Intl.DateTimeFormat("ja-JP", {
+    timeZone: "Asia/Tokyo",
+    dateStyle: "long",
+    timeStyle: "short",
+  }).format(new Date());
+
+  const INK = "#0e1633";
+  const PAPER = "#fbf9f6";
+  const LINE = "#e3e0da";
+  const SERIF = "'Hiragino Mincho ProN','Yu Mincho',Georgia,serif";
+  const SANS = "'Hiragino Kaku Gothic ProN','Yu Gothic','Helvetica Neue',Arial,sans-serif";
+
+  const row = (labelJp, labelEn, value) => `
+    <tr>
+      <td style="padding:10px 0;border-bottom:1px solid ${LINE};">
+        <div style="font-family:${SANS};font-size:11px;letter-spacing:.06em;color:${INK};opacity:.55;margin-bottom:3px;">
+          ${labelJp} / ${labelEn}
+        </div>
+        <div style="font-family:${SANS};font-size:15px;font-weight:600;color:${INK};">
+          ${esc(value)}
+        </div>
+      </td>
+    </tr>`;
+
+  const html = `<!DOCTYPE html>
+<html lang="ja">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:${PAPER};">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${PAPER};padding:32px 16px;">
+    <tr><td align="center">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0"
+        style="max-width:600px;width:100%;background:#ffffff;border-radius:18px;overflow:hidden;border:1px solid ${LINE};">
+
+        <tr><td style="height:6px;background:linear-gradient(90deg,${copy.accent},${copy.accentDeep});"></td></tr>
+
+        <tr>
+          <td style="padding:32px 36px 8px 36px;">
+            <div style="font-family:${SANS};font-size:13px;letter-spacing:.12em;color:${copy.accentDeep};font-weight:700;">
+              HEXAPOINT
+            </div>
+            <div style="font-family:${SERIF};font-size:24px;color:${INK};margin-top:6px;">
+              ${esc(copy.titleJa)}<span style="opacity:.5;font-size:16px;"> / ${esc(copy.titleEn)}</span>
+            </div>
+            <div style="font-family:${SANS};font-size:12px;color:${INK};opacity:.5;margin-top:8px;">
+              ${esc(receivedAt)}
+            </div>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:16px 36px 0 36px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+              ${row("プラン", "Plan", `${plan.nameJa} / ${plan.nameEn}`)}
+              ${row("金額", "Amount", `¥${Number(amount).toLocaleString("ja-JP")}`)}
+              ${row("注文ID", "Order ID", orderID)}
+            </table>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:24px 36px 32px 36px;">
+            <div style="font-family:${SANS};font-size:13px;line-height:1.8;color:${INK};opacity:.8;">
+              ご不明な点がございましたら、このメールにご返信ください。<br>
+              If you have any questions, just reply to this email.
+            </div>
+          </td>
+        </tr>
+
+        <tr><td style="height:1px;background:${LINE};"></td></tr>
+
+        <tr>
+          <td style="padding:18px 36px 28px 36px;">
+            <div style="font-family:${SANS};font-size:11px;color:${INK};opacity:.45;line-height:1.6;">
+              このメールは HexaPoint 管理画面からの操作により送信されました。<br>
+              This message was sent by a HexaPoint team member from the admin panel.
+            </div>
+          </td>
+        </tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+
+  const text =
+    `${copy.titleJa} / ${copy.titleEn}\n${receivedAt}\n\n` +
+    `プラン / Plan: ${plan.nameJa} / ${plan.nameEn}\n` +
+    `金額 / Amount: ¥${Number(amount).toLocaleString("ja-JP")}\n` +
+    `注文ID / Order ID: ${orderID}\n`;
+
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${env.RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: env.CONTACT_FROM,
+        to: buyer.email,
+        reply_to: env.CONTACT_TO,
+        subject: `【HexaPoint】${copy.titleJa} / ${copy.titleEn}`,
+        html,
+        text,
+      }),
+    });
+
+    if (!res.ok) {
+      const detail = await res.text();
+      console.error("Resend customer status update error:", res.status, detail);
+      return { ok: false, error: `resend_${res.status}` };
+    }
+    return { ok: true };
+  } catch (err) {
+    console.error("Customer status update email request failed:", err);
+    return { ok: false, error: String(err) };
+  }
+}

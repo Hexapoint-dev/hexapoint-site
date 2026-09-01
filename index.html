@@ -4766,7 +4766,7 @@
               data-en>FOUNDATION</span></span>
           <h3><span data-jp>基本デザインプラン</span><span data-en>Basic Design</span></h3><span class="h3en"><span
               data-jp>1ページ完結</span><span data-en>Single page</span></span>
-          <div class="price">¥100,000<small> 〜</small></div>
+          <div class="price" id="price-basic">¥100,000<small> 〜</small></div>
           <p class="line-note" style="margin:-6px 0 14px;opacity:.7"><span data-jp>まずはこのプランでサイトを制作します。運用開始後は、下記いずれかのプランで継続的にサポートできます。</span><span data-en>Start here to build your site. Once it's live, continue with either plan below for ongoing support.</span></p>
           <ul class="collapsible" id="basic-plan-list">
             <li class="plan-group"><span data-jp>ページ構成</span><span data-en>Page sections</span></li>
@@ -4828,7 +4828,7 @@
           <p class="plan-branch"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5">
               <path d="M2 1v5a3 3 0 003 3h5M7 6l3 3-3 3" />
             </svg><span data-jp>基本デザインプランへの追加</span><span data-en>Builds on the Basic Design plan</span></p>
-          <div class="price">¥50,000<small> /件</small></div>
+          <div class="price" id="price-maintenance">¥50,000<small> /件</small></div>
           <p class="line-note" style="margin:-6px 0 14px"><span data-jp>サブスクリプションではなく、都度のご購入です。サイトの安全性維持のため、半年に一度のご利用を推奨しています。</span><span data-en>Not a subscription — purchased whenever you need it. We recommend using it about every 6 months to keep your site secure and up to date.</span></p>
           <ul class="collapsible" id="maintenance-plan-list">
             <li class="plan-group"><span data-jp>コンテンツ更新</span><span data-en>Content updates</span></li>
@@ -4877,7 +4877,7 @@
           <p class="plan-branch"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5">
               <path d="M2 1v5a3 3 0 003 3h5M7 6l3 3-3 3" />
             </svg><span data-jp>基本デザインプランへの追加</span><span data-en>Builds on the Basic Design plan</span></p>
-          <div class="price">¥200,000<small> /年〜</small></div>
+          <div class="price" id="price-annual">¥200,000<small> /年〜</small></div>
           <p class="line-note" style="margin:-6px 0 14px;opacity:.85"><span data-jp>年間を通じて、更新・修正・新しいお知らせの掲載回数に制限はありません。</span><span data-en>Unlimited updates, edits, and new posts — all year round.</span></p>
           <ul class="collapsible" id="annual-plan-list">
             <li class="plan-group"><span data-jp>デザイン・ページ構成</span><span data-en>Design &amp; page structure</span></li>
@@ -6442,11 +6442,35 @@
 
   <script>
     (function () {
+      // Fallback values — used until (or unless) the /api/plans fetch below
+      // succeeds, so the page always renders correctly even offline/on error.
       var PLAN_INFO = {
         basic: { titleJp: '基本デザインプラン', titleEn: 'Basic Design', priceLabel: '¥100,000' },
         maintenance: { titleJp: 'コンテンツ変更・保守プラン', titleEn: 'Content & Maintenance', priceLabel: '¥50,000 /件' },
         annual: { titleJp: '年間無制限サブスクリプション', titleEn: 'Unlimited Annual', priceLabel: '¥200,000 /年〜' }
       };
+
+      // Best-effort sync with the admin-editable plan catalog (see
+      // functions/api/plans.js -> functions/_shared/plans.js). Updates both
+      // PLAN_INFO (used by the order modal) and the pricing cards' displayed
+      // amount, so a price change made in the admin panel's Plans tab shows
+      // up here without a code deploy. Falls back silently to the hardcoded
+      // PLAN_INFO/card text above on any failure — this is the live public
+      // checkout page and must never break on a network hiccup.
+      var PRICE_SUFFIX = { basic: ' 〜', maintenance: ' /件', annual: ' /年〜' };
+      fetch('/api/plans')
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+          if (!data.ok || !data.plans) return;
+          data.plans.forEach(function (p) {
+            if (!PLAN_INFO[p.id]) return; // only sync ids the page already knows how to display
+            var priceStr = '¥' + Number(p.priceJPY).toLocaleString('ja-JP');
+            PLAN_INFO[p.id] = { titleJp: p.nameJa, titleEn: p.nameEn, priceLabel: priceStr + (PRICE_SUFFIX[p.id] || '') };
+            var priceEl = document.getElementById('price-' + p.id);
+            if (priceEl && priceEl.firstChild) priceEl.firstChild.textContent = priceStr;
+          });
+        })
+        .catch(function (err) { console.error('plan sync fetch failed, using defaults:', err); });
 
       var currentPlan = null;
       var pendingBuyer = null;
