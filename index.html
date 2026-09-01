@@ -410,6 +410,26 @@
       text-transform: uppercase
     }
 
+    /* Katakana reading of the site name (ヘキサポイント) — shown right in the
+       header, the single most consistently visible spot on every page, so a
+       Japanese visitor unfamiliar with "HexaPoint" sees how to read/say it
+       immediately. Hidden below 480px so it doesn't crowd the header next to
+       the hamburger button on the smallest phones. */
+    .logo .kana {
+      font-family: "Zen Kaku Gothic New", sans-serif;
+      font-size: 10.5px;
+      letter-spacing: 0;
+      text-transform: none;
+      opacity: .55;
+      margin-left: 1px
+    }
+
+    @media(max-width:480px) {
+      .logo .kana {
+        display: none
+      }
+    }
+
     nav {
       display: flex;
       align-items: center;
@@ -4093,7 +4113,7 @@
     <div class="wrap bar">
       <a href="#" class="logo"><span class="mark"><img
             src="/logo.webp" fetchpriority="high"
-            alt="HexaPoint logo"></span><span class="name">HexaPoint</span></a>
+            alt="HexaPoint logo"></span><span class="name">HexaPoint<span class="kana">（ヘキサポイント）</span></span></a>
       <button class="hamburger" id="hamburger" aria-label="Menu"><span></span><span></span><span></span></button>
       <nav>
         <a class="navlink" href="#services" data-jp>サービス</a><a class="navlink" href="#services" data-en>Services</a>
@@ -7009,7 +7029,7 @@
           <div class="tag2"><i><span data-jp>EC構築</span><span data-en>Store</span></i><i><span data-jp>決済</span><span
                 data-en>Payments</span></i><i><span data-jp>執筆協力</span><span data-en>Copy (collab)</span></i>
           </div>
-          <a class="btn btn-primary wm-link" href="https://mine-shoutenp.netlify.app/" target="_blank"
+          <a class="btn btn-primary wm-link" href="https://mineshouten-togo.pages.dev/" target="_blank"
             rel="noopener"><span data-jp>サイトを見る →</span><span data-en>Visit live site →</span></a>
         </div>
       </div>
