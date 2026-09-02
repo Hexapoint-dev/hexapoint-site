@@ -723,8 +723,18 @@ GA4/Search Console と違い、Google Calendar は「プロパティへのアク
 4. Service Account の `client_email`（`xxxx@xxxx.iam.gserviceaccount.com` の形式。
    10節でダウンロードしたJSONファイルに記載）を入力。
 5. 権限は **予定の変更権限**（Make changes to events）を選択 → **送信**。
+6. 同じ設定画面を下にスクロールして **カレンダーの統合**（Integrate calendar）セクションを開き、
+   **カレンダー ID**（Calendar ID）の値を控えておく（メインカレンダーの場合は、あなたの
+   Googleアカウントのメールアドレスそのものです）。
 
 これで Service Account がこのカレンダーの予定を読み書きできるようになります。
+
+> ⚠️ **重要**: 「共有」しただけでは、そのカレンダーが Service Account にとっての
+> "primary"（既定のカレンダー）にはなりません。"primary" は常に Service Account 自身の
+> （あなたとは別の）カレンダーを指してしまうため、次の手順Eで**必ず手順D-6のカレンダーIDを
+> 明示的に設定**してください。これを忘れると、追加した予定があなたのGoogleカレンダーには
+> 一切反映されない（Service Account自身の見えないカレンダーに作成されてしまう）という
+> 不具合になります。
 
 ### 手順E — Cloudflare に環境変数を設定
 
@@ -733,7 +743,7 @@ GA4/Search Console と違い、Google Calendar は「プロパティへのアク
 | `CAL_SCHEDULE_ID` | 手順Bで控えた数字のID | `CAL_API_KEY`（4節ですでに設定済みのはず）を再利用します |
 | `GOOGLE_SERVICE_ACCOUNT_EMAIL` | Service Account の `client_email` | 10節ですでに設定済みなら再設定不要 |
 | `GOOGLE_SERVICE_ACCOUNT_KEY` | Service Account の `private_key` | 同上 |
-| `GOOGLE_CALENDAR_ID` | （任意）共有したカレンダーのID | 通常は不要（未設定時は自動的に「メインカレンダー」を使用）。専用の別カレンダーを共有した場合のみ、そのカレンダーの設定画面にある「カレンダーの統合」→「カレンダーID」を設定 |
+| `GOOGLE_CALENDAR_ID` | **必須。** 手順D-6で控えたカレンダーID（メインカレンダーなら、あなたのメールアドレスそのもの） | ⚠️ `primary` という文字列は無効です — 必ず実際のメールアドレス/カレンダーIDを設定してください |
 
 Cloudflare Pages → Settings → Environment variables に追加 → 保存後は次回デプロイから
 反映されます（すぐ反映したい場合は Deployments タブから最新デプロイを
@@ -759,3 +769,23 @@ Cloudflare Pages → Settings → Environment variables に追加 → 保存後�
 > こちらのリスクは低いです）。もしエラーが出た場合（特に「想定外の形式のデータが返って
 > きました」と表示された場合）、画面に表示される生のJSON、またはエラーメッセージ全文を
 > コピーして開発者に共有してください — 正確な形式が分かれば、修正は簡単です。
+
+### 追加機能: 日本時間・サウジ時間の同時表示 ／ 日本・サウジアラビアの祝日表示
+
+**追加の設定は一切不要です**（手順A〜Eの設定だけで動きます）。
+
+- カレンダー右上に「🇯🇵 JST時刻 ・ 🇸🇦 AST時刻」がリアルタイム表示されます。
+- 予定の追加/編集画面で、日本時間の入力に対応するサウジアラビア時間（AST）が
+  自動計算されて表示されます（日付をまたぐ場合は「前日」「翌日」も表示）。
+- 「今後の予定」リストには、日本時間とサウジアラビア時間の両方が表示されます。
+- カレンダーの各マス目に、その日が日本の祝日および/またはサウジアラビアの祝日
+  であれば小さく表示されます（`functions/_shared/googlecalendar.js` の
+  `listJapanHolidays`/`listSaudiHolidays` が Google の公開祝日カレンダーを参照）。
+
+> ⚠️ **技術的な注意（サウジアラビアの祝日のみ）**: 日本の祝日カレンダーID
+> （`ja.japanese#holiday@group.v.calendar.google.com`）は Google の標準的なもので
+> 確実に動作しますが、サウジアラビアの祝日カレンダーID
+> （`en.sa#holiday@group.v.calendar.google.com`）は今回の実装時点での best-guess
+> です。もしカレンダーにサウジアラビアの祝日が一切表示されない場合、この
+> カレンダーIDが実際と異なっている可能性があります — その場合は開発者に
+> お知らせください（日本側の祝日表示や他の機能には影響しません）。

@@ -16,21 +16,29 @@
 //   -> add the service account's client_email -> permission "Make changes to events"
 //
 // Required env vars (in addition to the ones in google-auth.js):
-//   GOOGLE_CALENDAR_ID   which calendar to read/write. Defaults to "primary"
-//                        (the owner's main calendar) if unset -- set this
-//                        explicitly only if a separate calendar is used for
-//                        HexaPoint bookings instead of the personal one.
+//   GOOGLE_CALENDAR_ID   REQUIRED -- the actual calendar ID to read/write.
+//                        "primary" is NOT a valid value here: a service
+//                        account's own identity has its own separate
+//                        "primary" calendar, completely different from the
+//                        human owner's calendar, even after the owner shares
+//                        their calendar with the service account. Sharing
+//                        grants access to that specific calendar; it does not
+//                        make it the service account's "primary". For a
+//                        personal Google Calendar, this ID is simply the
+//                        owner's own email address (Google Calendar ->
+//                        Settings for that calendar -> "Integrate calendar" ->
+//                        "Calendar ID").
 
 import { getGoogleAccessToken } from "./google-auth.js";
 
 const CALENDAR_SCOPE = "https://www.googleapis.com/auth/calendar.events";
 
 function googleCalendarConfigured(env) {
-  return !!(env.GOOGLE_SERVICE_ACCOUNT_EMAIL && env.GOOGLE_SERVICE_ACCOUNT_KEY);
+  return !!(env.GOOGLE_SERVICE_ACCOUNT_EMAIL && env.GOOGLE_SERVICE_ACCOUNT_KEY && env.GOOGLE_CALENDAR_ID);
 }
 
 function calendarId(env) {
-  return env.GOOGLE_CALENDAR_ID || "primary";
+  return env.GOOGLE_CALENDAR_ID;
 }
 
 function getCalendarToken(env) {
@@ -107,4 +115,57 @@ async function deleteEvent(env, eventId) {
   return { ok: true };
 }
 
-export { googleCalendarConfigured, listEvents, createEvent, updateEvent, deleteEvent };
+// ---- National holiday overlays (Japan + Saudi Arabia) ----
+// Google publishes read-only public holiday calendars anyone can query --
+// no sharing step needed. These use a broader read-only scope than the
+// owner's own calendar above: `calendar.events` only covers calendars the
+// caller already has explicit access to (the owner's shared calendar),
+// while arbitrary public calendars by ID need `calendar.readonly`. Japan's
+// ID is well-established; Saudi Arabia's is this integration's best guess
+// at Google's naming convention -- if it 404s, see the note in
+// calendar-holidays.js.
+const CALENDAR_READONLY_SCOPE = "https://www.googleapis.com/auth/calendar.readonly";
+const JAPAN_HOLIDAY_CALENDAR_ID = "ja.japanese#holiday@group.v.calendar.google.com";
+const SAUDI_HOLIDAY_CALENDAR_ID = "en.sa#holiday@group.v.calendar.google.com";
+
+function getHolidayToken(env) {
+  return getGoogleAccessToken(env, CALENDAR_READONLY_SCOPE, "calendar-readonly");
+}
+
+async function fetchHolidayEvents(env, holidayCalendarId, { timeMin, timeMax }) {
+  const accessToken = await getHolidayToken(env);
+  const params = new URLSearchParams({
+    timeMin,
+    timeMax,
+    singleEvents: "true",
+    orderBy: "startTime",
+    maxResults: "100",
+  });
+  const res = await fetch(
+    `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(holidayCalendarId)}/events?${params.toString()}`,
+    { headers: { Authorization: `Bearer ${accessToken}` } }
+  );
+  const data = await res.json().catch(() => null);
+  if (!res.ok || !data) {
+    throw new Error(`google_calendar_holiday_failed: ${res.status} ${JSON.stringify(data)}`);
+  }
+  return (data.items || []).map((ev) => ({ date: ev.start.date || ev.start.dateTime, title: ev.summary }));
+}
+
+function listJapanHolidays(env, range) {
+  return fetchHolidayEvents(env, JAPAN_HOLIDAY_CALENDAR_ID, range);
+}
+
+function listSaudiHolidays(env, range) {
+  return fetchHolidayEvents(env, SAUDI_HOLIDAY_CALENDAR_ID, range);
+}
+
+export {
+  googleCalendarConfigured,
+  listEvents,
+  createEvent,
+  updateEvent,
+  deleteEvent,
+  listJapanHolidays,
+  listSaudiHolidays,
+};
