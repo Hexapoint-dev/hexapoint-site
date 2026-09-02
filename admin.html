@@ -1072,7 +1072,9 @@
       <div style="display:flex;gap:16px;margin-top:12px;font-size:11px;opacity:.65;flex-wrap:wrap;">
         <span><span class="cal-legend-dot booking"></span> お客様の予約 / Client booking</span>
         <span><span class="cal-legend-dot block"></span> 個人の予定 / Personal block</span>
+        <span>🇯🇵 日本の祝日 ・ 🇸🇦 サウジアラビアの祝日</span>
       </div>
+      <div id="cal-holiday-error" class="mono" style="display:none;font-size:10.5px;color:var(--coral);margin-top:6px;white-space:pre-wrap;"></div>
     </div>
 
     <div class="fin-card" style="margin-bottom:24px;">
@@ -3305,17 +3307,41 @@
 
   window.fetchCalHolidays = function () {
     var range = getVisibleGridRange();
+    var errEl = document.getElementById('cal-holiday-error');
     fetch('/api/admin/calendar-holidays?start=' + encodeURIComponent(range.startISO) + '&end=' + encodeURIComponent(range.endISO))
       .then(function (res) { return res.json(); })
       .then(function (data) {
-        if (!data.ok) return; // bonus feature -- fail silently, doesn't block the grid itself
+        if (!data.ok) {
+          errEl.textContent = '祝日の取得に失敗しました: ' + (data.detail || data.error || 'unknown error');
+          errEl.style.display = '';
+          return;
+        }
         calHolidays.japan = {};
         calHolidays.saudi = {};
-        if (Array.isArray(data.japan)) data.japan.forEach(function (h) { calHolidays.japan[h.date] = h.title; });
-        if (Array.isArray(data.saudi)) data.saudi.forEach(function (h) { calHolidays.saudi[h.date] = h.title; });
+        var errors = [];
+        if (Array.isArray(data.japan)) {
+          data.japan.forEach(function (h) { calHolidays.japan[h.date] = h.title; });
+        } else if (data.japan && data.japan.error) {
+          errors.push('日本の祝日: ' + data.japan.error);
+        }
+        if (Array.isArray(data.saudi)) {
+          data.saudi.forEach(function (h) { calHolidays.saudi[h.date] = h.title; });
+        } else if (data.saudi && data.saudi.error) {
+          errors.push('サウジアラビアの祝日: ' + data.saudi.error);
+        }
+        if (errors.length) {
+          errEl.textContent = errors.join('\n');
+          errEl.style.display = '';
+        } else {
+          errEl.style.display = 'none';
+        }
         renderCalGrid();
       })
-      .catch(function (err) { console.error('fetchCalHolidays error:', err); });
+      .catch(function (err) {
+        console.error('fetchCalHolidays error:', err);
+        errEl.textContent = '祝日の取得に失敗しました: ' + err.message;
+        errEl.style.display = '';
+      });
   };
 
   // ---- 日本時間・サウジ時間の同時表示 ----
