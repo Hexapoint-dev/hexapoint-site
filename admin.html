@@ -566,6 +566,22 @@
     text-overflow: ellipsis;
   }
   .cal-event-more { font-size: 10px; opacity: .55; padding-left: 3px; }
+  .cal-event-chip.booking { background: linear-gradient(90deg, #4f86e8, #3a68c2); }
+  .cal-legend-dot {
+    display: inline-block; width: 9px; height: 9px; border-radius: 3px;
+    background: linear-gradient(90deg, var(--emerald), var(--emerald-deep));
+    margin-right: 4px; vertical-align: middle;
+  }
+  .cal-legend-dot.booking { background: linear-gradient(90deg, #4f86e8, #3a68c2); }
+  .cal-agenda-item { display: flex; align-items: center; gap: 14px; padding: 10px 0; border-bottom: 1px solid var(--line); cursor: pointer; }
+  .cal-agenda-item:last-child { border-bottom: none; }
+  .cal-agenda-date { width: 76px; flex-shrink: 0; font-size: 11.5px; opacity: .6; }
+  .cal-agenda-date .num { font-family: "DM Mono", monospace; font-size: 15px; opacity: 1; color: var(--ink); display: block; }
+  .cal-agenda-badge { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: var(--emerald); }
+  .cal-agenda-badge.booking { background: #4f86e8; }
+  .cal-agenda-main { flex: 1; min-width: 0; }
+  .cal-agenda-time { font-size: 11px; opacity: .55; font-family: "DM Mono", monospace; }
+  .cal-agenda-title { font-size: 13.5px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   @media (max-width: 900px) {
     .cal-grid-cell { min-height: 56px; }
     .cal-event-chip { font-size: 9.5px; }
@@ -1032,6 +1048,7 @@
         <div class="mono" id="cal-month-label" style="font-size:15px;min-width:110px;text-align:center;">—</div>
         <button type="button" class="btn btn-ghost" onclick="navigateCalMonth(1)">次月 →</button>
         <button type="button" class="btn btn-ghost" onclick="goToCalToday()">今日</button>
+        <input type="date" id="cal-jump-date" onchange="jumpToCalDate()" title="日付にジャンプ / Jump to date" style="width:auto;">
         <button type="button" class="btn btn-ghost" onclick="fetchCalendarEvents()">更新 / Refresh</button>
       </div>
       <button type="button" class="btn" onclick="openAddEventModal()">+ 予定を追加 / Add</button>
@@ -1040,12 +1057,24 @@
 
   <div id="cal-grid-not-configured" class="empty-state" style="display:none;padding:20px 0;">
     Google Calendar 連携が未設定です。<code>GOOGLE_SERVICE_ACCOUNT_EMAIL</code>・
-    <code>GOOGLE_SERVICE_ACCOUNT_KEY</code> を環境変数に設定し、あなたのGoogleカレンダーを
-    サービスアカウントと共有してください（SETUP-cloudflare.md 参照）。
+    <code>GOOGLE_SERVICE_ACCOUNT_KEY</code>・<code>GOOGLE_CALENDAR_ID</code>（"primary"は不可 —
+    あなた自身のGoogleアカウントのメールアドレスを指定）を環境変数に設定し、あなたの
+    Googleカレンダーをサービスアカウントと共有してください（SETUP-cloudflare.md 参照）。
   </div>
 
-  <div id="cal-grid-wrap" class="fin-card" style="margin-bottom:24px;">
-    <div id="cal-grid"><div class="loading-state">読み込み中…</div></div>
+  <div id="cal-grid-wrap">
+    <div class="fin-card" style="margin-bottom:12px;">
+      <div id="cal-grid"><div class="loading-state">読み込み中…</div></div>
+      <div style="display:flex;gap:16px;margin-top:12px;font-size:11px;opacity:.65;flex-wrap:wrap;">
+        <span><span class="cal-legend-dot booking"></span> お客様の予約 / Client booking</span>
+        <span><span class="cal-legend-dot block"></span> 個人の予定 / Personal block</span>
+      </div>
+    </div>
+
+    <div class="fin-card" style="margin-bottom:24px;">
+      <h3>今後の予定 <span class="mono" style="font-size:11px;opacity:.5">Upcoming (7 days)</span></h3>
+      <div id="cal-agenda"><div class="loading-state">読み込み中…</div></div>
+    </div>
   </div>
 
   <!-- ===== 定期的な対応時間 (Cal.com schedule) ===== -->
@@ -1593,6 +1622,11 @@
     <button type="button" class="close" onclick="closeEventModal()">✕</button>
     <h2 id="cal-event-modal-title">予定を追加</h2>
     <div class="modal-error" id="cal-event-error"></div>
+    <div class="fee-hint" id="cal-event-booking-notice" style="display:none;background:rgba(79,134,232,.1);border:1px solid rgba(79,134,232,.3);padding:10px 14px;border-radius:10px;margin-bottom:14px;">
+      📅 これはお客様の予約です（Cal.com経由）。日時変更・削除は慎重に行ってください —
+      ここでの変更はお客様には自動通知されません。キャンセル・日時変更が必要な場合は
+      Cal.comダッシュボードから対応することを推奨します。
+    </div>
 
     <div class="field">
       <label>タイトル</label>
@@ -1899,6 +1933,9 @@
   function pollForUpdates() {
     if (document.hidden || isAnyModalOpen()) return;
     fetchOrders(true);
+    // Keeps the "meeting starting soon" desktop reminder accurate even while
+    // the admin is working in a different tab, not just when Calendar is open.
+    if (calGridInited) fetchCalAgenda();
   }
 
   function startPolling() {
@@ -3136,7 +3173,25 @@
     calGridState.year = t.year;
     calGridState.month = t.month;
     fetchCalendarEvents();
+    fetchCalAgenda();
   }
+
+  // An event created via Cal.com's Google Calendar sync always carries the
+  // client as an attendee; events this admin panel creates never set
+  // attendees at all -- reliable enough to color-code and to warn before an
+  // accidental edit/delete of an actual client booking.
+  function isBookingEvent(ev) {
+    return !!(ev.attendees && ev.attendees.length > 0);
+  }
+
+  window.jumpToCalDate = function () {
+    var val = document.getElementById('cal-jump-date').value;
+    if (!val) return;
+    var parts = val.split('-');
+    calGridState.year = parseInt(parts[0], 10);
+    calGridState.month = parseInt(parts[1], 10) - 1;
+    fetchCalendarEvents();
+  };
 
   window.navigateCalMonth = function (delta) {
     var m = calGridState.month + delta;
@@ -3193,7 +3248,8 @@
       });
       var eventsHtml = dayEvents.slice(0, 3).map(function (ev) {
         var timeLabel = ev.start.dateTime ? fmtEventTime(ev.start.dateTime) : '終日';
-        return '<div class="cal-event-chip" onclick="event.stopPropagation();openEditEventModal(\'' + ev.id + '\')" title="' + esc(ev.summary || '') + '">' +
+        var chipClass = 'cal-event-chip' + (isBookingEvent(ev) ? ' booking' : '');
+        return '<div class="' + chipClass + '" onclick="event.stopPropagation();openEditEventModal(\'' + ev.id + '\')" title="' + esc(ev.summary || '') + '">' +
           '<span class="mono" style="opacity:.85;">' + timeLabel + '</span> ' + esc(truncate(ev.summary || '(無題)', 14)) +
         '</div>';
       }).join('');
@@ -3248,12 +3304,99 @@
       });
   };
 
+  // ---- 今後の予定 (7-day agenda) ----
+  // Fetched independently of the month grid (today..+7 days regardless of
+  // which month is currently displayed) so it stays accurate near month
+  // boundaries without re-fetching the whole visible grid.
+  var calAgendaEvents = [];
+  var calNotifiedEventIds = {};
+  var AGENDA_DAYS = 7;
+
+  function fmtAgendaDate(dateKey) {
+    var d = new Date(dateKey + 'T00:00:00Z');
+    var t = jstToday();
+    var isToday = ymd(t.year, t.month, t.day) === dateKey;
+    var weekdayJa = ['日', '月', '火', '水', '木', '金', '土'][d.getUTCDay()];
+    return { label: (d.getUTCMonth() + 1) + '/' + d.getUTCDate(), weekday: weekdayJa, isToday: isToday };
+  }
+
+  function renderCalAgenda() {
+    var el = document.getElementById('cal-agenda');
+    if (!calAgendaEvents.length) {
+      el.innerHTML = '<div class="empty-state" style="padding:14px 0;">今後7日間の予定はありません</div>';
+      return;
+    }
+    el.innerHTML = calAgendaEvents.map(function (ev) {
+      var dateKey = ev.start.date || jstDateKeyFromInstant(ev.start.dateTime);
+      var d = fmtAgendaDate(dateKey);
+      var timeLabel = ev.start.dateTime ? (fmtEventTime(ev.start.dateTime) + '〜' + fmtEventTime(ev.end.dateTime)) : '終日';
+      var booking = isBookingEvent(ev);
+      return '<div class="cal-agenda-item" onclick="openEditEventModal(\'' + ev.id + '\')">' +
+        '<div class="cal-agenda-date">' + (d.isToday ? '本日' : d.weekday + '曜') + '<span class="num">' + d.label + '</span></div>' +
+        '<span class="cal-agenda-badge' + (booking ? ' booking' : '') + '"></span>' +
+        '<div class="cal-agenda-main">' +
+          '<div class="cal-agenda-time">' + timeLabel + '</div>' +
+          '<div class="cal-agenda-title">' + esc(ev.summary || '(無題)') + '</div>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  // A light desktop-notification nudge for meetings starting soon, reusing
+  // the same Notification permission already requested for new orders --
+  // fires once per event (calNotifiedEventIds) so it doesn't repeat on every
+  // background refresh.
+  function checkUpcomingMeetingReminders() {
+    if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+    var now = Date.now();
+    calAgendaEvents.forEach(function (ev) {
+      if (!ev.start.dateTime || calNotifiedEventIds[ev.id]) return;
+      var startMs = new Date(ev.start.dateTime).getTime();
+      var minutesUntil = (startMs - now) / 60000;
+      if (minutesUntil > 0 && minutesUntil <= 30) {
+        calNotifiedEventIds[ev.id] = true;
+        try {
+          var n = new Notification('まもなく予定があります / Upcoming event', {
+            body: (ev.summary || '(無題)') + ' — ' + fmtEventTime(ev.start.dateTime) + '〜',
+            icon: '/favicon-192.png',
+          });
+          n.onclick = function () { window.focus(); n.close(); };
+        } catch (e) { /* non-fatal */ }
+      }
+    });
+  }
+
+  window.fetchCalAgenda = function () {
+    var t = jstToday();
+    var start = ymd(t.year, t.month, t.day) + 'T00:00:00+09:00';
+    var endDate = new Date(Date.UTC(t.year, t.month, t.day + AGENDA_DAYS));
+    var end = ymd(endDate.getUTCFullYear(), endDate.getUTCMonth(), endDate.getUTCDate()) + 'T23:59:59+09:00';
+
+    fetch('/api/admin/calendar-events?start=' + encodeURIComponent(start) + '&end=' + encodeURIComponent(end))
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (result) {
+        if (!result.ok || !result.data.ok) return; // cal-grid-not-configured banner already covers this
+        calAgendaEvents = (result.data.events || []).filter(function (ev) { return ev.start; }).sort(function (a, b) {
+          var at = a.start.dateTime || a.start.date || '';
+          var bt = b.start.dateTime || b.start.date || '';
+          return at < bt ? -1 : at > bt ? 1 : 0;
+        });
+        renderCalAgenda();
+        checkUpcomingMeetingReminders();
+      })
+      .catch(function (err) { console.error('fetchCalAgenda error:', err); });
+  };
+
   // ---- Add/Edit event modal ----
+  var calEventModalIsBooking = false;
+
   window.openAddEventModal = function (dateKey) {
     calEventModalMode = 'create';
     calEventModalId = null;
+    calEventModalIsBooking = false;
     document.getElementById('cal-event-modal-title').textContent = '予定を追加 / Add event';
     document.getElementById('cal-event-delete-btn').style.display = 'none';
+    document.getElementById('cal-event-booking-notice').style.display = 'none';
     document.getElementById('cal-event-error').classList.remove('show');
     document.getElementById('cal-event-conflict-warning').style.display = 'none';
     document.getElementById('cal-event-summary').value = '';
@@ -3269,8 +3412,10 @@
     if (!ev) return;
     calEventModalMode = 'edit';
     calEventModalId = eventId;
+    calEventModalIsBooking = isBookingEvent(ev);
     document.getElementById('cal-event-modal-title').textContent = '予定を編集 / Edit event';
     document.getElementById('cal-event-delete-btn').style.display = '';
+    document.getElementById('cal-event-booking-notice').style.display = calEventModalIsBooking ? '' : 'none';
     document.getElementById('cal-event-error').classList.remove('show');
     document.getElementById('cal-event-conflict-warning').style.display = 'none';
     document.getElementById('cal-event-summary').value = ev.summary || '';
@@ -3383,6 +3528,7 @@
         showToast('✓ 保存しました');
         closeEventModal();
         fetchCalendarEvents();
+        fetchCalAgenda();
       })
       .catch(function (err) {
         console.error('saveCalendarEvent error:', err);
@@ -3393,7 +3539,10 @@
 
   window.deleteCalendarEventFromModal = function () {
     if (!calEventModalId) return;
-    if (!confirm('この予定を削除しますか？Googleカレンダーからも削除されます。')) return;
+    var confirmMsg = calEventModalIsBooking
+      ? '⚠️ これはお客様の予約です。ここから削除してもお客様には通知されません。\n\n本当に削除しますか？（キャンセル連絡が必要な場合は別途ご連絡ください）'
+      : 'この予定を削除しますか？Googleカレンダーからも削除されます。';
+    if (!confirm(confirmMsg)) return;
     fetch('/api/admin/calendar-events/' + encodeURIComponent(calEventModalId), { method: 'DELETE' })
       .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
       .then(function (result) {
@@ -3403,6 +3552,7 @@
         showToast('✓ 削除しました');
         closeEventModal();
         fetchCalendarEvents();
+        fetchCalAgenda();
       })
       .catch(function (err) {
         console.error('deleteCalendarEventFromModal error:', err);
