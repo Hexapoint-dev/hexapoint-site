@@ -2,6 +2,8 @@
 // Used by both stripe-confirm-order.js (immediate confirmation) and
 // stripe-webhook.js (reliable fallback confirmation).
 
+import { trackResendSend } from "./usage.js";
+
 function esc(s) {
   return String(s)
     .replace(/&/g, "&amp;")
@@ -121,6 +123,7 @@ export async function sendOwnerAlert(env, { subject, title, titleEn, rows, urgen
       console.error("Resend owner alert error:", res.status, detail);
       return { ok: false, error: `resend_${res.status}` };
     }
+    await trackResendSend(env);
     return { ok: true };
   } catch (err) {
     console.error("Owner alert email request failed:", err);
@@ -271,6 +274,7 @@ export async function sendOrderConfirmation(env, { buyer, plan, orderID, amount 
       console.error("Resend order confirmation error:", res.status, detail);
       return { ok: false, error: `resend_${res.status}` };
     }
+    await trackResendSend(env);
     return { ok: true };
   } catch (err) {
     console.error("Order confirmation email request failed:", err);
@@ -440,6 +444,7 @@ export async function sendBankOrderNotification(env, { buyer, plan, orderID, amo
       console.error("Resend bank order notification error:", res.status, detail);
       return { ok: false, error: `resend_${res.status}` };
     }
+    await trackResendSend(env);
     return { ok: true };
   } catch (err) {
     console.error("Bank order notification email request failed:", err);
@@ -579,6 +584,7 @@ export async function sendCustomerStatusUpdate(env, { buyer, plan, orderID, amou
       console.error("Resend customer status update error:", res.status, detail);
       return { ok: false, error: `resend_${res.status}` };
     }
+    await trackResendSend(env);
     return { ok: true };
   } catch (err) {
     console.error("Customer status update email request failed:", err);

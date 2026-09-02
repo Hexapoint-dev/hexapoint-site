@@ -1,6 +1,7 @@
 // Cloudflare Pages Function
 // Endpoint: POST /api/contact
 import { verifyTurnstile } from "../_shared/turnstile.js";
+import { trackResendSend } from "../_shared/usage.js";
 
 export async function onRequestPost(context) {
   const { request, env } = context;
@@ -59,6 +60,7 @@ export async function onRequestPost(context) {
       return json({ ok: false, error: "resend_error" }, 502);
     }
 
+    await trackResendSend(env);
     return json({ ok: true });
   } catch (err) {
     console.error("Contact function error:", err);

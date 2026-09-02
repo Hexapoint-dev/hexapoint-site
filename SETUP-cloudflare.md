@@ -581,3 +581,75 @@ Production 環境に追加 → 保存後は次回デプロイから反映され�
 
 > 表示されるデータは 30 分ごとにキャッシュされます（`ORDERS_KV` 使用）。
 > タブ右上の「更新 / Refresh」ボタンでキャッシュを無視して即時再取得できます。
+
+---
+
+## 11. 管理画面の「システム状況 / Status」タブ（外部サービスの無料枠使用状況）
+
+`/admin.html` に、このサイトが依存している外部サービスの無料枠使用状況をまとめて
+表示するタブがあります（`functions/api/admin/status.js`）。表示内容：
+
+| サービス | 表示内容 | 取得方法 |
+|---|---|---|
+| **Zoho Invoice** | 今年作成した請求書数 | 自社の D1 (`orders` テーブル) を集計 — Zoho への追加API呼び出しなし |
+| **Resend** | 本日/今月の送信数 | 自己集計（送信成功のたびに `ORDERS_KV` のカウンタを加算） |
+| **Cloudflare D1** | 本日の読み取り/書き込み行数 | Cloudflare GraphQL Analytics API |
+| **Cloudflare KV** | 本日の read/write/delete/list 回数 | Cloudflare GraphQL Analytics API |
+| **Cloudflare Pages** | 今月のビルド数 | Cloudflare REST API（Deployments一覧） |
+
+⚠️ **Cloudflare の2項目（D1・KV）は技術的な注意点があります**: Cloudflare の
+GraphQL Analytics API のフィールド名は今回の実装時点のドキュメントに基づいていますが、
+Cloudflare 側で仕様が変わることがあります。もしタブに「エラー: cf_graphql_failed: ...」
+のような表示が出たら、そのエラーメッセージ全文をコピーして開発者に共有してください
+（Cloudflare 側が返す正確なフィールド名がエラーの中に含まれているので、修正が簡単です）。
+Zoho・Resend・Cloudflare Pages の部分にはこの種のリスクはありません。
+
+### 手順A — Cloudflare API Token を作成
+
+これは D1/KV バインディング（`env.DB` / `env.ORDERS_KV`）とは**別物**です。
+バインディングはデータの読み書き専用で、使用量そのものを取得する権限は持っていません。
+
+1. https://dash.cloudflare.com/profile/api-tokens → **Create Token**。
+2. **Create Custom Token** → **Get started**。
+3. Token name: 任意（例: `hexapoint-usage-readonly`）。
+4. **Permissions** に以下の2行を追加：
+   - `Account` / `Account Analytics` / `Read`
+   - `Account` / `Cloudflare Pages` / `Read`
+5. **Account Resources**: **Include** → 対象アカウントを選択。
+6. **Continue to summary** → **Create Token** → 表示されたトークンをコピー
+   （このページを閉じると二度と表示されません）。
+
+### 手順B — 必要なIDを控える
+
+1. **Account ID**: Cloudflare ダッシュボードの任意のゾーン概要ページ、または
+   **Workers & Pages** 概要ページの右下に表示されています。
+2. **D1 Database ID**: **Workers & Pages → D1** → 対象データベースを開く →
+   概要ページに ID（UUID形式）が表示されます。
+3. **KV Namespace ID**: **Workers & Pages → KV** → `ORDERS_KV` に紐付けている
+   Namespace の行に ID が表示されています。
+4. **Pages Project Name**: Pages プロジェクトの設定ページ、または
+   `xxxxx.pages.dev` の `xxxxx` の部分（例: `hexapoint`）。
+
+### 手順C — Cloudflare に環境変数を設定
+
+| 変数名 | 値 | 種別 |
+|---|---|---|
+| `CLOUDFLARE_API_TOKEN` | 手順Aで作成したトークン | Secret |
+| `CLOUDFLARE_ACCOUNT_ID` | 手順B-1 | 通常の変数でも可 |
+| `CLOUDFLARE_D1_DATABASE_ID` | 手順B-2 | 通常の変数でも可 |
+| `CLOUDFLARE_KV_NAMESPACE_ID` | 手順B-3 | 通常の変数でも可 |
+| `CLOUDFLARE_PAGES_PROJECT_NAME` | 手順B-4 | 通常の変数でも可 |
+| `ZOHO_FREE_PLAN_INVOICE_LIMIT` | （任意）Zoho の実際の年間請求書上限。未設定時は `1000` を仮の目安として使用 | 通常の変数でも可 |
+
+D1・KV・Pages のいずれか1つだけ先に設定しても、その項目だけが動きます
+（未設定の項目は「未設定です」と表示されるだけで、他の項目には影響しません）。
+
+### 動作確認
+
+1. `/admin.html` にログイン → 「システム状況 / Status」タブを開く。
+2. Zoho・Resend は追加設定なしでもすぐ数字が出ます（Resend は今後の送信分から
+   カウントが始まるため、最初は 0 のことがあります）。
+3. Cloudflare の3項目は、上記の環境変数を設定した分だけ表示されます。
+
+> データは 15 分ごとにキャッシュされます（`ORDERS_KV` 使用）。
+> タブ右上の「更新 / Refresh」ボタンでキャッシュを無視して即時再取得できます。

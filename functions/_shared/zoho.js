@@ -32,7 +32,7 @@ function zohoApiBase(env) {
   return `https://www.zohoapis.${zohoDc(env)}/invoice/v3`;
 }
 
-function zohoConfigured(env) {
+export function zohoConfigured(env) {
   return !!(env.ZOHO_CLIENT_ID && env.ZOHO_CLIENT_SECRET && env.ZOHO_REFRESH_TOKEN && env.ZOHO_ORGANIZATION_ID);
 }
 
