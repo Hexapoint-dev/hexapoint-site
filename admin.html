@@ -73,6 +73,11 @@
     color: var(--ink);
   }
 
+  #gsc-range-buttons button.active {
+    background: var(--ink);
+    color: var(--cream);
+  }
+
   .btn-danger {
     background: var(--coral);
     border-color: var(--coral);
@@ -789,6 +794,7 @@
     <button type="button" id="tab-btn-history" onclick="switchTab('history')">履歴 <span class="mono" style="font-size:10px;opacity:.7">History</span></button>
     <button type="button" id="tab-btn-customers" onclick="switchTab('customers')">顧客 <span class="mono" style="font-size:10px;opacity:.7">Customers</span></button>
     <button type="button" id="tab-btn-plans" onclick="switchTab('plans')">プラン <span class="mono" style="font-size:10px;opacity:.7">Plans</span></button>
+    <button type="button" id="tab-btn-analytics" onclick="switchTab('analytics')">分析 <span class="mono" style="font-size:10px;opacity:.7">Analytics</span></button>
   </div>
 
 <div id="view-orders" class="tab-view active">
@@ -1064,6 +1070,63 @@
     <button type="button" class="btn" onclick="submitAddPlan()">追加する</button>
   </div>
 </div><!-- /#view-plans -->
+
+<div id="view-analytics" class="tab-view">
+
+  <div class="toolbar" style="justify-content:space-between;">
+    <div style="display:flex;gap:8px;" id="gsc-range-buttons">
+      <button type="button" class="btn btn-ghost" data-range="7d" onclick="setAnalyticsRange('7d')">過去7日間</button>
+      <button type="button" class="btn btn-ghost active" data-range="28d" onclick="setAnalyticsRange('28d')">過去28日間</button>
+      <button type="button" class="btn btn-ghost" data-range="90d" onclick="setAnalyticsRange('90d')">過去90日間</button>
+    </div>
+    <button type="button" class="btn btn-ghost" onclick="fetchAnalytics(true)">更新 / Refresh</button>
+  </div>
+
+  <div id="gsc-not-configured" class="empty-state" style="display:none;padding:20px 0;">
+    Google Search Console が未設定です。<code>GOOGLE_SERVICE_ACCOUNT_EMAIL</code>・
+    <code>GOOGLE_SERVICE_ACCOUNT_KEY</code>・<code>SEARCH_CONSOLE_SITE_URL</code> を
+    環境変数に設定してください（SETUP-cloudflare.md 参照）。
+  </div>
+
+  <div id="gsc-content">
+    <div class="fee-hint" style="margin-bottom:14px;" id="gsc-range-note">&nbsp;</div>
+
+    <div class="stats-row" id="gsc-stats-row" style="grid-template-columns:repeat(4,1fr);">
+      <div class="stat-tile accent"><div class="num mono" id="gsc-clicks">—</div><div class="label">クリック数 / Clicks</div></div>
+      <div class="stat-tile"><div class="num mono" id="gsc-impressions">—</div><div class="label">表示回数 / Impressions</div></div>
+      <div class="stat-tile"><div class="num mono" id="gsc-ctr">—</div><div class="label">平均CTR / Avg. CTR</div></div>
+      <div class="stat-tile"><div class="num mono" id="gsc-position">—</div><div class="label">平均掲載順位 / Avg. Position</div></div>
+    </div>
+
+    <div class="fin-card" style="margin-bottom:16px;">
+      <h3>クリック数の推移 <span class="mono" style="font-size:11px;opacity:.5">Clicks Over Time</span></h3>
+      <div id="gsc-trend"><div class="loading-state">読み込み中…</div></div>
+    </div>
+
+    <div class="fin-grid">
+      <div class="fin-card">
+        <h3>検索キーワード <span class="mono" style="font-size:11px;opacity:.5">Top Queries</span></h3>
+        <div id="gsc-queries"><div class="loading-state">読み込み中…</div></div>
+      </div>
+      <div class="fin-card">
+        <h3>人気ページ <span class="mono" style="font-size:11px;opacity:.5">Top Pages</span></h3>
+        <div id="gsc-pages"><div class="loading-state">読み込み中…</div></div>
+      </div>
+    </div>
+
+    <div class="fin-grid">
+      <div class="fin-card">
+        <h3>デバイス <span class="mono" style="font-size:11px;opacity:.5">Devices</span></h3>
+        <div id="gsc-devices"><div class="loading-state">読み込み中…</div></div>
+      </div>
+      <div class="fin-card">
+        <h3>国別 <span class="mono" style="font-size:11px;opacity:.5">Countries</span></h3>
+        <div id="gsc-countries"><div class="loading-state">読み込み中…</div></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /#view-analytics -->
 
 </main>
 
@@ -1755,7 +1818,7 @@
   }
 
   // ---- Tabs ----
-  var TAB_NAMES = ['orders', 'renewals', 'finance', 'history', 'customers', 'plans'];
+  var TAB_NAMES = ['orders', 'renewals', 'finance', 'history', 'customers', 'plans', 'analytics'];
   window.switchTab = function (name) {
     TAB_NAMES.forEach(function (t) {
       document.getElementById('view-' + t).classList.toggle('active', t === name);
@@ -1766,6 +1829,7 @@
     if (name === 'history') fetchHistory();
     if (name === 'customers') fetchCustomers();
     if (name === 'plans') fetchPlansTab();
+    if (name === 'analytics') fetchAnalytics();
   };
 
   window.saveFeePct = function () {
@@ -1989,6 +2053,108 @@
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+  };
+
+  // ---- Analytics tab (Google Search Console) ----
+  var DEVICE_LABELS_JA = { desktop: 'デスクトップ / Desktop', mobile: 'モバイル / Mobile', tablet: 'タブレット / Tablet' };
+  var gscState = { range: '28d' };
+
+  function fmtNum(n) {
+    return Number(n || 0).toLocaleString('ja-JP');
+  }
+
+  window.setAnalyticsRange = function (range) {
+    gscState.range = range;
+    Array.prototype.forEach.call(document.querySelectorAll('#gsc-range-buttons button'), function (b) {
+      b.classList.toggle('active', b.getAttribute('data-range') === range);
+    });
+    fetchAnalytics();
+  };
+
+  function renderGscBarList(containerId, rows, labelFn, valueFn) {
+    var el = document.getElementById(containerId);
+    if (!rows.length) {
+      el.innerHTML = '<div class="empty-state" style="padding:20px 0;">データがありません</div>';
+      return;
+    }
+    var max = Math.max.apply(null, rows.map(valueFn));
+    el.innerHTML = rows.map(function (r) {
+      var val = valueFn(r);
+      var pct = max > 0 ? Math.max(2, Math.round((val / max) * 100)) : 0;
+      return '<div class="bar-row">' +
+        '<div class="bar-head"><span>' + esc(labelFn(r)) + '</span>' +
+        '<span class="amt">' + fmtNum(val) + '</span></div>' +
+        '<div class="bar-track"><div class="bar-fill" style="width:' + pct + '%"></div></div>' +
+      '</div>';
+    }).join('');
+  }
+
+  function renderGscTrend(rows) {
+    var el = document.getElementById('gsc-trend');
+    if (!rows.length) {
+      el.innerHTML = '<div class="empty-state" style="padding:20px 0;">データがありません</div>';
+      return;
+    }
+    var max = Math.max.apply(null, rows.map(function (r) { return r.clicks; })) || 1;
+    // Long ranges (90d) would otherwise cram 90 labels into the strip --
+    // thin them out so only every Nth day is labeled.
+    var showEvery = rows.length > 45 ? 7 : (rows.length > 20 ? 3 : 1);
+    el.innerHTML = '<div class="trend-chart">' + rows.map(function (r, i) {
+      var h = Math.max(3, Math.round((r.clicks / max) * 100));
+      var d = new Date(r.date + 'T00:00:00Z');
+      var label = (i % showEvery === 0) ? (d.getMonth() + 1) + '/' + d.getDate() : '';
+      return '<div class="trend-col' + (i === rows.length - 1 ? ' current' : '') + '">' +
+        '<span class="trend-val">' + fmtNum(r.clicks) + '</span>' +
+        '<div class="trend-bar" style="height:' + h + '%"></div>' +
+        '<span class="trend-label">' + label + '</span>' +
+      '</div>';
+    }).join('') + '</div>';
+  }
+
+  function renderAnalytics(data) {
+    document.getElementById('gsc-range-note').textContent =
+      '集計期間: ' + data.startDate + ' 〜 ' + data.endDate + '（Search Console のデータは直近2〜3日分が反映されるまで時間がかかるため、今日までではなくこの期間になります）';
+    document.getElementById('gsc-clicks').textContent = fmtNum(data.totals.clicks);
+    document.getElementById('gsc-impressions').textContent = fmtNum(data.totals.impressions);
+    document.getElementById('gsc-ctr').textContent = (data.totals.ctr * 100).toFixed(1) + '%';
+    document.getElementById('gsc-position').textContent = data.totals.position.toFixed(1);
+
+    renderGscTrend(data.trend);
+    renderGscBarList('gsc-queries', data.topQueries,
+      function (r) { return r.query; },
+      function (r) { return r.clicks; });
+    renderGscBarList('gsc-pages', data.topPages,
+      function (r) { return r.page; },
+      function (r) { return r.clicks; });
+    renderGscBarList('gsc-devices', data.devices,
+      function (r) { return DEVICE_LABELS_JA[r.device] || r.device; },
+      function (r) { return r.clicks; });
+    renderGscBarList('gsc-countries', data.countries,
+      function (r) { return r.country.toUpperCase(); },
+      function (r) { return r.clicks; });
+  }
+
+  window.fetchAnalytics = function fetchAnalytics(forceRefresh) {
+    var qs = 'range=' + gscState.range + (forceRefresh ? '&refresh=1' : '');
+    fetch('/api/admin/search-console?' + qs)
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, status: res.status, data: data }; }); })
+      .then(function (result) {
+        if (result.status === 501 || (result.data && result.data.error === 'google_not_configured')) {
+          document.getElementById('gsc-not-configured').style.display = '';
+          document.getElementById('gsc-content').style.display = 'none';
+          return;
+        }
+        document.getElementById('gsc-not-configured').style.display = 'none';
+        document.getElementById('gsc-content').style.display = '';
+        if (!result.ok || !result.data.ok) {
+          throw new Error((result.data && result.data.error) || 'request_failed');
+        }
+        renderAnalytics(result.data);
+      })
+      .catch(function (err) {
+        console.error('fetchAnalytics error:', err);
+        showError('検索パフォーマンスデータの取得に失敗しました: ' + err.message);
+      });
   };
 
   // ---- Renewals tab ----

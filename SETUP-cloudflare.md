@@ -172,7 +172,7 @@ curl -X POST "https://www.hexapoint-jp.com/api/indexnow?secret=YOUR_SECRET" \
 | **Bot Fight Mode / WAF** | 問い合わせフォーム・決済経路の保護を強化 |
 | **Email Routing** | `info@hexapoint-jp.com` を既存メールへ無料転送。日本の顧客の信頼度向上 |
 | **Always Online** | 障害時もキャッシュ済みページを配信 |
-| **Cloudflare Access** | `/admin.html` と `/api/admin/*` の追加保護として利用可能に（任意・下記5節参照。現状のパスワードログインのままでも問題ありません） |
+| **Cloudflare Access** | `/admin.html` と `/api/admin/*` を Google ログイン + Google Authenticator で追加保護（**設定済み**・下記5節参照） |
 
 **Bot Fight Mode を有効化する手順（推奨・決済のあるサイトなので）：**
 そのゾーン（`hexapoint-jp.com`）のダッシュボード → 左メニュー **Security → Bots** →
@@ -330,12 +330,13 @@ D1 データベースをこの Pages プロジェクトに紐付けてくださ�
 パスワードログイン機能を組み込みました（`functions/_shared/admin-auth.js` —
 署名付き HttpOnly セッションクッキー方式、サーバー側にセッション情報を保存しない）。
 
-`www.hexapoint-jp.com` を独自ドメインとして接続した今は、**Cloudflare Access**
-（3.3 節）を `/admin.html` と `/api/admin/*` の前段に追加で重ねることも可能になりました
-（任意）。ただし現状のパスワードログインは単体でも安全に機能しているため、Access の
-追加は必須ではありません。
+`www.hexapoint-jp.com` を独自ドメインとして接続したことで **Cloudflare Access** を
+`/admin.html` と `/api/admin/*` の前段に重ねることが可能になり、**現在この Access を
+有効化済み**です（Google ログイン + そのアカウントの Google Authenticator）。
+既存のパスワードログイン（`admin-auth.js`）はそのまま残しており、Access → パスワード
+ログインの二段構えになっています。
 
-**Cloudflare Access を追加する手順（Google ログイン + Google Authenticator を使う場合）**
+以下は設定時の手順の記録です（再設定・別担当者への引き継ぎ・許可アカウントの追加時に参照）。
 
 Cloudflare Access 自体には「認証アプリ（TOTP）」を単独のログイン方式として選ぶ機能は
 ありません。実際に Google Authenticator を関与させるには、Access のログイン方法として
@@ -492,3 +493,77 @@ Cloudflare Pages → Settings → Environment variables に以下を **Secret** 
 - [ ] Google Search Console にドメインプロパティを追加し、`sitemap.xml` を送信（7節）
 - [ ] Bing Webmaster Tools に Google Search Console からインポート（8節）
 - [ ] https://search.google.com/test/rich-results （Rich Results Test）で構造化データを検証
+
+---
+
+## 10. 管理画面の「分析 / Analytics」タブ（Google Search Console 連携）
+
+管理画面（`/admin.html`）に、Google Search Console の検索パフォーマンス
+データをそのまま表示する「分析」タブがあります
+（`functions/api/admin/search-console.js` ・ `functions/_shared/google.js`）。
+Zoho 連携と同じ仕組みで、Cloudflare 側に Service Account の認証情報を
+Secret として設定するだけで動きます（管理画面のコード自体は変更不要）。
+
+このタブはすでに `/admin.html` と `/api/admin/*` の Access + パスワードログイン
+の内側にあるため、追加の認証は不要です。
+
+**前提条件**: 7節「Google Search Console — ドメインプロパティの追加と検証」が
+完了している必要があります（TXTレコードでの検証が済み、`sc-domain:hexapoint-jp.com`
+というドメインプロパティが Search Console 上に存在する状態）。まだの場合は
+先に7節を終わらせてください。
+
+### 手順A — Google Cloud で Service Account を作成
+
+Cloudflare Access（5節）で使ったのと同じ Google Cloud プロジェクトで OK です。
+
+1. https://console.cloud.google.com/ → 対象プロジェクトを選択。
+2. 検索バーで **Service Accounts** と入力して開く（または
+   **IAM & Admin → Service Accounts**）。
+3. **+ Create Service Account** → 名前は任意（例: `search-console-reader`）→
+   **Create and Continue** → ロールの割り当てはスキップして構いません
+   （Search Console 側の権限は手順Bで別途付与します）→ **Done**。
+4. 作成された Service Account の行をクリック → **Keys** タブ →
+   **Add Key → Create new key** → 形式は **JSON** を選択 → **Create**。
+   → JSON ファイルが自動でダウンロードされます（これが唯一のコピーです。
+   紛失した場合はキーを作り直す必要があります）。
+5. 検索バーで **Google Search Console API** と入力し、そのAPIのページで
+   **Enable** をクリック（プロジェクトで未有効化の場合のみ表示されます）。
+
+### 手順B — Search Console にアクセス権を付与
+
+Search Console 自体には「Viewer専用の招待」という概念はなく、
+**Settings → Users and permissions** から直接ユーザーを追加する形になります。
+
+1. https://search.google.com/search-console/ → 対象プロパティ
+   （`hexapoint-jp.com` のドメインプロパティ）を開く。
+2. 左メニュー **Settings** → **Users and permissions**。
+3. **Add user**。
+4. ダウンロードした JSON ファイルを開き、`client_email` の値
+   （`xxxx@xxxx.iam.gserviceaccount.com` の形式）をコピーしてメールアドレス欄に貼り付け。
+5. Permission は **Full**（読み取り専用の API 呼び出しには Full で問題なく、
+   Restricted だと弾かれるケースがあるため Full を推奨）→ **Add**。
+
+### 手順C — Cloudflare に環境変数を設定
+
+| 変数名 | 値 | 備考 |
+|---|---|---|
+| `GOOGLE_SERVICE_ACCOUNT_EMAIL` | JSON の `client_email` | そのままコピー |
+| `GOOGLE_SERVICE_ACCOUNT_KEY` | JSON の `private_key` | `-----BEGIN PRIVATE KEY-----` から `-----END PRIVATE KEY-----` まで全部（改行込み）をそのまま貼り付けてOK |
+| `SEARCH_CONSOLE_SITE_URL` | `sc-domain:hexapoint-jp.com` | 7節で作成したドメインプロパティの識別子。`https://` は付けない |
+
+Cloudflare Pages → Settings → Environment variables で、3つとも **Secret** として
+Production 環境に追加 → 保存後は次回デプロイから反映されます
+（すぐ反映したい場合は Deployments タブから最新デプロイを **Retry deployment**）。
+
+### 動作確認
+
+1. `/admin.html` にログイン → 「分析 / Analytics」タブを開く。
+2. クリック数・表示回数などの数値が表示されれば成功
+   （集計期間はタブ上部に表示されます — Search Console のデータには
+   2〜3日ほどの反映遅延があるため、「今日」までではなく数日前までの期間になります）。
+3. 「Google Search Console が未設定です」という表示のままの場合は、上記3つの
+   環境変数のいずれかが未設定か、Search Console 側の Users and permissions に
+   Service Account が正しく追加されていません。
+
+> 表示されるデータは 30 分ごとにキャッシュされます（`ORDERS_KV` 使用）。
+> タブ右上の「更新 / Refresh」ボタンでキャッシュを無視して即時再取得できます。
