@@ -318,9 +318,12 @@ Settings → Functions → D1 database bindings で、バインディング名 *
 D1 データベースをこの Pages プロジェクトに紐付けてください。バインド後、
 `migrations/0001_orders.sql`・`migrations/0002_order_notes.sql`（メモ機能）・
 `migrations/0003_finance_features.sql`（Zoho請求書ステータス追跡＋管理操作履歴。
-会計/更新/履歴タブに必須）を一度ずつ適用する必要があります
+会計/更新/履歴タブに必須）・`migrations/0004_status_reason.sql`・
+`migrations/0005_admin_settings.sql`・`migrations/0006_plans.sql`・
+`migrations/0007_contact_messages.sql`（お問い合わせタブに必須）を
+一度ずつ適用する必要があります
 （`wrangler d1 execute <DB名> --file=migrations/0001_orders.sql --remote`、
-`0002_order_notes.sql`・`0003_finance_features.sql` も同様に）。詳しい手順はチャットで案内します。
+以降の番号も同様に1つずつ実行）。詳しい手順はチャットで案内します。
 
 **管理画面（`/admin.html` と `/api/admin/*`）の保護**
 

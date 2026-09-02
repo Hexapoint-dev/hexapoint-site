@@ -2,6 +2,7 @@
 // Endpoint: POST /api/contact
 import { verifyTurnstile } from "../_shared/turnstile.js";
 import { trackResendSend } from "../_shared/usage.js";
+import { insertContactMessage } from "../_shared/db.js";
 
 export async function onRequestPost(context) {
   const { request, env } = context;
@@ -29,6 +30,17 @@ export async function onRequestPost(context) {
       return json({ ok: false, error: turnstileResult.error }, turnstileResult.status);
     }
     // ------------------------------------------------
+
+    // Best-effort: shows up in the admin panel's "お問い合わせ" tab. Never
+    // blocks the actual submission -- the Resend email below is still the
+    // primary delivery path, this is additive.
+    if (env.DB) {
+      try {
+        await insertContactMessage(env, { name, email, service, message });
+      } catch (err) {
+        console.error("insertContactMessage failed (non-fatal):", err);
+      }
+    }
 
     const receivedAt = new Intl.DateTimeFormat("ja-JP", {
       timeZone: "Asia/Tokyo",

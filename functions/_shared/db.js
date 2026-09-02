@@ -497,3 +497,78 @@ export async function updatePlan(env, id, patch) {
   await env.DB.prepare(`UPDATE plans SET ${setClauses.join(", ")} WHERE id = ?`).bind(...params).run();
   return getPlanRow(env, id);
 }
+
+// ---- Contact form messages (migrations/0007_contact_messages.sql) ----
+// The admin panel's "お問い合わせ" inbox tab. Always sorted newest-first --
+// unlike orders, there's no sortable-column UI here.
+
+export async function insertContactMessage(env, { name, email, service, message }) {
+  const result = await env.DB.prepare(
+    `INSERT INTO contact_messages (name, email, service, message) VALUES (?, ?, ?, ?)`
+  ).bind(name, email, service || "", message).run();
+  return { id: result.meta.last_row_id };
+}
+
+function buildMessageFilters({ status, search }) {
+  const where = [];
+  const params = [];
+  if (status) {
+    where.push("status = ?");
+    params.push(status);
+  }
+  if (search) {
+    where.push("(name LIKE ? OR email LIKE ? OR message LIKE ? OR service LIKE ?)");
+    const like = `%${search}%`;
+    params.push(like, like, like, like);
+  }
+  return { whereSql: where.length ? `WHERE ${where.join(" AND ")}` : "", params };
+}
+
+export async function listContactMessages(env, { status, search, page, limit } = {}) {
+  const pageNum = Math.max(1, parseInt(page, 10) || 1);
+  const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 25));
+  const offset = (pageNum - 1) * limitNum;
+
+  const { whereSql, params } = buildMessageFilters({ status, search });
+
+  const listSql = `SELECT * FROM contact_messages ${whereSql} ORDER BY created_at DESC LIMIT ? OFFSET ?`;
+  const countSql = `SELECT COUNT(*) AS total FROM contact_messages ${whereSql}`;
+  // Unread count ignores the current filters -- it's for the tab's badge,
+  // which should always reflect the true unread total, not the filtered view.
+  const unreadSql = `SELECT COUNT(*) AS total FROM contact_messages WHERE status = 'new'`;
+
+  const [listResult, countResult, unreadResult] = await Promise.all([
+    env.DB.prepare(listSql).bind(...params, limitNum, offset).all(),
+    env.DB.prepare(countSql).bind(...params).first(),
+    env.DB.prepare(unreadSql).first(),
+  ]);
+
+  return {
+    messages: listResult.results || [],
+    total: countResult ? countResult.total : 0,
+    unreadCount: unreadResult ? unreadResult.total : 0,
+    page: pageNum,
+    limit: limitNum,
+  };
+}
+
+export async function getContactMessage(env, id) {
+  if (!id) return null;
+  const row = await env.DB.prepare("SELECT * FROM contact_messages WHERE id = ?").bind(id).first();
+  return row || null;
+}
+
+const MESSAGE_STATUSES = new Set(["new", "read", "replied", "archived"]);
+
+export async function updateContactMessageStatus(env, id, status) {
+  if (!MESSAGE_STATUSES.has(status)) return null;
+  await env.DB.prepare(
+    `UPDATE contact_messages SET status = ?, updated_at = datetime('now') WHERE id = ?`
+  ).bind(status, id).run();
+  return getContactMessage(env, id);
+}
+
+export async function deleteContactMessage(env, id) {
+  const result = await env.DB.prepare("DELETE FROM contact_messages WHERE id = ?").bind(id).run();
+  return { ok: true, deleted: result?.meta?.changes || 0 };
+}

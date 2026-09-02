@@ -170,6 +170,10 @@
   .badge-paid { background: var(--emerald); color: #fff; }
   .badge-refunded { background: var(--coral-soft); color: var(--coral); }
   .badge-cancelled { background: var(--coral); color: #fff; }
+  .badge-msg-new { background: var(--coral); color: #fff; }
+  .badge-msg-read { background: var(--line); color: var(--ink); }
+  .badge-msg-replied { background: #4f86e8; color: #fff; }
+  .badge-msg-archived { background: #9aa0b4; color: #fff; }
 
   .row-actions button {
     border: none;
@@ -406,12 +410,34 @@
   /* ---- tabs ---- */
   .tabs {
     display: flex;
+    align-items: center;
     gap: 4px;
     background: var(--line);
     border-radius: 12px;
     padding: 4px;
     width: fit-content;
+    max-width: 100%;
+    flex-wrap: wrap;
     margin-bottom: 20px;
+  }
+  .tab-divider {
+    width: 1px;
+    align-self: stretch;
+    background: rgba(14, 22, 51, .16);
+    margin: 4px 2px;
+  }
+  .tab-badge {
+    display: inline-block;
+    min-width: 16px;
+    padding: 1px 5px;
+    margin-left: 5px;
+    border-radius: 999px;
+    background: var(--coral);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1.4;
+    text-align: center;
   }
   .tabs button {
     border: none;
@@ -789,14 +815,26 @@
   <div id="error-banner"></div>
 
   <div class="tabs">
+    <!-- 受信・日常業務 / Inbox & daily work -->
     <button type="button" class="active" id="tab-btn-orders" onclick="switchTab('orders')">注文 <span class="mono" style="font-size:10px;opacity:.7">Orders</span></button>
-    <button type="button" id="tab-btn-renewals" onclick="switchTab('renewals')">更新 <span class="mono" style="font-size:10px;opacity:.7">Renewals</span></button>
-    <button type="button" id="tab-btn-finance" onclick="switchTab('finance')">会計 <span class="mono" style="font-size:10px;opacity:.7">Accounts</span></button>
-    <button type="button" id="tab-btn-history" onclick="switchTab('history')">履歴 <span class="mono" style="font-size:10px;opacity:.7">History</span></button>
+    <button type="button" id="tab-btn-messages" onclick="switchTab('messages')">お問い合わせ <span class="mono" style="font-size:10px;opacity:.7">Messages</span><span class="tab-badge" id="messages-unread-badge" style="display:none;"></span></button>
+    <span class="tab-divider"></span>
+    <!-- 顧客管理 / Customers -->
     <button type="button" id="tab-btn-customers" onclick="switchTab('customers')">顧客 <span class="mono" style="font-size:10px;opacity:.7">Customers</span></button>
+    <button type="button" id="tab-btn-renewals" onclick="switchTab('renewals')">更新 <span class="mono" style="font-size:10px;opacity:.7">Renewals</span></button>
+    <span class="tab-divider"></span>
+    <!-- 経理 / Finance -->
+    <button type="button" id="tab-btn-finance" onclick="switchTab('finance')">会計 <span class="mono" style="font-size:10px;opacity:.7">Accounts</span></button>
+    <span class="tab-divider"></span>
+    <!-- カタログ設定 / Catalog -->
     <button type="button" id="tab-btn-plans" onclick="switchTab('plans')">プラン <span class="mono" style="font-size:10px;opacity:.7">Plans</span></button>
+    <span class="tab-divider"></span>
+    <!-- インサイト・運用監視 / Insights & ops -->
     <button type="button" id="tab-btn-analytics" onclick="switchTab('analytics')">分析 <span class="mono" style="font-size:10px;opacity:.7">Analytics</span></button>
     <button type="button" id="tab-btn-status" onclick="switchTab('status')">システム状況 <span class="mono" style="font-size:10px;opacity:.7">Status</span></button>
+    <span class="tab-divider"></span>
+    <!-- 監査ログ / Audit -->
+    <button type="button" id="tab-btn-history" onclick="switchTab('history')">履歴 <span class="mono" style="font-size:10px;opacity:.7">History</span></button>
   </div>
 
 <div id="view-orders" class="tab-view active">
@@ -899,6 +937,46 @@
   </div>
 
 </div><!-- /#view-orders -->
+
+<div id="view-messages" class="tab-view">
+
+  <div class="toolbar">
+    <select id="msg-filter-status" onchange="onMessageFilterChange()">
+      <option value="">すべて / All</option>
+      <option value="new">未読 / New</option>
+      <option value="read">既読 / Read</option>
+      <option value="replied">返信済み / Replied</option>
+      <option value="archived">アーカイブ / Archived</option>
+    </select>
+    <input type="search" id="msg-filter-search" placeholder="名前・メール・内容で検索…" oninput="onMessageSearchInput()">
+    <button type="button" class="btn btn-ghost" onclick="fetchMessages()">更新 / Refresh</button>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>受信日時</th>
+          <th>お名前</th>
+          <th>メール</th>
+          <th>サービス</th>
+          <th>内容</th>
+          <th>状態</th>
+        </tr>
+      </thead>
+      <tbody id="messages-tbody">
+        <tr><td colspan="6" class="loading-state">読み込み中…</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="pagination">
+    <button type="button" class="btn btn-ghost" id="msg-prev-page" onclick="changeMessagePage(-1)">← 前へ</button>
+    <span id="msg-page-indicator" class="mono"></span>
+    <button type="button" class="btn btn-ghost" id="msg-next-page" onclick="changeMessagePage(1)">次へ →</button>
+  </div>
+
+</div><!-- /#view-messages -->
 
 <div id="view-finance" class="tab-view">
 
@@ -1367,6 +1445,34 @@
   </div>
 </div>
 
+<div class="overlay" id="message-overlay">
+  <div class="modal">
+    <button type="button" class="close" onclick="closeMessageModal()">✕</button>
+    <h2>お問い合わせ詳細</h2>
+    <div class="sub mono" id="msg-modal-date"></div>
+
+    <div class="field-row">
+      <div class="field"><label>お名前</label><div class="mono" id="msg-modal-name" style="padding:10px 0;"></div></div>
+      <div class="field"><label>メール</label><div class="mono" id="msg-modal-email" style="padding:10px 0;"></div></div>
+    </div>
+    <div class="field">
+      <label>ご希望のサービス</label>
+      <div class="mono" id="msg-modal-service" style="padding:10px 0;"></div>
+    </div>
+    <div class="field">
+      <label>メッセージ</label>
+      <div id="msg-modal-body" style="white-space:pre-wrap;line-height:1.8;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:16px;"></div>
+    </div>
+
+    <div class="modal-actions" style="flex-wrap:wrap;">
+      <a id="msg-modal-reply" href="#" class="btn" style="text-decoration:none;text-align:center;">メールで返信する</a>
+      <button type="button" class="btn btn-ghost" onclick="setMessageStatus('replied')">返信済みにする</button>
+      <button type="button" class="btn btn-ghost" onclick="setMessageStatus('archived')">アーカイブ</button>
+      <button type="button" class="btn btn-danger" onclick="deleteCurrentMessage()">削除</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast-stack" aria-live="polite"></div>
 </div><!-- /#dashboard-screen -->
 
@@ -1634,7 +1740,8 @@
     var d = document.getElementById('detail-overlay');
     var a = document.getElementById('add-overlay');
     var c = document.getElementById('customer-overlay');
-    return (d && d.classList.contains('show')) || (a && a.classList.contains('show')) || (c && c.classList.contains('show'));
+    var m = document.getElementById('message-overlay');
+    return (d && d.classList.contains('show')) || (a && a.classList.contains('show')) || (c && c.classList.contains('show')) || (m && m.classList.contains('show'));
   }
 
   function pollForUpdates() {
@@ -1882,7 +1989,7 @@
   }
 
   // ---- Tabs ----
-  var TAB_NAMES = ['orders', 'renewals', 'finance', 'history', 'customers', 'plans', 'analytics', 'status'];
+  var TAB_NAMES = ['orders', 'messages', 'customers', 'renewals', 'finance', 'plans', 'analytics', 'status', 'history'];
   window.switchTab = function (name) {
     TAB_NAMES.forEach(function (t) {
       document.getElementById('view-' + t).classList.toggle('active', t === name);
@@ -1895,6 +2002,7 @@
     if (name === 'plans') fetchPlansTab();
     if (name === 'analytics') fetchAnalytics();
     if (name === 'status') fetchStatus();
+    if (name === 'messages') fetchMessages();
   };
 
   window.saveFeePct = function () {
@@ -2453,6 +2561,180 @@
       .catch(function (err) {
         console.error('fetchStatus error:', err);
         showError('システム状況の取得に失敗しました: ' + err.message);
+      });
+  };
+
+  // ---- お問い合わせ (Contact Messages) tab ----
+  var msgState = { status: '', search: '', page: 1, limit: 25 };
+  var currentMessages = [];
+  var currentMessageId = null;
+  var msgSearchDebounce = null;
+
+  function updateMessagesUnreadBadge(count) {
+    var badge = document.getElementById('messages-unread-badge');
+    if (count > 0) {
+      badge.textContent = count > 99 ? '99+' : String(count);
+      badge.style.display = '';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+
+  var MSG_STATUS_LABELS = { new: '未読 / New', read: '既読 / Read', replied: '返信済み / Replied', archived: 'アーカイブ / Archived' };
+  function msgBadgeHtml(status) {
+    return '<span class="badge badge-msg-' + esc(status) + '">' + esc(MSG_STATUS_LABELS[status] || status) + '</span>';
+  }
+
+  function truncate(s, n) {
+    s = String(s || '').replace(/\s+/g, ' ').trim();
+    return s.length > n ? s.slice(0, n) + '…' : s;
+  }
+
+  function renderMessagesTable(messages) {
+    var tbody = document.getElementById('messages-tbody');
+    if (!messages.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="empty-state">お問い合わせはありません</td></tr>';
+      return;
+    }
+    tbody.innerHTML = messages.map(function (m) {
+      return '<tr onclick="openMessageModal(' + m.id + ')"' + (m.status === 'new' ? ' style="font-weight:700;"' : '') + '>' +
+        '<td class="mono" data-label="受信日時">' + esc(fmtDate(m.created_at)) + '</td>' +
+        '<td data-label="お名前">' + esc(m.name) + '</td>' +
+        '<td data-label="メール">' + esc(m.email) + '</td>' +
+        '<td data-label="サービス">' + esc(m.service || '—') + '</td>' +
+        '<td data-label="内容">' + esc(truncate(m.message, 60)) + '</td>' +
+        '<td data-label="状態">' + msgBadgeHtml(m.status) + '</td>' +
+      '</tr>';
+    }).join('');
+  }
+
+  function renderMessagePagination(total, page, limit) {
+    var totalPages = Math.max(1, Math.ceil(total / limit));
+    document.getElementById('msg-page-indicator').textContent = page + ' / ' + totalPages + '（全 ' + total + ' 件）';
+    document.getElementById('msg-prev-page').disabled = page <= 1;
+    document.getElementById('msg-next-page').disabled = page >= totalPages;
+  }
+
+  function buildMessageQuery() {
+    var params = new URLSearchParams();
+    if (msgState.status) params.set('status', msgState.status);
+    if (msgState.search) params.set('search', msgState.search);
+    params.set('page', msgState.page);
+    params.set('limit', msgState.limit);
+    return params.toString();
+  }
+
+  window.fetchMessages = function fetchMessages() {
+    var tbody = document.getElementById('messages-tbody');
+    if (tbody) tbody.innerHTML = '<tr><td colspan="6" class="loading-state">読み込み中…</td></tr>';
+    fetch('/api/admin/messages?' + buildMessageQuery())
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (result) {
+        if (!result.ok || !result.data.ok) {
+          throw new Error((result.data && result.data.error) || 'request_failed');
+        }
+        currentMessages = result.data.messages;
+        renderMessagesTable(currentMessages);
+        renderMessagePagination(result.data.total, result.data.page, result.data.limit);
+        updateMessagesUnreadBadge(result.data.unreadCount);
+      })
+      .catch(function (err) {
+        console.error('fetchMessages error:', err);
+        showError('お問い合わせ一覧の取得に失敗しました: ' + err.message);
+        document.getElementById('messages-tbody').innerHTML = '<tr><td colspan="6" class="empty-state">読み込みエラー</td></tr>';
+      });
+  };
+
+  window.onMessageFilterChange = function () {
+    msgState.status = document.getElementById('msg-filter-status').value;
+    msgState.page = 1;
+    fetchMessages();
+  };
+
+  window.onMessageSearchInput = function () {
+    clearTimeout(msgSearchDebounce);
+    msgSearchDebounce = setTimeout(function () {
+      msgState.search = document.getElementById('msg-filter-search').value.trim();
+      msgState.page = 1;
+      fetchMessages();
+    }, 350);
+  };
+
+  window.changeMessagePage = function (delta) {
+    msgState.page = Math.max(1, msgState.page + delta);
+    fetchMessages();
+  };
+
+  function renderMessageModal(m) {
+    currentMessageId = m.id;
+    document.getElementById('msg-modal-date').textContent = fmtDate(m.created_at);
+    document.getElementById('msg-modal-name').textContent = m.name;
+    document.getElementById('msg-modal-email').textContent = m.email;
+    document.getElementById('msg-modal-service').textContent = m.service || '—';
+    document.getElementById('msg-modal-body').textContent = m.message;
+    var subject = encodeURIComponent('Re: お問い合わせありがとうございます / Re: your inquiry — HexaPoint');
+    document.getElementById('msg-modal-reply').href = 'mailto:' + encodeURIComponent(m.email) + '?subject=' + subject;
+    document.getElementById('message-overlay').classList.add('show');
+  }
+
+  // GET may flip 'new' -> 'read' server-side (viewing a message marks it
+  // read, same convention as any email inbox) -- fetchMessages() afterward
+  // keeps the table/badge in sync with that in the background.
+  window.openMessageModal = function (id) {
+    fetch('/api/admin/messages/' + id)
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (!data.ok) throw new Error(data.error || 'request_failed');
+        renderMessageModal(data.message);
+        fetchMessages();
+      })
+      .catch(function (err) {
+        console.error('openMessageModal error:', err);
+        showError('お問い合わせの取得に失敗しました: ' + err.message);
+      });
+  };
+
+  window.closeMessageModal = function () {
+    document.getElementById('message-overlay').classList.remove('show');
+    currentMessageId = null;
+  };
+
+  document.getElementById('message-overlay').addEventListener('click', function (e) {
+    if (e.target === this) closeMessageModal();
+  });
+
+  window.setMessageStatus = function (status) {
+    if (!currentMessageId) return;
+    fetch('/api/admin/messages/' + currentMessageId, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: status })
+    })
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (!data.ok) throw new Error(data.error || 'request_failed');
+        closeMessageModal();
+        fetchMessages();
+      })
+      .catch(function (err) {
+        console.error('setMessageStatus error:', err);
+        showError('更新に失敗しました: ' + err.message);
+      });
+  };
+
+  window.deleteCurrentMessage = function () {
+    if (!currentMessageId) return;
+    if (!confirm('このお問い合わせを削除しますか？この操作は取り消せません。')) return;
+    fetch('/api/admin/messages/' + currentMessageId, { method: 'DELETE' })
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (!data.ok) throw new Error(data.error || 'request_failed');
+        closeMessageModal();
+        fetchMessages();
+      })
+      .catch(function (err) {
+        console.error('deleteCurrentMessage error:', err);
+        showError('削除に失敗しました: ' + err.message);
       });
   };
 
@@ -3087,6 +3369,7 @@
     fetchStats();
     fetchSettings();
     fetchPlansTab();
+    fetchMessages();
     updateNotifButton();
     applyTaxVisibility();
     startPolling();
