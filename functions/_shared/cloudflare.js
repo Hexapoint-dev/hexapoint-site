@@ -104,18 +104,41 @@ async function getKvUsage(env) {
   return { ...byType, limits: KV_FREE_LIMITS, date };
 }
 
+// The Pages deployments endpoint doesn't accept a `per_page` override (fixed
+// page size, ~25/page) and returns deployments newest-first, so we page
+// through it and stop as soon as a deployment older than the current month
+// shows up -- no need to fetch the project's entire deployment history.
 async function getPagesBuildsThisMonth(env) {
   if (!env.CLOUDFLARE_PAGES_PROJECT_NAME) return null;
-  const res = await fetch(
-    `https://api.cloudflare.com/client/v4/accounts/${env.CLOUDFLARE_ACCOUNT_ID}/pages/projects/${env.CLOUDFLARE_PAGES_PROJECT_NAME}/deployments?per_page=100`,
-    { headers: { Authorization: `Bearer ${env.CLOUDFLARE_API_TOKEN}` } }
-  );
-  const data = await res.json().catch(() => null);
-  if (!res.ok || !data || !data.success) {
-    throw new Error(`cf_pages_deployments_failed: ${res.status} ${JSON.stringify(data)}`);
-  }
   const month = new Date().toISOString().slice(0, 7);
-  const count = (data.result || []).filter((d) => String(d.created_on || "").slice(0, 7) === month).length;
+  const MAX_PAGES = 8;
+  let count = 0;
+
+  for (let page = 1; page <= MAX_PAGES; page++) {
+    const res = await fetch(
+      `https://api.cloudflare.com/client/v4/accounts/${env.CLOUDFLARE_ACCOUNT_ID}/pages/projects/${env.CLOUDFLARE_PAGES_PROJECT_NAME}/deployments?page=${page}`,
+      { headers: { Authorization: `Bearer ${env.CLOUDFLARE_API_TOKEN}` } }
+    );
+    const data = await res.json().catch(() => null);
+    if (!res.ok || !data || !data.success) {
+      throw new Error(`cf_pages_deployments_failed: ${res.status} ${JSON.stringify(data)}`);
+    }
+    const deployments = data.result || [];
+    if (!deployments.length) break;
+
+    let sawOlderDeployment = false;
+    for (const d of deployments) {
+      const deployMonth = String(d.created_on || "").slice(0, 7);
+      if (deployMonth === month) {
+        count++;
+      } else if (deployMonth < month) {
+        sawOlderDeployment = true;
+        break;
+      }
+    }
+    if (sawOlderDeployment || deployments.length < 25) break;
+  }
+
   return { count, limits: PAGES_FREE_LIMITS, month };
 }
 
