@@ -127,4 +127,22 @@ async function runSearchAnalyticsQuery(env, { startDate, endDate, dimensions = [
   return data.rows || [];
 }
 
-export { googleConfigured, runSearchAnalyticsQuery };
+// Lists the sitemaps submitted for the property, each with its last-read
+// date and submitted/indexed counts -- used by the admin Analytics tab to
+// show whether Google actually picked up sitemap.xml (see SETUP-cloudflare.md
+// section 7) rather than just guessing from the search traffic numbers.
+async function listSitemaps(env) {
+  const accessToken = await getGoogleAccessToken(env);
+  const siteUrl = encodeURIComponent(env.SEARCH_CONSOLE_SITE_URL);
+  const res = await fetch(
+    `https://searchconsole.googleapis.com/webmasters/v3/sites/${siteUrl}/sitemaps`,
+    { headers: { Authorization: `Bearer ${accessToken}` } }
+  );
+  const data = await res.json().catch(() => null);
+  if (!res.ok || !data) {
+    throw new Error(`search_console_sitemaps_failed: ${res.status} ${JSON.stringify(data)}`);
+  }
+  return data.sitemap || [];
+}
+
+export { googleConfigured, runSearchAnalyticsQuery, listSitemaps };

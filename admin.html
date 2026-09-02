@@ -1089,6 +1089,11 @@
   </div>
 
   <div id="gsc-content">
+    <div class="fin-card" style="margin-bottom:16px;">
+      <h3>サイトマップの状態 <span class="mono" style="font-size:11px;opacity:.5">Sitemap Status</span></h3>
+      <div id="gsc-sitemaps"><div class="loading-state">読み込み中…</div></div>
+    </div>
+
     <div class="fee-hint" style="margin-bottom:14px;" id="gsc-range-note">&nbsp;</div>
 
     <div class="stats-row" id="gsc-stats-row" style="grid-template-columns:repeat(4,1fr);">
@@ -2063,6 +2068,18 @@
     return Number(n || 0).toLocaleString('ja-JP');
   }
 
+  // Google's sitemap `lastDownloaded` is already a full ISO 8601 timestamp
+  // (unlike our own DB's "YYYY-MM-DD HH:MM:SS" rows that fmtDate() expects),
+  // so it can be parsed directly without the space->T / +Z massaging.
+  function fmtGscTimestamp(iso) {
+    try {
+      return new Intl.DateTimeFormat('ja-JP', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Tokyo' })
+        .format(new Date(iso));
+    } catch (e) {
+      return iso;
+    }
+  }
+
   window.setAnalyticsRange = function (range) {
     gscState.range = range;
     Array.prototype.forEach.call(document.querySelectorAll('#gsc-range-buttons button'), function (b) {
@@ -2111,7 +2128,36 @@
     }).join('') + '</div>';
   }
 
+  function renderGscSitemaps(rows) {
+    var el = document.getElementById('gsc-sitemaps');
+    if (!rows.length) {
+      el.innerHTML = '<div class="empty-state" style="padding:20px 0;">サイトマップが送信されていません（7節参照）</div>';
+      return;
+    }
+    el.innerHTML = rows.map(function (s) {
+      var totalSubmitted = s.contents.reduce(function (a, c) { return a + c.submitted; }, 0);
+      var totalIndexed = s.contents.reduce(function (a, c) { return a + c.indexed; }, 0);
+      var lastRead = s.lastDownloaded ? fmtGscTimestamp(s.lastDownloaded) : (s.isPending ? '処理待ち / Pending' : '未読み込み / Not read yet');
+      var badgeClass = s.errors > 0 ? 'warn' : (s.warnings > 0 ? 'ok' : '');
+      var noteBits = [];
+      if (s.errors > 0) noteBits.push(s.errors + '件のエラー');
+      if (s.warnings > 0) noteBits.push(s.warnings + '件の警告');
+      return '<div class="renewal-list-item">' +
+        '<span class="r-badge' + (badgeClass ? ' ' + badgeClass : '') + '"></span>' +
+        '<div class="r-main">' +
+          '<div class="r-name">' + esc(s.path) + '</div>' +
+          '<div class="r-sub">最終読み込み: ' + lastRead + (noteBits.length ? ' · ' + noteBits.join(' / ') : '') + '</div>' +
+        '</div>' +
+        '<div class="r-days">' +
+          '<div class="num">' + fmtNum(totalIndexed) + ' / ' + fmtNum(totalSubmitted) + '</div>' +
+          '<div class="lbl">インデックス済み / 送信</div>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
+
   function renderAnalytics(data) {
+    renderGscSitemaps(data.sitemaps);
     document.getElementById('gsc-range-note').textContent =
       '集計期間: ' + data.startDate + ' 〜 ' + data.endDate + '（Search Console のデータは直近2〜3日分が反映されるまで時間がかかるため、今日までではなくこの期間になります）';
     document.getElementById('gsc-clicks').textContent = fmtNum(data.totals.clicks);

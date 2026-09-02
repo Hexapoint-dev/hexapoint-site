@@ -11,7 +11,7 @@
 
 import { jsonResponse } from "../../_shared/db.js";
 import { requireAdmin } from "../../_shared/admin-auth.js";
-import { googleConfigured, runSearchAnalyticsQuery } from "../../_shared/google.js";
+import { googleConfigured, runSearchAnalyticsQuery, listSitemaps } from "../../_shared/google.js";
 
 const RANGE_DAYS = { "7d": 7, "28d": 28, "90d": 90 };
 const CACHE_TTL_SECONDS = 1800;
@@ -38,13 +38,14 @@ const byClicksDesc = (a, b) => (b.clicks || 0) - (a.clicks || 0);
 async function loadSearchConsole(env, rangeKey) {
   const { startDate, endDate } = dateRangeFor(rangeKey);
 
-  const [totalsRows, trendRows, queryRows, pageRows, deviceRows, countryRows] = await Promise.all([
+  const [totalsRows, trendRows, queryRows, pageRows, deviceRows, countryRows, sitemapRows] = await Promise.all([
     runSearchAnalyticsQuery(env, { startDate, endDate }),
     runSearchAnalyticsQuery(env, { startDate, endDate, dimensions: ["date"], rowLimit: 100 }),
     runSearchAnalyticsQuery(env, { startDate, endDate, dimensions: ["query"], rowLimit: 25 }),
     runSearchAnalyticsQuery(env, { startDate, endDate, dimensions: ["page"], rowLimit: 25 }),
     runSearchAnalyticsQuery(env, { startDate, endDate, dimensions: ["device"], rowLimit: 10 }),
     runSearchAnalyticsQuery(env, { startDate, endDate, dimensions: ["country"], rowLimit: 10 }),
+    listSitemaps(env),
   ]);
 
   const totalsRow = totalsRows[0];
@@ -79,6 +80,18 @@ async function loadSearchConsole(env, rangeKey) {
       .sort(byClicksDesc)
       .slice(0, 10)
       .map((r) => ({ country: r.keys[0], clicks: r.clicks || 0 })),
+    sitemaps: sitemapRows.map((s) => ({
+      path: s.path,
+      lastDownloaded: s.lastDownloaded || null,
+      isPending: !!s.isPending,
+      warnings: Number(s.warnings || 0),
+      errors: Number(s.errors || 0),
+      contents: (s.contents || []).map((c) => ({
+        type: c.type,
+        submitted: Number(c.submitted || 0),
+        indexed: Number(c.indexed || 0),
+      })),
+    })),
   };
 }
 
