@@ -108,7 +108,9 @@ export async function onRequestGet({ request, env }) {
     const range = RANGE_DAYS[url.searchParams.get("range")] ? url.searchParams.get("range") : "28d";
     const forceRefresh = url.searchParams.get("refresh") === "1";
 
-    const cacheKey = `gsc:report:${range}`;
+    // v2: bump this if the shape of loadSearchConsole()'s return value changes
+    // again, so stale KV entries from an older shape don't get served as-is.
+    const cacheKey = `gsc:report:v2:${range}`;
     if (!forceRefresh && env.ORDERS_KV) {
       const cached = await env.ORDERS_KV.get(cacheKey, "json");
       if (cached) return jsonResponse({ ok: true, range, cached: true, ...cached });

@@ -2157,25 +2157,26 @@
   }
 
   function renderAnalytics(data) {
-    renderGscSitemaps(data.sitemaps);
+    var totals = data.totals || { clicks: 0, impressions: 0, ctr: 0, position: 0 };
+    renderGscSitemaps(data.sitemaps || []);
     document.getElementById('gsc-range-note').textContent =
       '集計期間: ' + data.startDate + ' 〜 ' + data.endDate + '（Search Console のデータは直近2〜3日分が反映されるまで時間がかかるため、今日までではなくこの期間になります）';
-    document.getElementById('gsc-clicks').textContent = fmtNum(data.totals.clicks);
-    document.getElementById('gsc-impressions').textContent = fmtNum(data.totals.impressions);
-    document.getElementById('gsc-ctr').textContent = (data.totals.ctr * 100).toFixed(1) + '%';
-    document.getElementById('gsc-position').textContent = data.totals.position.toFixed(1);
+    document.getElementById('gsc-clicks').textContent = fmtNum(totals.clicks);
+    document.getElementById('gsc-impressions').textContent = fmtNum(totals.impressions);
+    document.getElementById('gsc-ctr').textContent = (totals.ctr * 100).toFixed(1) + '%';
+    document.getElementById('gsc-position').textContent = totals.position.toFixed(1);
 
-    renderGscTrend(data.trend);
-    renderGscBarList('gsc-queries', data.topQueries,
+    renderGscTrend(data.trend || []);
+    renderGscBarList('gsc-queries', data.topQueries || [],
       function (r) { return r.query; },
       function (r) { return r.clicks; });
-    renderGscBarList('gsc-pages', data.topPages,
+    renderGscBarList('gsc-pages', data.topPages || [],
       function (r) { return r.page; },
       function (r) { return r.clicks; });
-    renderGscBarList('gsc-devices', data.devices,
+    renderGscBarList('gsc-devices', data.devices || [],
       function (r) { return DEVICE_LABELS_JA[r.device] || r.device; },
       function (r) { return r.clicks; });
-    renderGscBarList('gsc-countries', data.countries,
+    renderGscBarList('gsc-countries', data.countries || [],
       function (r) { return r.country.toUpperCase(); },
       function (r) { return r.clicks; });
   }
