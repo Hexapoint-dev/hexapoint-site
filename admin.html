@@ -818,6 +818,7 @@
     <!-- 受信・日常業務 / Inbox & daily work -->
     <button type="button" class="active" id="tab-btn-orders" onclick="switchTab('orders')">注文 <span class="mono" style="font-size:10px;opacity:.7">Orders</span></button>
     <button type="button" id="tab-btn-messages" onclick="switchTab('messages')">お問い合わせ <span class="mono" style="font-size:10px;opacity:.7">Messages</span><span class="tab-badge" id="messages-unread-badge" style="display:none;"></span></button>
+    <button type="button" id="tab-btn-calendar" onclick="switchTab('calendar')">予約カレンダー <span class="mono" style="font-size:10px;opacity:.7">Calendar</span></button>
     <span class="tab-divider"></span>
     <!-- 顧客管理 / Customers -->
     <button type="button" id="tab-btn-customers" onclick="switchTab('customers')">顧客 <span class="mono" style="font-size:10px;opacity:.7">Customers</span></button>
@@ -977,6 +978,50 @@
   </div>
 
 </div><!-- /#view-messages -->
+
+<div id="view-calendar" class="tab-view">
+
+  <div class="toolbar" style="justify-content:space-between;">
+    <div style="font-size:13px;opacity:.7;">
+      タイムゾーン / Timezone: <span class="mono" id="cal-timezone">—</span>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <button type="button" class="btn btn-ghost" onclick="fetchCalendar()">更新 / Refresh</button>
+      <button type="button" class="btn" onclick="saveCalendar()">保存する / Save</button>
+    </div>
+  </div>
+
+  <div id="cal-not-configured" class="empty-state" style="display:none;padding:20px 0;">
+    Cal.com の予約カレンダー連携が未設定です。<code>CAL_API_KEY</code>・
+    <code>CAL_SCHEDULE_ID</code> を環境変数に設定してください（SETUP-cloudflare.md 参照）。
+  </div>
+
+  <div id="cal-unexpected-format" class="empty-state" style="display:none;padding:20px 0;flex-direction:column;align-items:flex-start;gap:10px;">
+    <div>Cal.com から想定外の形式のデータが返ってきました。下のJSONを開発者に共有してください：</div>
+    <pre id="cal-raw-json" class="mono" style="white-space:pre-wrap;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:14px;font-size:11px;max-height:300px;overflow:auto;width:100%;"></pre>
+  </div>
+
+  <div id="cal-content">
+    <div class="fin-card" style="margin-bottom:16px;">
+      <h3>週次の対応可能時間 <span class="mono" style="font-size:11px;opacity:.5">Weekly Availability</span></h3>
+      <div id="cal-weekly"><div class="loading-state">読み込み中…</div></div>
+    </div>
+
+    <div class="fin-card">
+      <h3>
+        <span>特別な日 <span class="mono" style="font-size:11px;opacity:.5">Date Overrides</span></span>
+      </h3>
+      <div class="fee-hint" style="margin-bottom:14px;">特定の日だけ休みにしたり、通常と違う時間で対応したりできます。<br>
+        <span style="opacity:.75">Mark specific dates as fully unavailable, or give them different hours than usual.</span></div>
+      <div id="cal-overrides"><div class="loading-state">読み込み中…</div></div>
+      <div class="field-row" style="margin-top:16px;align-items:flex-end;">
+        <div class="field"><label>日付を追加</label><input type="date" id="cal-new-override-date"></div>
+        <button type="button" class="btn btn-ghost" onclick="addOverride()">+ 特別な日を追加</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /#view-calendar -->
 
 <div id="view-finance" class="tab-view">
 
@@ -1989,7 +2034,7 @@
   }
 
   // ---- Tabs ----
-  var TAB_NAMES = ['orders', 'messages', 'customers', 'renewals', 'finance', 'plans', 'analytics', 'status', 'history'];
+  var TAB_NAMES = ['orders', 'messages', 'calendar', 'customers', 'renewals', 'finance', 'plans', 'analytics', 'status', 'history'];
   window.switchTab = function (name) {
     TAB_NAMES.forEach(function (t) {
       document.getElementById('view-' + t).classList.toggle('active', t === name);
@@ -2003,6 +2048,7 @@
     if (name === 'analytics') fetchAnalytics();
     if (name === 'status') fetchStatus();
     if (name === 'messages') fetchMessages();
+    if (name === 'calendar') fetchCalendar();
   };
 
   window.saveFeePct = function () {
@@ -2735,6 +2781,208 @@
       .catch(function (err) {
         console.error('deleteCurrentMessage error:', err);
         showError('削除に失敗しました: ' + err.message);
+      });
+  };
+
+  // ---- 予約カレンダー (Calendar / Cal.com schedule) tab ----
+  var DAY_ORDER = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  var DAY_LABELS_JA = { Sunday: '日', Monday: '月', Tuesday: '火', Wednesday: '水', Thursday: '木', Friday: '金', Saturday: '土' };
+  var calWorking = null; // { perDay, overrides, timeZone, timeSample }
+
+  // Cal.com's schedule times may come back either as plain "HH:mm" or as a
+  // full timestamp anchored to an arbitrary date (e.g.
+  // "1970-01-01T09:00:00.000Z") -- extract/rebuild against a captured sample
+  // so we write back in whatever shape we read, instead of guessing.
+  function extractHHMM(raw) {
+    if (typeof raw !== 'string') return '09:00';
+    var m = /(\d{2}:\d{2})/.exec(raw);
+    return m ? m[1] : '09:00';
+  }
+
+  function rebuildTimeValue(hhmm, sample) {
+    if (typeof sample === 'string' && sample.indexOf('T') !== -1) {
+      return sample.replace(/\d{2}:\d{2}/, hhmm);
+    }
+    return hhmm;
+  }
+
+  function buildCalWorkingModel(schedule) {
+    var perDay = {};
+    DAY_ORDER.forEach(function (d) { perDay[d] = []; });
+    var timeSample = '09:00';
+
+    (schedule.availability || []).forEach(function (rule) {
+      (rule.days || []).forEach(function (day) {
+        if (!perDay[day]) return;
+        perDay[day].push({ start: extractHHMM(rule.startTime), end: extractHHMM(rule.endTime) });
+        timeSample = rule.startTime || timeSample;
+      });
+    });
+
+    var overrides = (schedule.overrides || []).map(function (o) {
+      return {
+        date: o.date,
+        allDayOff: !!o.isUnavailable,
+        start: extractHHMM(o.startTime),
+        end: extractHHMM(o.endTime)
+      };
+    });
+
+    return { perDay: perDay, overrides: overrides, timeZone: schedule.timeZone || '', timeSample: timeSample };
+  }
+
+  function renderWeekly() {
+    var el = document.getElementById('cal-weekly');
+    el.innerHTML = DAY_ORDER.map(function (day, dayIdx) {
+      var ranges = calWorking.perDay[day];
+      var rangesHtml = ranges.length
+        ? ranges.map(function (r, i) {
+            return '<div class="field-row" style="align-items:center;margin-bottom:6px;">' +
+              '<input type="time" value="' + r.start + '" onchange="updateDayRange(' + dayIdx + ',' + i + ',\'start\',this.value)">' +
+              '<span style="opacity:.5;">〜</span>' +
+              '<input type="time" value="' + r.end + '" onchange="updateDayRange(' + dayIdx + ',' + i + ',\'end\',this.value)">' +
+              '<button type="button" class="btn btn-ghost" onclick="removeDayRange(' + dayIdx + ',' + i + ')">削除</button>' +
+            '</div>';
+          }).join('')
+        : '<div style="opacity:.5;font-size:13px;padding:6px 0;">休み / Off</div>';
+
+      return '<div style="display:flex;gap:16px;padding:10px 0;border-bottom:1px solid var(--line);align-items:flex-start;">' +
+        '<div style="width:40px;font-weight:700;padding-top:6px;">' + DAY_LABELS_JA[day] + '</div>' +
+        '<div style="flex:1;">' + rangesHtml +
+          '<button type="button" class="btn btn-ghost" onclick="addDayRange(' + dayIdx + ')" style="font-size:12px;">+ 時間帯を追加</button>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  window.updateDayRange = function (dayIdx, i, field, value) {
+    calWorking.perDay[DAY_ORDER[dayIdx]][i][field] = value;
+  };
+
+  window.removeDayRange = function (dayIdx, i) {
+    calWorking.perDay[DAY_ORDER[dayIdx]].splice(i, 1);
+    renderWeekly();
+  };
+
+  window.addDayRange = function (dayIdx) {
+    calWorking.perDay[DAY_ORDER[dayIdx]].push({ start: '09:00', end: '17:00' });
+    renderWeekly();
+  };
+
+  function renderOverrides() {
+    var el = document.getElementById('cal-overrides');
+    if (!calWorking.overrides.length) {
+      el.innerHTML = '<div class="empty-state" style="padding:14px 0;">特別な日はありません</div>';
+      return;
+    }
+    el.innerHTML = calWorking.overrides.map(function (o, i) {
+      return '<div class="field-row" style="align-items:center;margin-bottom:8px;">' +
+        '<div class="mono" style="width:110px;">' + esc(o.date) + '</div>' +
+        '<label style="display:flex;align-items:center;gap:6px;font-size:13px;white-space:nowrap;">' +
+          '<input type="checkbox" style="width:auto;" ' + (o.allDayOff ? 'checked' : '') + ' onchange="updateOverride(' + i + ',\'allDayOff\',this.checked)"> 終日休み' +
+        '</label>' +
+        (o.allDayOff ? '' :
+          '<input type="time" value="' + o.start + '" onchange="updateOverride(' + i + ',\'start\',this.value)">' +
+          '<span style="opacity:.5;">〜</span>' +
+          '<input type="time" value="' + o.end + '" onchange="updateOverride(' + i + ',\'end\',this.value)">'
+        ) +
+        '<button type="button" class="btn btn-ghost" onclick="removeOverride(' + i + ')">削除</button>' +
+      '</div>';
+    }).join('');
+  }
+
+  window.updateOverride = function (i, field, value) {
+    calWorking.overrides[i][field] = value;
+    if (field === 'allDayOff') renderOverrides();
+  };
+
+  window.removeOverride = function (i) {
+    calWorking.overrides.splice(i, 1);
+    renderOverrides();
+  };
+
+  window.addOverride = function () {
+    var dateInput = document.getElementById('cal-new-override-date');
+    var date = dateInput.value;
+    if (!date) return;
+    calWorking.overrides.push({ date: date, allDayOff: true, start: '09:00', end: '17:00' });
+    dateInput.value = '';
+    renderOverrides();
+  };
+
+  function renderCalendar() {
+    document.getElementById('cal-timezone').textContent = calWorking.timeZone || '—';
+    renderWeekly();
+    renderOverrides();
+  }
+
+  window.fetchCalendar = function () {
+    document.getElementById('cal-not-configured').style.display = 'none';
+    document.getElementById('cal-unexpected-format').style.display = 'none';
+    document.getElementById('cal-content').style.display = 'none';
+    fetch('/api/admin/calendar')
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, status: res.status, data: data }; }); })
+      .then(function (result) {
+        if (result.status === 501 || (result.data && result.data.error === 'calcom_not_configured')) {
+          document.getElementById('cal-not-configured').style.display = '';
+          return;
+        }
+        if (!result.ok || !result.data.ok) {
+          throw new Error((result.data && (result.data.detail || result.data.error)) || 'request_failed');
+        }
+        var schedule = result.data.schedule;
+        if (!schedule || !Array.isArray(schedule.availability) || !Array.isArray(schedule.overrides)) {
+          document.getElementById('cal-raw-json').textContent = JSON.stringify(schedule, null, 2);
+          document.getElementById('cal-unexpected-format').style.display = 'flex';
+          return;
+        }
+        calWorking = buildCalWorkingModel(schedule);
+        document.getElementById('cal-content').style.display = '';
+        renderCalendar();
+      })
+      .catch(function (err) {
+        console.error('fetchCalendar error:', err);
+        showError('カレンダー情報の取得に失敗しました: ' + err.message);
+      });
+  };
+
+  window.saveCalendar = function () {
+    if (!calWorking) return;
+    var availability = [];
+    DAY_ORDER.forEach(function (day) {
+      calWorking.perDay[day].forEach(function (r) {
+        availability.push({
+          days: [day],
+          startTime: rebuildTimeValue(r.start, calWorking.timeSample),
+          endTime: rebuildTimeValue(r.end, calWorking.timeSample)
+        });
+      });
+    });
+    var overrides = calWorking.overrides.map(function (o) {
+      var entry = { date: o.date, isUnavailable: o.allDayOff };
+      if (!o.allDayOff) {
+        entry.startTime = rebuildTimeValue(o.start, calWorking.timeSample);
+        entry.endTime = rebuildTimeValue(o.end, calWorking.timeSample);
+      }
+      return entry;
+    });
+
+    fetch('/api/admin/calendar', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ availability: availability, overrides: overrides })
+    })
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (result) {
+        if (!result.ok || !result.data.ok) {
+          throw new Error((result.data && (result.data.detail || result.data.error)) || 'request_failed');
+        }
+        showToast('✓ 保存しました');
+        fetchCalendar();
+      })
+      .catch(function (err) {
+        console.error('saveCalendar error:', err);
+        showError('保存に失敗しました: ' + err.message);
       });
   };
 

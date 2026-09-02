@@ -656,3 +656,58 @@ D1・KV・Pages のいずれか1つだけ先に設定しても、その項目だ
 
 > データは 15 分ごとにキャッシュされます（`ORDERS_KV` 使用）。
 > タブ右上の「更新 / Refresh」ボタンでキャッシュを無視して即時再取得できます。
+
+---
+
+## 12. 管理画面の「予約カレンダー / Calendar」タブ + Google Calendar 連携
+
+無料相談の予約（4節・Cal.com連携）の対応可能時間を、Cal.com のダッシュボードに
+ログインしなくても `/admin.html` から直接編集できるタブです
+（`functions/api/admin/calendar.js` ・ `functions/_shared/calcom.js`）。
+週次の曜日別スケジュールと、特定の日だけ休み/特別時間にする「特別な日」の
+両方を編集できます。
+
+### 手順A — Google Calendar を Cal.com に接続する（コードの変更不要）
+
+これだけで「Googleカレンダーと連携」が完成します：
+1. https://app.cal.com/apps/installed/calendar にアクセス（またはCal.comダッシュボード
+   → **Settings → My Availability** 内の連携リンクから）。
+2. **Google Calendar** を探して **Install/Connect**。
+3. Googleアカウントでログインし、アクセスを許可。
+4. 接続後、**Check for conflicts**（既存の予定と重複する時間を自動的に空き時間から除外）
+   と、確認済み予約を自動でGoogleカレンダーに追加する設定を有効にしておく
+   （通常はインストール時にデフォルトで有効）。
+
+これで今まで通りのCal.com予約フローが、あなたのGoogleカレンダーとリアルタイムで
+連動するようになります（既存の予定と自動で衝突回避、確定した相談はスマホの
+カレンダーアプリにも表示）。
+
+### 手順B — 管理画面の編集タブに必要な Schedule ID を控える
+
+1. https://app.cal.com/availability にアクセス。
+2. 無料相談のイベントタイプが使っているスケジュール（通常は「Working Hours」）を開く。
+3. ブラウザのURLを確認: `https://app.cal.com/availability/12345` のような形式になっており、
+   末尾の数字（例: `12345`）が Schedule ID。
+
+### 手順C — Cloudflare に環境変数を設定
+
+| 変数名 | 値 | 備考 |
+|---|---|---|
+| `CAL_SCHEDULE_ID` | 手順Bで控えた数字のID | `CAL_API_KEY`（4節ですでに設定済みのはず）を再利用します |
+
+Cloudflare Pages → Settings → Environment variables に追加 → 保存後は次回デプロイから
+反映されます（すぐ反映したい場合は Deployments タブから最新デプロイを
+**Retry deployment**）。
+
+### 動作確認
+
+1. `/admin.html` にログイン → 「予約カレンダー / Calendar」タブを開く。
+2. 曜日ごとの対応可能時間と、既存の「特別な日」設定が表示されれば成功。
+3. 時間帯を編集するか「特別な日」を追加/削除し、右上の **保存する / Save** を押す →
+   保存後、実際に `https://www.hexapoint-jp.com/` の無料相談予約セクションで
+   反映されているか確認してください。
+
+> ⚠️ **技術的な注意**: Cal.com の Schedule API は今回の実装時点での仕様に基づいています。
+> もし保存やデータ表示でエラーが出た場合（特に「想定外の形式のデータが返ってきました」と
+> 表示された場合）、画面に表示される生のJSON、またはエラーメッセージ全文をコピーして
+> 開発者に共有してください — Cal.com側の正確な形式が分かれば、修正は簡単です。
