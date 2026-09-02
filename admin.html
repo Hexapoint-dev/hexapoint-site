@@ -1073,13 +1073,20 @@
 
 <div id="view-analytics" class="tab-view">
 
-  <div class="toolbar" style="justify-content:space-between;">
-    <div style="display:flex;gap:8px;" id="gsc-range-buttons">
+  <div class="toolbar" style="justify-content:space-between;flex-wrap:wrap;gap:10px;">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;" id="gsc-range-buttons">
       <button type="button" class="btn btn-ghost" data-range="7d" onclick="setAnalyticsRange('7d')">過去7日間</button>
       <button type="button" class="btn btn-ghost active" data-range="28d" onclick="setAnalyticsRange('28d')">過去28日間</button>
       <button type="button" class="btn btn-ghost" data-range="90d" onclick="setAnalyticsRange('90d')">過去90日間</button>
+      <input type="date" id="gsc-date-from" onchange="setAnalyticsCustomRange()" title="開始日">
+      <span style="opacity:.5;font-size:12px;align-self:center;">〜</span>
+      <input type="date" id="gsc-date-to" onchange="setAnalyticsCustomRange()" title="終了日">
+      <button type="button" class="btn btn-ghost" onclick="clearAnalyticsCustomRange()">期間クリア</button>
     </div>
-    <button type="button" class="btn btn-ghost" onclick="fetchAnalytics(true)">更新 / Refresh</button>
+    <div style="display:flex;gap:10px;">
+      <button type="button" class="btn btn-ghost" onclick="exportAnalyticsCsv()">CSVで書き出す</button>
+      <button type="button" class="btn btn-ghost" onclick="fetchAnalytics(true)">更新 / Refresh</button>
+    </div>
   </div>
 
   <div id="gsc-not-configured" class="empty-state" style="display:none;padding:20px 0;">
@@ -1097,8 +1104,8 @@
     <div class="fee-hint" style="margin-bottom:14px;" id="gsc-range-note">&nbsp;</div>
 
     <div class="stats-row" id="gsc-stats-row" style="grid-template-columns:repeat(4,1fr);">
-      <div class="stat-tile accent"><div class="num mono" id="gsc-clicks">—</div><div class="label">クリック数 / Clicks</div></div>
-      <div class="stat-tile"><div class="num mono" id="gsc-impressions">—</div><div class="label">表示回数 / Impressions</div></div>
+      <div class="stat-tile accent"><div class="num mono" id="gsc-clicks">—</div><div class="label">クリック数 / Clicks</div><div class="sub-note" id="gsc-clicks-change">—</div></div>
+      <div class="stat-tile"><div class="num mono" id="gsc-impressions">—</div><div class="label">表示回数 / Impressions</div><div class="sub-note" id="gsc-impressions-change">—</div></div>
       <div class="stat-tile"><div class="num mono" id="gsc-ctr">—</div><div class="label">平均CTR / Avg. CTR</div></div>
       <div class="stat-tile"><div class="num mono" id="gsc-position">—</div><div class="label">平均掲載順位 / Avg. Position</div></div>
     </div>
@@ -2062,7 +2069,8 @@
 
   // ---- Analytics tab (Google Search Console) ----
   var DEVICE_LABELS_JA = { desktop: 'デスクトップ / Desktop', mobile: 'モバイル / Mobile', tablet: 'タブレット / Tablet' };
-  var gscState = { range: '28d' };
+  var gscState = { range: '28d', from: '', to: '' };
+  var lastAnalyticsData = null;
 
   function fmtNum(n) {
     return Number(n || 0).toLocaleString('ja-JP');
@@ -2082,10 +2090,35 @@
 
   window.setAnalyticsRange = function (range) {
     gscState.range = range;
-    Array.prototype.forEach.call(document.querySelectorAll('#gsc-range-buttons button'), function (b) {
+    gscState.from = '';
+    gscState.to = '';
+    document.getElementById('gsc-date-from').value = '';
+    document.getElementById('gsc-date-to').value = '';
+    Array.prototype.forEach.call(document.querySelectorAll('#gsc-range-buttons button[data-range]'), function (b) {
       b.classList.toggle('active', b.getAttribute('data-range') === range);
     });
     fetchAnalytics();
+  };
+
+  // A custom date range takes priority over the preset buttons -- both dates
+  // must be filled in before it's applied (a lone "from" with no "to" isn't
+  // a valid Search Console query).
+  window.setAnalyticsCustomRange = function () {
+    var from = document.getElementById('gsc-date-from').value;
+    var to = document.getElementById('gsc-date-to').value;
+    if (!from || !to) return;
+    gscState.from = from;
+    gscState.to = to;
+    Array.prototype.forEach.call(document.querySelectorAll('#gsc-range-buttons button[data-range]'), function (b) {
+      b.classList.remove('active');
+    });
+    fetchAnalytics();
+  };
+
+  window.clearAnalyticsCustomRange = function () {
+    document.getElementById('gsc-date-from').value = '';
+    document.getElementById('gsc-date-to').value = '';
+    setAnalyticsRange(gscState.range || '28d');
   };
 
   function renderGscBarList(containerId, rows, labelFn, valueFn) {
@@ -2156,15 +2189,36 @@
     }).join('');
   }
 
+  // Renders a "+12% vs previous period" style note under a KPI tile, colored
+  // green/red -- same idea as the Finance tab's month-over-month figure.
+  function renderPctChange(elId, current, previous) {
+    var el = document.getElementById(elId);
+    if (!previous) {
+      el.textContent = '前期間データなし';
+      el.style.color = '';
+      return;
+    }
+    var change = ((current - previous) / previous) * 100;
+    var sign = change >= 0 ? '+' : '';
+    el.textContent = sign + change.toFixed(0) + '% 前期間比';
+    el.style.color = change >= 0 ? 'var(--emerald-deep)' : 'var(--coral)';
+  }
+
   function renderAnalytics(data) {
+    lastAnalyticsData = data;
     var totals = data.totals || { clicks: 0, impressions: 0, ctr: 0, position: 0 };
+    var previousTotals = data.previousTotals || { clicks: 0, impressions: 0 };
     renderGscSitemaps(data.sitemaps || []);
     document.getElementById('gsc-range-note').textContent =
-      '集計期間: ' + data.startDate + ' 〜 ' + data.endDate + '（Search Console のデータは直近2〜3日分が反映されるまで時間がかかるため、今日までではなくこの期間になります）';
+      '集計期間: ' + data.startDate + ' 〜 ' + data.endDate +
+      '（前期間: ' + data.previousStartDate + ' 〜 ' + data.previousEndDate + '）' +
+      ' — Search Console のデータは直近2〜3日分が反映されるまで時間がかかるため、今日までではなくこの期間になります。';
     document.getElementById('gsc-clicks').textContent = fmtNum(totals.clicks);
     document.getElementById('gsc-impressions').textContent = fmtNum(totals.impressions);
     document.getElementById('gsc-ctr').textContent = (totals.ctr * 100).toFixed(1) + '%';
     document.getElementById('gsc-position').textContent = totals.position.toFixed(1);
+    renderPctChange('gsc-clicks-change', totals.clicks, previousTotals.clicks);
+    renderPctChange('gsc-impressions-change', totals.impressions, previousTotals.impressions);
 
     renderGscTrend(data.trend || []);
     renderGscBarList('gsc-queries', data.topQueries || [],
@@ -2182,7 +2236,10 @@
   }
 
   window.fetchAnalytics = function fetchAnalytics(forceRefresh) {
-    var qs = 'range=' + gscState.range + (forceRefresh ? '&refresh=1' : '');
+    var qs = (gscState.from && gscState.to)
+      ? 'from=' + gscState.from + '&to=' + gscState.to
+      : 'range=' + gscState.range;
+    if (forceRefresh) qs += '&refresh=1';
     fetch('/api/admin/search-console?' + qs)
       .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, status: res.status, data: data }; }); })
       .then(function (result) {
@@ -2202,6 +2259,41 @@
         console.error('fetchAnalytics error:', err);
         showError('検索パフォーマンスデータの取得に失敗しました: ' + err.message);
       });
+  };
+
+  // Exports whatever is currently rendered in the Analytics tab -- same
+  // pattern as exportFinanceCsv().
+  window.exportAnalyticsCsv = function () {
+    if (!lastAnalyticsData) return;
+    var d = lastAnalyticsData;
+    var lines = [['Section', 'Label', 'Clicks', 'Impressions'].map(csvFieldClient).join(',')];
+    lines.push(['Totals', d.startDate + ' to ' + d.endDate, d.totals.clicks, d.totals.impressions].map(csvFieldClient).join(','));
+    lines.push(['Previous Period', d.previousStartDate + ' to ' + d.previousEndDate, d.previousTotals.clicks, d.previousTotals.impressions].map(csvFieldClient).join(','));
+    d.trend.forEach(function (r) {
+      lines.push(['Daily Trend', r.date, r.clicks, ''].map(csvFieldClient).join(','));
+    });
+    d.topQueries.forEach(function (r) {
+      lines.push(['Top Query', r.query, r.clicks, r.impressions].map(csvFieldClient).join(','));
+    });
+    d.topPages.forEach(function (r) {
+      lines.push(['Top Page', r.page, r.clicks, r.impressions].map(csvFieldClient).join(','));
+    });
+    d.devices.forEach(function (r) {
+      lines.push(['Device', r.device, r.clicks, ''].map(csvFieldClient).join(','));
+    });
+    d.countries.forEach(function (r) {
+      lines.push(['Country', r.country, r.clicks, ''].map(csvFieldClient).join(','));
+    });
+    var csv = '﻿' + lines.join('\r\n');
+    var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'search-console-' + d.startDate + '-to-' + d.endDate + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   // ---- Renewals tab ----
