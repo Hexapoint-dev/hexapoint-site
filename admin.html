@@ -528,6 +528,49 @@
   .bar-row .bar-fill.method-manual { background: linear-gradient(90deg, #9aa0b4, #6b7189); }
   .bar-row .bar-fill.usage-warn { background: linear-gradient(90deg, var(--coral), #c81f34); }
 
+  /* ---- calendar tab: live Google Calendar month grid ---- */
+  .cal-grid-head, .cal-grid-body { display: grid; grid-template-columns: repeat(7, 1fr); }
+  .cal-grid-head { margin-bottom: 6px; }
+  .cal-grid-headcell { text-align: center; font-size: 11px; font-weight: 700; opacity: .55; padding: 4px 0; }
+  .cal-grid-headcell.sun { color: var(--coral); }
+  .cal-grid-headcell.sat { color: #4f86e8; }
+  .cal-grid-body { gap: 4px; }
+  .cal-grid-cell {
+    min-height: 84px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 6px;
+    cursor: pointer;
+    transition: background .12s;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    overflow: hidden;
+  }
+  .cal-grid-cell:hover { background: rgba(245, 145, 42, .06); }
+  .cal-grid-cell.empty { border: none; cursor: default; }
+  .cal-grid-cell.empty:hover { background: transparent; }
+  .cal-grid-cell.today { border-color: var(--emerald-deep); background: rgba(245, 145, 42, .07); }
+  .cal-grid-cell.sun .cal-grid-daynum { color: var(--coral); }
+  .cal-grid-cell.sat .cal-grid-daynum { color: #4f86e8; }
+  .cal-grid-daynum { font-size: 12px; font-weight: 700; font-family: "DM Mono", monospace; }
+  .cal-grid-events { display: flex; flex-direction: column; gap: 2px; overflow: hidden; }
+  .cal-event-chip {
+    background: linear-gradient(90deg, var(--emerald), var(--emerald-deep));
+    color: #fff;
+    border-radius: 5px;
+    padding: 2px 5px;
+    font-size: 10.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .cal-event-more { font-size: 10px; opacity: .55; padding-left: 3px; }
+  @media (max-width: 900px) {
+    .cal-grid-cell { min-height: 56px; }
+    .cal-event-chip { font-size: 9.5px; }
+  }
+
   .trend-chart {
     display: flex;
     align-items: flex-end;
@@ -980,6 +1023,32 @@
 </div><!-- /#view-messages -->
 
 <div id="view-calendar" class="tab-view">
+
+  <!-- ===== ライブカレンダー (Google Calendar) ===== -->
+  <div class="fin-card" style="margin-bottom:16px;">
+    <div class="toolbar" style="justify-content:space-between;margin-bottom:0;flex-wrap:wrap;gap:10px;">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <button type="button" class="btn btn-ghost" onclick="navigateCalMonth(-1)">← 前月</button>
+        <div class="mono" id="cal-month-label" style="font-size:15px;min-width:110px;text-align:center;">—</div>
+        <button type="button" class="btn btn-ghost" onclick="navigateCalMonth(1)">次月 →</button>
+        <button type="button" class="btn btn-ghost" onclick="goToCalToday()">今日</button>
+      </div>
+      <button type="button" class="btn" onclick="openAddEventModal()">+ 予定を追加 / Add</button>
+    </div>
+  </div>
+
+  <div id="cal-grid-not-configured" class="empty-state" style="display:none;padding:20px 0;">
+    Google Calendar 連携が未設定です。<code>GOOGLE_SERVICE_ACCOUNT_EMAIL</code>・
+    <code>GOOGLE_SERVICE_ACCOUNT_KEY</code> を環境変数に設定し、あなたのGoogleカレンダーを
+    サービスアカウントと共有してください（SETUP-cloudflare.md 参照）。
+  </div>
+
+  <div id="cal-grid-wrap" class="fin-card" style="margin-bottom:24px;">
+    <div id="cal-grid"><div class="loading-state">読み込み中…</div></div>
+  </div>
+
+  <!-- ===== 定期的な対応時間 (Cal.com schedule) ===== -->
+  <h3 style="margin:0 0 12px;font-size:14px;opacity:.6;font-weight:700;">定期的な対応時間の設定 <span class="mono" style="font-size:11px;opacity:.6">Recurring Availability (Cal.com)</span></h3>
 
   <div class="toolbar" style="justify-content:space-between;">
     <div style="font-size:13px;opacity:.7;">
@@ -1518,6 +1587,42 @@
   </div>
 </div>
 
+<div class="overlay" id="calendar-event-overlay">
+  <div class="modal">
+    <button type="button" class="close" onclick="closeEventModal()">✕</button>
+    <h2 id="cal-event-modal-title">予定を追加</h2>
+    <div class="modal-error" id="cal-event-error"></div>
+
+    <div class="field">
+      <label>タイトル</label>
+      <input type="text" id="cal-event-summary" placeholder="例: 歯医者の予約 / Dentist appointment">
+    </div>
+    <div class="field-row">
+      <div class="field"><label>日付</label><input type="date" id="cal-event-date"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>開始時刻</label><input type="time" id="cal-event-start"></div>
+      <div class="field"><label>終了時刻</label><input type="time" id="cal-event-end"></div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin:-6px 0 14px;">
+      <button type="button" class="btn btn-ghost" style="font-size:11px;padding:6px 12px;" onclick="applyQuickDuration(30)">30分</button>
+      <button type="button" class="btn btn-ghost" style="font-size:11px;padding:6px 12px;" onclick="applyQuickDuration(60)">1時間</button>
+      <button type="button" class="btn btn-ghost" style="font-size:11px;padding:6px 12px;" onclick="applyQuickDuration(120)">2時間</button>
+      <button type="button" class="btn btn-ghost" style="font-size:11px;padding:6px 12px;" onclick="applyQuickDuration('day')">終日 (00:00-23:59)</button>
+    </div>
+    <div class="field">
+      <label>メモ（任意）</label>
+      <textarea id="cal-event-description" placeholder="詳細やメモがあれば"></textarea>
+    </div>
+    <div id="cal-event-conflict-warning" class="modal-error" style="display:none;background:var(--coral-soft);color:var(--coral);"></div>
+
+    <div class="modal-actions">
+      <button type="button" class="btn btn-danger" id="cal-event-delete-btn" style="display:none;" onclick="deleteCalendarEventFromModal()">削除</button>
+      <button type="button" class="btn" onclick="saveCalendarEvent()">保存する</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast-stack" aria-live="polite"></div>
 </div><!-- /#dashboard-screen -->
 
@@ -1786,7 +1891,8 @@
     var a = document.getElementById('add-overlay');
     var c = document.getElementById('customer-overlay');
     var m = document.getElementById('message-overlay');
-    return (d && d.classList.contains('show')) || (a && a.classList.contains('show')) || (c && c.classList.contains('show')) || (m && m.classList.contains('show'));
+    var ce = document.getElementById('calendar-event-overlay');
+    return (d && d.classList.contains('show')) || (a && a.classList.contains('show')) || (c && c.classList.contains('show')) || (m && m.classList.contains('show')) || (ce && ce.classList.contains('show'));
   }
 
   function pollForUpdates() {
@@ -2048,7 +2154,7 @@
     if (name === 'analytics') fetchAnalytics();
     if (name === 'status') fetchStatus();
     if (name === 'messages') fetchMessages();
-    if (name === 'calendar') fetchCalendar();
+    if (name === 'calendar') { fetchCalendar(); initCalGridIfNeeded(); }
   };
 
   window.saveFeePct = function () {
@@ -2958,13 +3064,16 @@
         });
       });
     });
+    // Cal.com requires startTime/endTime as "HH:MM" strings on every override,
+    // even when isUnavailable is true (confirmed via its own validation error) --
+    // so these are always sent, not just when the day has real hours.
     var overrides = calWorking.overrides.map(function (o) {
-      var entry = { date: o.date, isUnavailable: o.allDayOff };
-      if (!o.allDayOff) {
-        entry.startTime = rebuildTimeValue(o.start, calWorking.timeSample);
-        entry.endTime = rebuildTimeValue(o.end, calWorking.timeSample);
-      }
-      return entry;
+      return {
+        date: o.date,
+        isUnavailable: o.allDayOff,
+        startTime: rebuildTimeValue(o.start, calWorking.timeSample),
+        endTime: rebuildTimeValue(o.end, calWorking.timeSample)
+      };
     });
 
     fetch('/api/admin/calendar', {
@@ -2983,6 +3092,320 @@
       .catch(function (err) {
         console.error('saveCalendar error:', err);
         showError('保存に失敗しました: ' + err.message);
+      });
+  };
+
+  // ---- ライブカレンダー (Google Calendar month grid) ----
+  // All calendar-day math here treats Y/M/D as plain JST calendar dates (the
+  // studio's operating timezone, same convention as cal-slots.js/cal-book.js)
+  // -- Date.UTC() is used purely as a date calculator, never as a real instant,
+  // so this works correctly regardless of the admin's own browser timezone
+  // (the site owner is in Asia/Riyadh, not Asia/Tokyo).
+  var calGridState = { year: null, month: null }; // month is 0-11
+  var calGridEvents = [];
+  var calGridInited = false;
+  var calEventModalMode = 'create';
+  var calEventModalId = null;
+  var MONTH_LABELS_JA2 = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+
+  function pad2(n) { return n < 10 ? '0' + n : String(n); }
+  function ymd(year, month, day) { return year + '-' + pad2(month + 1) + '-' + pad2(day); }
+  function daysInMonth(year, month) { return new Date(Date.UTC(year, month + 1, 0)).getUTCDate(); }
+  function weekdayOf(year, month, day) { return new Date(Date.UTC(year, month, day)).getUTCDay(); }
+
+  function jstToday() {
+    var parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Tokyo', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date());
+    var out = {};
+    parts.forEach(function (p) { out[p.type] = p.value; });
+    return { year: parseInt(out.year, 10), month: parseInt(out.month, 10) - 1, day: parseInt(out.day, 10) };
+  }
+
+  function jstDateKeyFromInstant(iso) {
+    return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Tokyo', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(iso));
+  }
+
+  function fmtEventTime(iso) {
+    return new Intl.DateTimeFormat('ja-JP', { timeZone: 'Asia/Tokyo', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(iso));
+  }
+
+  function initCalGridIfNeeded() {
+    if (calGridInited) return;
+    calGridInited = true;
+    var t = jstToday();
+    calGridState.year = t.year;
+    calGridState.month = t.month;
+    fetchCalendarEvents();
+  }
+
+  window.navigateCalMonth = function (delta) {
+    var m = calGridState.month + delta;
+    var y = calGridState.year;
+    if (m < 0) { m = 11; y--; }
+    if (m > 11) { m = 0; y++; }
+    calGridState.year = y;
+    calGridState.month = m;
+    fetchCalendarEvents();
+  };
+
+  window.goToCalToday = function () {
+    var t = jstToday();
+    calGridState.year = t.year;
+    calGridState.month = t.month;
+    fetchCalendarEvents();
+  };
+
+  function renderCalGrid() {
+    document.getElementById('cal-month-label').textContent = calGridState.year + '年 ' + MONTH_LABELS_JA2[calGridState.month];
+
+    var today = jstToday();
+    var firstWeekday = weekdayOf(calGridState.year, calGridState.month, 1);
+    var totalDays = daysInMonth(calGridState.year, calGridState.month);
+
+    var byDate = {};
+    calGridEvents.forEach(function (ev) {
+      if (!ev.start) return;
+      var dateKey = ev.start.date || (ev.start.dateTime ? jstDateKeyFromInstant(ev.start.dateTime) : null);
+      if (!dateKey) return;
+      if (!byDate[dateKey]) byDate[dateKey] = [];
+      byDate[dateKey].push(ev);
+    });
+
+    var cells = [];
+    for (var i = 0; i < firstWeekday; i++) cells.push(null);
+    for (var d = 1; d <= totalDays; d++) cells.push(d);
+    while (cells.length % 7 !== 0) cells.push(null);
+
+    var headHtml = ['日', '月', '火', '水', '木', '金', '土'].map(function (w, i) {
+      return '<div class="cal-grid-headcell' + (i === 0 ? ' sun' : i === 6 ? ' sat' : '') + '">' + w + '</div>';
+    }).join('');
+
+    var bodyHtml = cells.map(function (day, idx) {
+      var weekday = idx % 7;
+      if (day === null) return '<div class="cal-grid-cell empty"></div>';
+
+      var dateKey = ymd(calGridState.year, calGridState.month, day);
+      var isToday = today.year === calGridState.year && today.month === calGridState.month && today.day === day;
+      var dayEvents = (byDate[dateKey] || []).sort(function (a, b) {
+        var at = (a.start.dateTime || a.start.date || '');
+        var bt = (b.start.dateTime || b.start.date || '');
+        return at < bt ? -1 : at > bt ? 1 : 0;
+      });
+      var eventsHtml = dayEvents.slice(0, 3).map(function (ev) {
+        var timeLabel = ev.start.dateTime ? fmtEventTime(ev.start.dateTime) : '終日';
+        return '<div class="cal-event-chip" onclick="event.stopPropagation();openEditEventModal(\'' + ev.id + '\')" title="' + esc(ev.summary || '') + '">' +
+          '<span class="mono" style="opacity:.85;">' + timeLabel + '</span> ' + esc(truncate(ev.summary || '(無題)', 14)) +
+        '</div>';
+      }).join('');
+      var moreLabel = dayEvents.length > 3 ? '<div class="cal-event-more">+' + (dayEvents.length - 3) + '件</div>' : '';
+      var cellClasses = 'cal-grid-cell' + (isToday ? ' today' : '') + (weekday === 0 ? ' sun' : weekday === 6 ? ' sat' : '');
+
+      return '<div class="' + cellClasses + '" onclick="openAddEventModal(\'' + dateKey + '\')">' +
+        '<div class="cal-grid-daynum">' + day + '</div>' +
+        '<div class="cal-grid-events">' + eventsHtml + moreLabel + '</div>' +
+      '</div>';
+    }).join('');
+
+    document.getElementById('cal-grid').innerHTML =
+      '<div class="cal-grid-head">' + headHtml + '</div><div class="cal-grid-body">' + bodyHtml + '</div>';
+  }
+
+  window.fetchCalendarEvents = function () {
+    var grid = document.getElementById('cal-grid');
+    if (grid) grid.innerHTML = '<div class="loading-state">読み込み中…</div>';
+
+    // Pad the queried range to cover every cell shown on the grid, including
+    // the lead/trail days from adjacent months.
+    var firstWeekday = weekdayOf(calGridState.year, calGridState.month, 1);
+    var totalDays = daysInMonth(calGridState.year, calGridState.month);
+    var cellCount = firstWeekday + totalDays;
+    var trailing = (7 - (cellCount % 7)) % 7;
+    var gridStart = new Date(Date.UTC(calGridState.year, calGridState.month, 1 - firstWeekday));
+    var gridEnd = new Date(Date.UTC(calGridState.year, calGridState.month, totalDays + trailing));
+
+    var startISO = ymd(gridStart.getUTCFullYear(), gridStart.getUTCMonth(), gridStart.getUTCDate()) + 'T00:00:00+09:00';
+    var endISO = ymd(gridEnd.getUTCFullYear(), gridEnd.getUTCMonth(), gridEnd.getUTCDate()) + 'T23:59:59+09:00';
+
+    fetch('/api/admin/calendar-events?start=' + encodeURIComponent(startISO) + '&end=' + encodeURIComponent(endISO))
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, status: res.status, data: data }; }); })
+      .then(function (result) {
+        if (result.status === 501 || (result.data && result.data.error === 'google_calendar_not_configured')) {
+          document.getElementById('cal-grid-not-configured').style.display = '';
+          document.getElementById('cal-grid-wrap').style.display = 'none';
+          return;
+        }
+        document.getElementById('cal-grid-not-configured').style.display = 'none';
+        document.getElementById('cal-grid-wrap').style.display = '';
+        if (!result.ok || !result.data.ok) {
+          throw new Error((result.data && (result.data.detail || result.data.error)) || 'request_failed');
+        }
+        calGridEvents = result.data.events || [];
+        renderCalGrid();
+      })
+      .catch(function (err) {
+        console.error('fetchCalendarEvents error:', err);
+        showError('カレンダーの取得に失敗しました: ' + err.message);
+      });
+  };
+
+  // ---- Add/Edit event modal ----
+  window.openAddEventModal = function (dateKey) {
+    calEventModalMode = 'create';
+    calEventModalId = null;
+    document.getElementById('cal-event-modal-title').textContent = '予定を追加 / Add event';
+    document.getElementById('cal-event-delete-btn').style.display = 'none';
+    document.getElementById('cal-event-error').classList.remove('show');
+    document.getElementById('cal-event-conflict-warning').style.display = 'none';
+    document.getElementById('cal-event-summary').value = '';
+    document.getElementById('cal-event-description').value = '';
+    document.getElementById('cal-event-date').value = dateKey || ymd(jstToday().year, jstToday().month, jstToday().day);
+    document.getElementById('cal-event-start').value = '09:00';
+    document.getElementById('cal-event-end').value = '10:00';
+    document.getElementById('calendar-event-overlay').classList.add('show');
+  };
+
+  window.openEditEventModal = function (eventId) {
+    var ev = calGridEvents.find(function (e) { return e.id === eventId; });
+    if (!ev) return;
+    calEventModalMode = 'edit';
+    calEventModalId = eventId;
+    document.getElementById('cal-event-modal-title').textContent = '予定を編集 / Edit event';
+    document.getElementById('cal-event-delete-btn').style.display = '';
+    document.getElementById('cal-event-error').classList.remove('show');
+    document.getElementById('cal-event-conflict-warning').style.display = 'none';
+    document.getElementById('cal-event-summary').value = ev.summary || '';
+    document.getElementById('cal-event-description').value = ev.description || '';
+    if (ev.start.dateTime) {
+      var startD = new Date(ev.start.dateTime);
+      var endD = new Date(ev.end.dateTime);
+      document.getElementById('cal-event-date').value = jstDateKeyFromInstant(ev.start.dateTime);
+      document.getElementById('cal-event-start').value = fmtEventTime(ev.start.dateTime);
+      document.getElementById('cal-event-end').value = fmtEventTime(ev.end.dateTime);
+    } else {
+      document.getElementById('cal-event-date').value = ev.start.date;
+      document.getElementById('cal-event-start').value = '00:00';
+      document.getElementById('cal-event-end').value = '23:59';
+    }
+    document.getElementById('calendar-event-overlay').classList.add('show');
+  };
+
+  window.closeEventModal = function () {
+    document.getElementById('calendar-event-overlay').classList.remove('show');
+    calEventModalId = null;
+  };
+
+  document.getElementById('calendar-event-overlay').addEventListener('click', function (e) {
+    if (e.target === this) closeEventModal();
+  });
+
+  window.applyQuickDuration = function (mode) {
+    if (mode === 'day') {
+      document.getElementById('cal-event-start').value = '00:00';
+      document.getElementById('cal-event-end').value = '23:59';
+      return;
+    }
+    var startVal = document.getElementById('cal-event-start').value || '09:00';
+    var parts = startVal.split(':');
+    var startMinutes = parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+    var endMinutes = Math.min(23 * 60 + 59, startMinutes + mode);
+    var eh = Math.floor(endMinutes / 60);
+    var em = endMinutes % 60;
+    document.getElementById('cal-event-end').value = pad2(eh) + ':' + pad2(em);
+  };
+
+  // Overlap check (real timestamp arithmetic, not string slicing, so it's
+  // correct regardless of what offset format Google echoes back) against
+  // whatever's already loaded for the visible month -- a fast local warning,
+  // not a hard block (the owner may deliberately want two things noted at once).
+  function checkEventConflict(dateKey, startTime, endTime, excludeId) {
+    var newStart = new Date(dateKey + 'T' + startTime + ':00+09:00').getTime();
+    var newEnd = new Date(dateKey + 'T' + endTime + ':00+09:00').getTime();
+    return calGridEvents.some(function (ev) {
+      if (ev.id === excludeId || !ev.start || !ev.start.dateTime) return false;
+      var evStart = new Date(ev.start.dateTime).getTime();
+      var evEnd = new Date(ev.end.dateTime).getTime();
+      return newStart < evEnd && newEnd > evStart;
+    });
+  }
+
+  window.saveCalendarEvent = function () {
+    var errEl = document.getElementById('cal-event-error');
+    errEl.classList.remove('show');
+
+    var summary = document.getElementById('cal-event-summary').value.trim();
+    var date = document.getElementById('cal-event-date').value;
+    var startTime = document.getElementById('cal-event-start').value;
+    var endTime = document.getElementById('cal-event-end').value;
+    var description = document.getElementById('cal-event-description').value.trim();
+
+    if (!summary || !date || !startTime || !endTime) {
+      errEl.textContent = 'タイトル・日付・時刻をすべて入力してください。';
+      errEl.classList.add('show');
+      return;
+    }
+    if (startTime >= endTime) {
+      errEl.textContent = '終了時刻は開始時刻より後にしてください。';
+      errEl.classList.add('show');
+      return;
+    }
+
+    var hasConflict = checkEventConflict(date, startTime, endTime, calEventModalId);
+    var warnEl = document.getElementById('cal-event-conflict-warning');
+    if (hasConflict) {
+      warnEl.textContent = '⚠️ この時間帯には既に別の予定があります。内容を確認してください。';
+      warnEl.style.display = '';
+    } else {
+      warnEl.style.display = 'none';
+    }
+
+    var start = date + 'T' + startTime + ':00+09:00';
+    var end = date + 'T' + endTime + ':00+09:00';
+    var payload = { summary: summary, description: description, start: start, end: end, timeZone: 'Asia/Tokyo' };
+
+    var request = calEventModalMode === 'edit'
+      ? fetch('/api/admin/calendar-events/' + encodeURIComponent(calEventModalId), {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        })
+      : fetch('/api/admin/calendar-events', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+    request
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (result) {
+        if (!result.ok || !result.data.ok) {
+          throw new Error((result.data && (result.data.detail || result.data.error)) || 'request_failed');
+        }
+        showToast('✓ 保存しました');
+        closeEventModal();
+        fetchCalendarEvents();
+      })
+      .catch(function (err) {
+        console.error('saveCalendarEvent error:', err);
+        errEl.textContent = '保存に失敗しました: ' + err.message;
+        errEl.classList.add('show');
+      });
+  };
+
+  window.deleteCalendarEventFromModal = function () {
+    if (!calEventModalId) return;
+    if (!confirm('この予定を削除しますか？Googleカレンダーからも削除されます。')) return;
+    fetch('/api/admin/calendar-events/' + encodeURIComponent(calEventModalId), { method: 'DELETE' })
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (result) {
+        if (!result.ok || !result.data.ok) {
+          throw new Error((result.data && (result.data.detail || result.data.error)) || 'request_failed');
+        }
+        showToast('✓ 削除しました');
+        closeEventModal();
+        fetchCalendarEvents();
+      })
+      .catch(function (err) {
+        console.error('deleteCalendarEventFromModal error:', err);
+        showError('削除に失敗しました: ' + err.message);
       });
   };
 

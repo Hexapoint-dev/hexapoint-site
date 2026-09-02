@@ -661,11 +661,23 @@ D1・KV・Pages のいずれか1つだけ先に設定しても、その項目だ
 
 ## 12. 管理画面の「予約カレンダー / Calendar」タブ + Google Calendar 連携
 
-無料相談の予約（4節・Cal.com連携）の対応可能時間を、Cal.com のダッシュボードに
-ログインしなくても `/admin.html` から直接編集できるタブです
-（`functions/api/admin/calendar.js` ・ `functions/_shared/calcom.js`）。
-週次の曜日別スケジュールと、特定の日だけ休み/特別時間にする「特別な日」の
-両方を編集できます。
+このタブには2つの機能があります：
+
+1. **ライブカレンダー（月表示）** — あなたの実際の Google Calendar の予定を
+   月カレンダー形式でそのまま表示・追加・編集・削除できます
+   （`functions/api/admin/calendar-events.js` ・ `functions/_shared/googlecalendar.js`）。
+   ここで追加した予定（私用の予定・急な用事など）は Google Calendar に即座に反映され、
+   Cal.com がその Google Calendar を見て予約可否を判断しているため（手順Aで接続）、
+   **その時間は自動的にお客様の予約候補から外れます** — 二重に何かを設定する必要はありません。
+2. **定期的な対応時間の設定** — 無料相談（4節・Cal.com連携）の毎週の対応可能時間と、
+   特定の日だけ休み/特別時間にする「特別な日」を、Cal.com のダッシュボードに
+   ログインしなくても編集できます（`functions/api/admin/calendar.js` ・
+   `functions/_shared/calcom.js`）。
+
+つまり「①ふだんの対応可能時間（②の定期設定）」から「①の中で今回だけ空けられない時間
+（①のライブカレンダーに予定を追加）」を自動的に除いた時間だけが、実際にお客様に提示される
+仕組みです。今後の予定はこのタブと Google Calendar の両方を、完全に信頼できる単一の情報源
+として使えます。
 
 ### 手順A — Google Calendar を Cal.com に接続する（コードの変更不要）
 
@@ -689,11 +701,39 @@ D1・KV・Pages のいずれか1つだけ先に設定しても、その項目だ
 3. ブラウザのURLを確認: `https://app.cal.com/availability/12345` のような形式になっており、
    末尾の数字（例: `12345`）が Schedule ID。
 
-### 手順C — Cloudflare に環境変数を設定
+### 手順C — Google Calendar API 用の Service Account を用意する
+
+10節（Search Console）ですでに Service Account を作っている場合は、**そのまま
+同じものを再利用できます**（`GOOGLE_SERVICE_ACCOUNT_EMAIL` / `GOOGLE_SERVICE_ACCOUNT_KEY`
+は共通です）。まだ作っていない場合は10節の手順Aを先に行ってください。
+
+1. 同じ Google Cloud プロジェクトで、検索バーに **Google Calendar API** と入力し、
+   そのAPIのページで **Enable** をクリック（未有効化の場合のみ表示されます）。
+2. それ以外の追加作業（新しいキーの発行など）は不要です。
+
+### 手順D — あなたの Google Calendar を Service Account と共有する
+
+GA4/Search Console と違い、Google Calendar は「プロパティへのアクセス権」ではなく
+**カレンダー自体の共有設定**でアクセスを許可します。
+
+1. https://calendar.google.com/ を開く。
+2. 左側であなたのメインカレンダー（予定を管理しているカレンダー）にカーソルを合わせ、
+   **⋮ → 設定と共有**（Settings and sharing）をクリック。
+3. **特定のユーザーとの共有**（Share with specific people）→ **ユーザーを追加**。
+4. Service Account の `client_email`（`xxxx@xxxx.iam.gserviceaccount.com` の形式。
+   10節でダウンロードしたJSONファイルに記載）を入力。
+5. 権限は **予定の変更権限**（Make changes to events）を選択 → **送信**。
+
+これで Service Account がこのカレンダーの予定を読み書きできるようになります。
+
+### 手順E — Cloudflare に環境変数を設定
 
 | 変数名 | 値 | 備考 |
 |---|---|---|
 | `CAL_SCHEDULE_ID` | 手順Bで控えた数字のID | `CAL_API_KEY`（4節ですでに設定済みのはず）を再利用します |
+| `GOOGLE_SERVICE_ACCOUNT_EMAIL` | Service Account の `client_email` | 10節ですでに設定済みなら再設定不要 |
+| `GOOGLE_SERVICE_ACCOUNT_KEY` | Service Account の `private_key` | 同上 |
+| `GOOGLE_CALENDAR_ID` | （任意）共有したカレンダーのID | 通常は不要（未設定時は自動的に「メインカレンダー」を使用）。専用の別カレンダーを共有した場合のみ、そのカレンダーの設定画面にある「カレンダーの統合」→「カレンダーID」を設定 |
 
 Cloudflare Pages → Settings → Environment variables に追加 → 保存後は次回デプロイから
 反映されます（すぐ反映したい場合は Deployments タブから最新デプロイを
@@ -702,12 +742,20 @@ Cloudflare Pages → Settings → Environment variables に追加 → 保存後�
 ### 動作確認
 
 1. `/admin.html` にログイン → 「予約カレンダー / Calendar」タブを開く。
-2. 曜日ごとの対応可能時間と、既存の「特別な日」設定が表示されれば成功。
-3. 時間帯を編集するか「特別な日」を追加/削除し、右上の **保存する / Save** を押す →
-   保存後、実際に `https://www.hexapoint-jp.com/` の無料相談予約セクションで
-   反映されているか確認してください。
+2. 上部に今月のカレンダーが表示され、Google Calendar に既にある予定が
+   マス目の中に表示されていれば、ライブカレンダー機能は成功。
+3. 空いている日をクリック（または「+ 予定を追加」）→ タイトル・時間を入力して保存 →
+   実際にあなたの Google Calendar（スマホアプリでも可）にその予定が反映されているか確認。
+4. その予定を追加した時間帯が、`https://www.hexapoint-jp.com/` の無料相談予約セクションで
+   選べなくなっている（Cal.comの空き時間から除外されている）ことを確認
+   — 反映まで数分かかる場合があります。
+5. 下部の「定期的な対応時間の設定」で曜日ごとの対応可能時間と「特別な日」が
+   表示されれば、そちらも成功。編集して **保存する / Save** を押し、同じく
+   予約セクションに反映されているか確認してください。
 
-> ⚠️ **技術的な注意**: Cal.com の Schedule API は今回の実装時点での仕様に基づいています。
-> もし保存やデータ表示でエラーが出た場合（特に「想定外の形式のデータが返ってきました」と
-> 表示された場合）、画面に表示される生のJSON、またはエラーメッセージ全文をコピーして
-> 開発者に共有してください — Cal.com側の正確な形式が分かれば、修正は簡単です。
+> ⚠️ **技術的な注意**: 上の「定期的な対応時間の設定」が使っている Cal.com の Schedule API
+> は今回の実装時点での仕様に基づいており、フィールド名などが実際と異なる可能性があります
+> （Google Calendar 側のライブカレンダー機能は標準的な Google Calendar API を使っているため、
+> こちらのリスクは低いです）。もしエラーが出た場合（特に「想定外の形式のデータが返って
+> きました」と表示された場合）、画面に表示される生のJSON、またはエラーメッセージ全文を
+> コピーして開発者に共有してください — 正確な形式が分かれば、修正は簡単です。
