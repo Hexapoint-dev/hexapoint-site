@@ -567,6 +567,9 @@
   }
   .cal-event-more { font-size: 10px; opacity: .55; padding-left: 3px; }
   .cal-event-chip.booking { background: linear-gradient(90deg, #4f86e8, #3a68c2); }
+  .cal-holiday-label { font-size: 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 700; }
+  .cal-holiday-label.jp { color: var(--coral); }
+  .cal-holiday-label.sa { color: #1a7a3c; }
   .cal-legend-dot {
     display: inline-block; width: 9px; height: 9px; border-radius: 3px;
     background: linear-gradient(90deg, var(--emerald), var(--emerald-deep));
@@ -1041,6 +1044,7 @@
 <div id="view-calendar" class="tab-view">
 
   <!-- ===== ライブカレンダー (Google Calendar) ===== -->
+  <div style="text-align:right;font-size:12px;opacity:.6;margin-bottom:6px;" id="cal-dual-clock">—</div>
   <div class="fin-card" style="margin-bottom:16px;">
     <div class="toolbar" style="justify-content:space-between;margin-bottom:0;flex-wrap:wrap;gap:10px;">
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
@@ -1633,12 +1637,13 @@
       <input type="text" id="cal-event-summary" placeholder="例: 歯医者の予約 / Dentist appointment">
     </div>
     <div class="field-row">
-      <div class="field"><label>日付</label><input type="date" id="cal-event-date"></div>
+      <div class="field"><label>日付</label><input type="date" id="cal-event-date" onchange="updateSaudiTimePreview()"></div>
     </div>
     <div class="field-row">
-      <div class="field"><label>開始時刻</label><input type="time" id="cal-event-start"></div>
-      <div class="field"><label>終了時刻</label><input type="time" id="cal-event-end"></div>
+      <div class="field"><label>開始時刻 (JST)</label><input type="time" id="cal-event-start" onchange="updateSaudiTimePreview()"></div>
+      <div class="field"><label>終了時刻 (JST)</label><input type="time" id="cal-event-end" onchange="updateSaudiTimePreview()"></div>
     </div>
+    <div class="mono" id="cal-event-saudi-preview" style="font-size:11.5px;opacity:.65;margin:-8px 0 14px;">🇸🇦 —</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin:-6px 0 14px;">
       <button type="button" class="btn btn-ghost" style="font-size:11px;padding:6px 12px;" onclick="applyQuickDuration(30)">30分</button>
       <button type="button" class="btn btn-ghost" style="font-size:11px;padding:6px 12px;" onclick="applyQuickDuration(60)">1時間</button>
@@ -3166,6 +3171,10 @@
     return new Intl.DateTimeFormat('ja-JP', { timeZone: 'Asia/Tokyo', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(iso));
   }
 
+  function fmtEventTimeSaudi(iso) {
+    return new Intl.DateTimeFormat('ja-JP', { timeZone: 'Asia/Riyadh', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(iso));
+  }
+
   function initCalGridIfNeeded() {
     if (calGridInited) return;
     calGridInited = true;
@@ -3174,6 +3183,8 @@
     calGridState.month = t.month;
     fetchCalendarEvents();
     fetchCalAgenda();
+    updateCalClockWidget();
+    if (!calClockInterval) calClockInterval = setInterval(updateCalClockWidget, 30000);
   }
 
   // An event created via Cal.com's Google Calendar sync always carries the
@@ -3256,8 +3267,15 @@
       var moreLabel = dayEvents.length > 3 ? '<div class="cal-event-more">+' + (dayEvents.length - 3) + '件</div>' : '';
       var cellClasses = 'cal-grid-cell' + (isToday ? ' today' : '') + (weekday === 0 ? ' sun' : weekday === 6 ? ' sat' : '');
 
+      var jpHoliday = calHolidays.japan[dateKey];
+      var saHoliday = calHolidays.saudi[dateKey];
+      var holidayHtml =
+        (jpHoliday ? '<div class="cal-holiday-label jp" title="' + esc(jpHoliday) + '">🇯🇵 ' + esc(truncate(jpHoliday, 9)) + '</div>' : '') +
+        (saHoliday ? '<div class="cal-holiday-label sa" title="' + esc(saHoliday) + '">🇸🇦 ' + esc(truncate(saHoliday, 9)) + '</div>' : '');
+
       return '<div class="' + cellClasses + '" onclick="openAddEventModal(\'' + dateKey + '\')">' +
         '<div class="cal-grid-daynum">' + day + '</div>' +
+        holidayHtml +
         '<div class="cal-grid-events">' + eventsHtml + moreLabel + '</div>' +
       '</div>';
     }).join('');
@@ -3266,21 +3284,59 @@
       '<div class="cal-grid-head">' + headHtml + '</div><div class="cal-grid-body">' + bodyHtml + '</div>';
   }
 
-  window.fetchCalendarEvents = function () {
-    var grid = document.getElementById('cal-grid');
-    if (grid) grid.innerHTML = '<div class="loading-state">読み込み中…</div>';
-
-    // Pad the queried range to cover every cell shown on the grid, including
-    // the lead/trail days from adjacent months.
+  // Pads the queried range to cover every cell shown on the grid, including
+  // the lead/trail days from adjacent months -- shared by the events fetch
+  // and the holidays fetch so both always cover exactly the visible grid.
+  function getVisibleGridRange() {
     var firstWeekday = weekdayOf(calGridState.year, calGridState.month, 1);
     var totalDays = daysInMonth(calGridState.year, calGridState.month);
     var cellCount = firstWeekday + totalDays;
     var trailing = (7 - (cellCount % 7)) % 7;
     var gridStart = new Date(Date.UTC(calGridState.year, calGridState.month, 1 - firstWeekday));
     var gridEnd = new Date(Date.UTC(calGridState.year, calGridState.month, totalDays + trailing));
+    return {
+      startISO: ymd(gridStart.getUTCFullYear(), gridStart.getUTCMonth(), gridStart.getUTCDate()) + 'T00:00:00+09:00',
+      endISO: ymd(gridEnd.getUTCFullYear(), gridEnd.getUTCMonth(), gridEnd.getUTCDate()) + 'T23:59:59+09:00'
+    };
+  }
 
-    var startISO = ymd(gridStart.getUTCFullYear(), gridStart.getUTCMonth(), gridStart.getUTCDate()) + 'T00:00:00+09:00';
-    var endISO = ymd(gridEnd.getUTCFullYear(), gridEnd.getUTCMonth(), gridEnd.getUTCDate()) + 'T23:59:59+09:00';
+  // ---- 日本・サウジアラビアの祝日オーバーレイ ----
+  var calHolidays = { japan: {}, saudi: {} };
+
+  window.fetchCalHolidays = function () {
+    var range = getVisibleGridRange();
+    fetch('/api/admin/calendar-holidays?start=' + encodeURIComponent(range.startISO) + '&end=' + encodeURIComponent(range.endISO))
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (!data.ok) return; // bonus feature -- fail silently, doesn't block the grid itself
+        calHolidays.japan = {};
+        calHolidays.saudi = {};
+        if (Array.isArray(data.japan)) data.japan.forEach(function (h) { calHolidays.japan[h.date] = h.title; });
+        if (Array.isArray(data.saudi)) data.saudi.forEach(function (h) { calHolidays.saudi[h.date] = h.title; });
+        renderCalGrid();
+      })
+      .catch(function (err) { console.error('fetchCalHolidays error:', err); });
+  };
+
+  // ---- 日本時間・サウジ時間の同時表示 ----
+  var calClockInterval = null;
+  function updateCalClockWidget() {
+    var el = document.getElementById('cal-dual-clock');
+    if (!el) return;
+    var now = new Date();
+    var jst = new Intl.DateTimeFormat('ja-JP', { timeZone: 'Asia/Tokyo', hour: '2-digit', minute: '2-digit', hour12: false }).format(now);
+    var sa = new Intl.DateTimeFormat('ja-JP', { timeZone: 'Asia/Riyadh', hour: '2-digit', minute: '2-digit', hour12: false }).format(now);
+    el.textContent = '🇯🇵 ' + jst + ' (JST) ・ 🇸🇦 ' + sa + ' (AST)';
+  }
+
+  window.fetchCalendarEvents = function () {
+    var grid = document.getElementById('cal-grid');
+    if (grid) grid.innerHTML = '<div class="loading-state">読み込み中…</div>';
+
+    var range = getVisibleGridRange();
+    var startISO = range.startISO;
+    var endISO = range.endISO;
+    fetchCalHolidays();
 
     fetch('/api/admin/calendar-events?start=' + encodeURIComponent(startISO) + '&end=' + encodeURIComponent(endISO))
       .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, status: res.status, data: data }; }); })
@@ -3329,7 +3385,10 @@
     el.innerHTML = calAgendaEvents.map(function (ev) {
       var dateKey = ev.start.date || jstDateKeyFromInstant(ev.start.dateTime);
       var d = fmtAgendaDate(dateKey);
-      var timeLabel = ev.start.dateTime ? (fmtEventTime(ev.start.dateTime) + '〜' + fmtEventTime(ev.end.dateTime)) : '終日';
+      var timeLabel = ev.start.dateTime
+        ? (fmtEventTime(ev.start.dateTime) + '〜' + fmtEventTime(ev.end.dateTime) + ' JST ・ ' +
+           fmtEventTimeSaudi(ev.start.dateTime) + '〜' + fmtEventTimeSaudi(ev.end.dateTime) + ' AST')
+        : '終日';
       var booking = isBookingEvent(ev);
       return '<div class="cal-agenda-item" onclick="openEditEventModal(\'' + ev.id + '\')">' +
         '<div class="cal-agenda-date">' + (d.isToday ? '本日' : d.weekday + '曜') + '<span class="num">' + d.label + '</span></div>' +
@@ -3404,11 +3463,16 @@
     document.getElementById('cal-event-date').value = dateKey || ymd(jstToday().year, jstToday().month, jstToday().day);
     document.getElementById('cal-event-start').value = '09:00';
     document.getElementById('cal-event-end').value = '10:00';
+    updateSaudiTimePreview();
     document.getElementById('calendar-event-overlay').classList.add('show');
   };
 
   window.openEditEventModal = function (eventId) {
-    var ev = calGridEvents.find(function (e) { return e.id === eventId; });
+    // Checks both pools -- an event opened from the "今後の予定" agenda list
+    // may not be in the currently-displayed month's grid data (e.g. viewing
+    // next month while today's agenda is still shown).
+    var ev = calGridEvents.find(function (e) { return e.id === eventId; }) ||
+      calAgendaEvents.find(function (e) { return e.id === eventId; });
     if (!ev) return;
     calEventModalMode = 'edit';
     calEventModalId = eventId;
@@ -3431,6 +3495,7 @@
       document.getElementById('cal-event-start').value = '00:00';
       document.getElementById('cal-event-end').value = '23:59';
     }
+    updateSaudiTimePreview();
     document.getElementById('calendar-event-overlay').classList.add('show');
   };
 
@@ -3443,10 +3508,32 @@
     if (e.target === this) closeEventModal();
   });
 
+  // Converts the JST date+time in the event form to the equivalent Asia/Riyadh
+  // clock time, flagging whether it lands on the previous/next Saudi calendar
+  // day -- JST is UTC+9 and Saudi is UTC+3, a fixed 6-hour gap with no DST on
+  // either side, but the day can still roll over near midnight.
+  window.updateSaudiTimePreview = function () {
+    var el = document.getElementById('cal-event-saudi-preview');
+    var date = document.getElementById('cal-event-date').value;
+    var startTime = document.getElementById('cal-event-start').value;
+    var endTime = document.getElementById('cal-event-end').value;
+    if (!date || !startTime || !endTime) { el.textContent = '🇸🇦 —'; return; }
+
+    var startInstant = new Date(date + 'T' + startTime + ':00+09:00');
+    var endInstant = new Date(date + 'T' + endTime + ':00+09:00');
+    var saudiFmt = new Intl.DateTimeFormat('ja-JP', { timeZone: 'Asia/Riyadh', hour: '2-digit', minute: '2-digit', hour12: false });
+    var saudiDateFmt = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Riyadh', year: 'numeric', month: '2-digit', day: '2-digit' });
+    var saudiDateKey = saudiDateFmt.format(startInstant);
+    var dayNote = saudiDateKey !== date ? (saudiDateKey < date ? '（前日）' : '（翌日）') : '';
+
+    el.textContent = '🇸🇦 ' + saudiFmt.format(startInstant) + '〜' + saudiFmt.format(endInstant) + ' (AST)' + dayNote;
+  };
+
   window.applyQuickDuration = function (mode) {
     if (mode === 'day') {
       document.getElementById('cal-event-start').value = '00:00';
       document.getElementById('cal-event-end').value = '23:59';
+      updateSaudiTimePreview();
       return;
     }
     var startVal = document.getElementById('cal-event-start').value || '09:00';
@@ -3456,6 +3543,7 @@
     var eh = Math.floor(endMinutes / 60);
     var em = endMinutes % 60;
     document.getElementById('cal-event-end').value = pad2(eh) + ':' + pad2(em);
+    updateSaudiTimePreview();
   };
 
   // Overlap check (real timestamp arithmetic, not string slicing, so it's
