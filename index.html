@@ -262,20 +262,6 @@
       }
     }
 
-    .jp-serif {
-      font-family: "Shippori Mincho", serif
-    }
-
-    .mono {
-      font-family: "DM Mono", monospace;
-      letter-spacing: .02em
-    }
-
-    .spec {
-      font-family: "Spectral", serif;
-      font-style: italic
-    }
-
     .wrap {
       max-width: 1140px;
       margin: 0 auto;
@@ -2573,12 +2559,6 @@
       line-height: 1.2
     }
 
-    .cinfo .csub {
-      margin: 14px 0 28px;
-      opacity: .82;
-      max-width: 380px
-    }
-
     .quick-tips {
       list-style: none;
       margin: 16px 0 30px;
@@ -3212,12 +3192,6 @@
       border-radius: 50%;
       filter: blur(64px);
       opacity: .32
-    }
-
-    .gring {
-      border-radius: 50%;
-      border: 1.5px solid var(--line);
-      opacity: .4
     }
 
     .gdots {
@@ -6770,7 +6744,6 @@
         })
           .then(function (res) { return res.json(); })
           .then(function (result) {
-            console.log('Bank order result:', result);
             if (result.sheet && result.sheet.ok === false) {
               console.warn('Google Sheet sync failed for this bank order:', result.sheet.error);
             }
