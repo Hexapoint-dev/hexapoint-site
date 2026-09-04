@@ -176,7 +176,7 @@ curl -X POST "https://www.hexapoint-jp.com/api/indexnow?secret=YOUR_SECRET" \
 | **Bot Fight Mode / WAF** | 問い合わせフォーム・決済経路の保護を強化 |
 | **Email Routing** | `info@hexapoint-jp.com` を既存メールへ無料転送。日本の顧客の信頼度向上 |
 | **Always Online** | 障害時もキャッシュ済みページを配信 |
-| **Cloudflare Access** | `/admin.html` と `/api/admin/*` を Google ログイン + Google Authenticator で追加保護（**設定済み**・下記5節参照） |
+| **Cloudflare Access** | `/admin.html` と `/api/admin/*` の追加保護に使える機能だが、**2026-09-04 に削除済み**（下記参照）。現在はパスワードログインのみ |
 
 **Bot Fight Mode を有効化する手順（推奨・決済のあるサイトなので）：**
 そのゾーン（`hexapoint-jp.com`）のダッシュボード → 左メニュー **Security → Bots** →
@@ -352,69 +352,34 @@ D1 データベースをこの Pages プロジェクトに紐付けてくださ�
 パスワードログイン機能を組み込みました（`functions/_shared/admin-auth.js` —
 署名付き HttpOnly セッションクッキー方式、サーバー側にセッション情報を保存しない）。
 
-`www.hexapoint-jp.com` を独自ドメインとして接続したことで **Cloudflare Access** を
-`/admin.html` と `/api/admin/*` の前段に重ねることが可能になり、**現在この Access を
-有効化済み**です（Google ログイン + そのアカウントの Google Authenticator）。
-既存のパスワードログイン（`admin-auth.js`）はそのまま残しており、Access → パスワード
-ログインの二段構えになっています。
+`www.hexapoint-jp.com` を独自ドメインとして接続したことで、一時期 **Cloudflare Access**
+（Google ログイン + Google Authenticator）を `/admin.html` と `/api/admin/*` の前段に
+重ねて二段構えにしていましたが、**2026-09-04 に削除**しました。
 
-以下は設定時の手順の記録です（再設定・別担当者への引き継ぎ・許可アカウントの追加時に参照）。
+削除理由：管理画面の「パスワードでログイン」ボタンは JS の `fetch()` でバックグラウンド
+通信します。Access のセッション（Cookie）が切れた状態でこの `fetch` を叩くと、Access が
+Google のログイン画面へリダイレクトしようとしますが、`fetch` はページ遷移ではないため
+その別ドメインへのリダイレクトを追えず、ブラウザ側で `Failed to fetch` という分かりにくい
+エラーになって完全にログインできなくなる、という問題が発生しました。タブを開きっぱなしに
+していると Access セッションだけが裏で切れるため再現しやすく、実用上ロックアウトの
+リスクが高いと判断し、Access は使わずに既存のパスワードログイン（`admin-auth.js`・
+署名付き HttpOnly セッションクッキー）のみで運用することにしました。
 
-Cloudflare Access 自体には「認証アプリ（TOTP）」を単独のログイン方式として選ぶ機能は
-ありません。実際に Google Authenticator を関与させるには、Access のログイン方法として
-**Google** を選び、その Google アカウント側で 2 段階認証（Authenticator アプリ）を
-有効にしておく、という構成になります。手順は以下のとおりです。
+削除の手順（Cloudflare ダッシュボードで実施・コード変更は不要）：
+1. `dash.cloudflare.com` → 左メニュー最下部 **Zero Trust**。
+2. **Access → Applications** → `HexaPoint Admin`（または同等の名前のアプリ）を開き、
+   右上の **Delete** でアプリごと削除。
+   （アプリを消さずポリシーだけ残すと再度ロックアウトの原因になるため、アプリごと削除を推奨）
+3. 他の Zero Trust アプリで Google ログインを使っていなければ、**Settings → Authentication
+   → Login methods** から **Google** を削除してよい（任意・必須ではない）。
+4. Google Cloud 側で作成した OAuth クライアント（手順Aで作成したもの）も、他で使っていなければ
+   `console.cloud.google.com` → **APIs & Services → Credentials** から削除してよい（任意）。
+5. 削除後、シークレットウィンドウで `https://www.hexapoint-jp.com/admin.html` を開き、
+   Google のログイン画面を経由せず直接パスワードログイン画面が表示されることを確認。
 
-*手順A — Google Cloud で OAuth クライアントを作成*
-1. https://console.cloud.google.com/ でプロジェクトを選択（新規でも既存でもOK）。
-2. **APIs & Services → OAuth consent screen** → User Type は個人アカウントなら
-   **External** を選び、アプリ名（例: `HexaPoint Admin`）とサポートメールを入力して保存。
-   公開ステータスは **Testing** のままで問題ありません（**Test users** に自分の
-   Gmail アドレスを追加）。
-3. **APIs & Services → Credentials → Create Credentials → OAuth client ID**。
-   - Application type: **Web application**
-   - **Authorized redirect URIs** に次を追加（`<team-name>` は手順Bで決める
-     Cloudflare Zero Trust のチーム名）：
-     `https://<team-name>.cloudflareaccess.com/cdn-cgi/access/callback`
-   - 作成後に表示される **Client ID** と **Client secret** を控えておく。
-
-*手順B — Cloudflare Zero Trust に Google ログインを追加*
-1. Cloudflare ダッシュボード → 左メニュー最下部 **Zero Trust**（初回はチーム名の
-   設定を求められます。手順Aのリダイレクト URI の `<team-name>` と一致させること）。
-2. **Settings → Authentication → Login methods → Add new → Google**。
-3. 手順Aで控えた Client ID / Client secret を貼り付けて保存。
-
-*手順C — 保護対象アプリケーションとポリシーを作成*
-1. **Access → Applications → Add an application → Self-hosted**。
-2. Application name: `HexaPoint Admin`。Session duration は決済のある管理画面なので
-   短め（例: `24 hours`）を推奨。
-3. Public hostname に `www.hexapoint-jp.com` / Path `/admin.html` を設定し、
-   **+ Add public hostname** で同じホスト名 / Path `/api/admin/*` をもう1行追加
-   （両方を保護しないと API に直接アクセスされてしまいます）。
-4. **Identity providers** で Google のみを選択（他のログイン方式は外す）。
-5. **Policies → Add a policy** → Action: **Allow** → Include の Selector を
-   **Emails** にし、管理画面へのログインを許可する Google アカウントの
-   メールアドレスを追加。
-6. 保存して発行。
-
-*手順D — Google アカウント側で Google Authenticator を有効化*
-すでに2段階認証を設定済みなら不要です。未設定の場合：
-1. https://myaccount.google.com/security → **2段階認証プロセス** を有効化。
-2. **認証システムアプリ** を追加し、Google Authenticator アプリでQRコードをスキャン。
-
-*動作確認*
-1. シークレットウィンドウで `https://www.hexapoint-jp.com/admin.html` を開く。
-2. Cloudflare Access のログイン画面 → **Google でログイン** → 手順Cで許可した
-   Gmail を選択 → Google のパスワード → Google Authenticator の6桁コードを入力。
-3. 通過すると初めて `admin.html` が表示され、続けて既存のパスワードログイン画面
-   （`admin-auth.js`）が出ます — つまり二重の壁になります。
-4. 許可していないメールアドレスでログインを試し、Access の段階で
-   `Access Denied` になることも確認してください。
-
-> ⚠️ 自分がロックアウトされないよう、Policy の Emails には必ず先に自分の
-> Gmail アドレスを追加してから保存してください。万一ロックアウトしても、
-> Cloudflare ダッシュボード自体（`dash.cloudflare.com`）へのログインとは別物なので、
-> そこから Access の設定はいつでも編集・削除できます。
+もし将来また二段階認証を検討する場合は、Access のような「別ドメインへのリダイレクト」を
+伴う方式ではなく、`fetch` で完結する方式（例: TOTP をパスワードログインの中に直接組み込む）
+を選ぶこと。
 
 Cloudflare Pages → Settings → Environment variables に以下を **Secret** として追加してください：
 
@@ -526,8 +491,8 @@ Cloudflare Pages → Settings → Environment variables に以下を **Secret** 
 Zoho 連携と同じ仕組みで、Cloudflare 側に Service Account の認証情報を
 Secret として設定するだけで動きます（管理画面のコード自体は変更不要）。
 
-このタブはすでに `/admin.html` と `/api/admin/*` の Access + パスワードログイン
-の内側にあるため、追加の認証は不要です。
+このタブはすでに `/admin.html` と `/api/admin/*` のパスワードログインの内側にあるため、
+追加の認証は不要です。
 
 **前提条件**: 7節「Google Search Console — ドメインプロパティの追加と検証」が
 完了している必要があります（TXTレコードでの検証が済み、`sc-domain:hexapoint-jp.com`
@@ -536,7 +501,8 @@ Secret として設定するだけで動きます（管理画面のコード自�
 
 ### 手順A — Google Cloud で Service Account を作成
 
-Cloudflare Access（5節）で使ったのと同じ Google Cloud プロジェクトで OK です。
+既存の Google Cloud プロジェクト（他の連携ですでに使っているものがあれば）を
+流用しても、新規作成しても構いません。
 
 1. https://console.cloud.google.com/ → 対象プロジェクトを選択。
 2. 検索バーで **Service Accounts** と入力して開く（または
