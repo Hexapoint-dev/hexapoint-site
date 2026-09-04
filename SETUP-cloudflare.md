@@ -152,7 +152,11 @@ curl -X POST "https://www.hexapoint-jp.com/api/indexnow?secret=YOUR_SECRET" \
 9. ブラウザで `https://www.hexapoint-jp.com/` を開き、サイトが正しく表示されることを確認。
    さらに `https://hexapoint-jp.com/`（www なし）も開き、`www.` へ自動で
    リダイレクトされることを確認。
-   （`hexapoint.pages.dev` は接続後も引き続きプレビュー用として動作し続けます — 消す必要はありません。）
+   （`hexapoint.pages.dev` は Cloudflare の仕様上、完全に無効化することはできませんが、
+   `functions/_middleware.js` により `www.hexapoint-jp.com` へ301リダイレクトされるように
+   設定済みです — 詳細は 3.5節 参照。プレビューデプロイ用のURL
+   （`<ハッシュ>.hexapoint.pages.dev` 等）はこのリダイレクトの対象外で、引き続き
+   プレビュー確認に使えます。）
 
 ### 3.2b — SSL/TLS モードの確認（1回だけ）
 
@@ -204,6 +208,21 @@ curl -X POST "https://www.hexapoint-jp.com/api/indexnow?secret=YOUR_SECRET" \
    引き続き使えます）。
 4. 保存後、`https://www.hexapoint-jp.com/` 上で問い合わせフォームを実際に送信して
    Turnstile が正常に通ることを確認してください。
+
+### 3.5 — `hexapoint.pages.dev` を隠して独自ドメインに一本化する
+
+Cloudflare Pages の仕様上、自動割り当てされる `<プロジェクト名>.pages.dev` は
+完全に削除・無効化することができません。代わりに、`functions/_middleware.js`
+（全リクエストの前段で必ず実行される Cloudflare Pages Function）で
+`hexapoint.pages.dev`（本番エイリアス）へのアクセスを検知し、
+`www.hexapoint-jp.com` の同じパスへ 301（恒久）リダイレクトするようにしています。
+
+- コード変更のみで完結しており、Cloudflare 側の追加設定は不要です。
+- **プレビューデプロイ用のURL**（`<コミットハッシュ>.hexapoint.pages.dev` や
+  `<ブランチ名>.hexapoint.pages.dev` など）はこのリダイレクトの対象外のままです
+  — 3.2節の注記どおり、マージ前の動作確認に引き続き使えます。
+- 動作確認: シークレットウィンドウで `https://hexapoint.pages.dev/` を開き、
+  `https://www.hexapoint-jp.com/` に自動でリダイレクトされることを確認してください。
 
 ---
 
