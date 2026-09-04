@@ -970,48 +970,6 @@
       font-style: normal
     }
 
-    .strip {
-      border-top: 1px solid var(--line);
-      border-bottom: 1px solid var(--line);
-      background: var(--emerald);
-      overflow: hidden;
-      white-space: nowrap
-    }
-
-    .strip .run {
-      display: inline-block;
-      padding: 15px 0;
-      animation: slide 26s linear infinite;
-      font-family: "DM Mono", monospace;
-      font-size: 14px;
-      letter-spacing: .08em;
-      color: var(--mint)
-    }
-
-    .strip .run span {
-      margin: 0 26px
-    }
-
-    .strip .run span b {
-      color: var(--azure)
-    }
-
-    @keyframes slide {
-      from {
-        transform: translateX(0)
-      }
-
-      to {
-        transform: translateX(-50%)
-      }
-    }
-
-    @media(prefers-reduced-motion:reduce) {
-      .strip .run {
-        animation: none
-      }
-    }
-
     section {
       padding: 96px 0
     }
@@ -4269,20 +4227,6 @@
       if (document.getElementById('whyMini')) start();
     })();
   </script>
-  <div class="strip" aria-hidden="true">
-    <div class="run">
-      <span data-jp>テンプレート設計 <b>TEMPLATES</b></span><span data-jp>ビジュアル・アイデンティティ <b>BRANDING</b></span><span
-        data-jp>文章作成 <b>COPY</b></span><span data-jp>SEO強化 <b>GOOGLE SEO</b></span><span data-jp>公開・ドメイン設定 <b>LAUNCH</b></span>
-      <span data-jp>テンプレート設計 <b>TEMPLATES</b></span><span data-jp>ビジュアル・アイデンティティ <b>BRANDING</b></span><span
-        data-jp>文章作成 <b>COPY</b></span><span data-jp>SEO強化 <b>GOOGLE SEO</b></span><span data-jp>公開・ドメイン設定 <b>LAUNCH</b></span>
-      <span data-en>Templates <b>設計</b></span><span data-en>Brand Identity <b>ロゴ</b></span><span data-en>Copywriting
-        <b>執筆</b></span><span data-en>Google SEO <b>検索</b></span><span data-en>Launch &amp; Domain <b>公開</b></span>
-      <span data-en>Templates <b>設計</b></span><span data-en>Brand Identity <b>ロゴ</b></span><span data-en>Copywriting
-        <b>執筆</b></span><span data-en>Google SEO <b>検索</b></span><span data-en>Launch &amp; Domain <b>公開</b></span>
-    </div>
-  </div>
-
-
   <section id="services">
     <div class="gbg" aria-hidden="true">
       <div class="gtint warm"></div>
