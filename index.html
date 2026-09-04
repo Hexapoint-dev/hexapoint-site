@@ -6240,6 +6240,87 @@
       line-height: 1.6;
     }
 
+    #order-modal .om-section {
+      margin-bottom: 26px;
+      padding-top: 20px;
+      border-top: 1px solid var(--line);
+    }
+    #order-modal .om-section:first-child {
+      padding-top: 0;
+      border-top: none;
+    }
+    #order-modal .om-section-title {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .04em;
+      color: var(--emerald-deep);
+      text-transform: uppercase;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+    #order-modal .om-section-title .en {
+      font-weight: 500;
+      opacity: .55;
+      text-transform: none;
+      letter-spacing: normal;
+      font-size: 11px;
+    }
+    #order-modal .field-row {
+      display: flex;
+      gap: 12px;
+    }
+    #order-modal .field-row .field {
+      flex: 1;
+      min-width: 0;
+    }
+    #order-modal .om-addr-toggle {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    #order-modal .om-addr-toggle button {
+      flex: 1;
+      padding: 10px 8px;
+      border-radius: 10px;
+      border: 1.5px solid var(--line);
+      background: var(--paper);
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--ink);
+      opacity: .55;
+      cursor: pointer;
+    }
+    #order-modal .om-addr-toggle button.active {
+      opacity: 1;
+      border-color: var(--emerald-deep);
+      background: var(--cream);
+      color: var(--emerald-deep);
+    }
+    #order-modal .om-postal-hint {
+      font-size: 11.5px;
+      margin-top: 6px;
+      min-height: 14px;
+      opacity: .65;
+    }
+    #order-modal .om-postal-hint.ok { color: var(--emerald-deep); opacity: 1; }
+    #order-modal .om-postal-hint.err { color: var(--coral, #e63548); opacity: 1; }
+    #order-modal .field input:read-only,
+    #order-modal .field select:disabled {
+      background: var(--line);
+      opacity: .8;
+      cursor: not-allowed;
+    }
+    #order-modal .om-autofill-unlock {
+      font-weight: 400;
+      font-size: 11px;
+      opacity: .6;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
     #order-modal .om-success,
     #order-modal .om-error {
       display: none;
@@ -6406,16 +6487,68 @@
       <div class="om-price" id="om-plan-price">—</div>
 
       <div id="om-step-form">
-        <p class="om-note"><span data-jp>お支払いの前に、ご連絡先をご入力ください。</span><span data-en>Please enter your contact
-            details before payment.</span></p>
-        <div class="field"><label for="om-name"><span data-jp>お名前</span><span data-en>Full name</span> <span
-              class="req">*</span></label><input type="text" id="om-name"></div>
-        <div class="field"><label for="om-phone"><span data-jp>電話番号（日本）</span><span data-en>Phone number (Japan)</span> <span
-              class="req">*</span></label><input type="tel" id="om-phone" placeholder="080-1234-5678"></div>
-        <div class="field"><label for="om-email"><span data-jp>メールアドレス</span><span data-en>Email</span> <span
-              class="req">*</span></label><input type="email" id="om-email"></div>
-        <div class="field"><label for="om-address"><span data-jp>ご住所</span><span data-en>Address</span> <span
-              class="req">*</span></label><textarea id="om-address" style="min-height:80px"></textarea></div>
+        <p class="om-note"><span data-jp>お支払いの前に、以下の情報をご入力ください。</span><span data-en>Please enter the following
+            information before payment.</span></p>
+
+        <div class="om-section">
+          <div class="om-section-title"><span data-jp>プロジェクト情報</span><span data-en>Project</span> <span class="en">/ Project Information</span></div>
+          <div class="field"><label for="om-project-name"><span data-jp>ウェブサイト名・プロジェクト名</span><span data-en>Website / project name</span> <span class="en" style="opacity:.5;font-weight:400;">(<span data-jp>任意</span><span data-en>optional</span>)</span></label><input type="text" id="om-project-name" placeholder="例：田中商店 / example: Tanaka Shoten"></div>
+        </div>
+
+        <div class="om-section">
+          <div class="om-section-title"><span data-jp>お客様情報</span><span data-en>Client Information</span></div>
+          <div class="field"><label for="om-name"><span data-jp>お名前</span><span data-en>Full name</span> <span
+                class="req">*</span></label><input type="text" id="om-name"></div>
+          <div class="field"><label for="om-phone"><span data-jp>電話番号</span><span data-en>Phone number</span> <span
+                class="req">*</span></label><input type="tel" id="om-phone" placeholder="080-1234-5678"></div>
+          <div class="field"><label for="om-email"><span data-jp>メールアドレス</span><span data-en>Email</span> <span
+                class="req">*</span></label><input type="email" id="om-email"></div>
+        </div>
+
+        <div class="om-section">
+          <div class="om-section-title"><span data-jp>請求先情報</span><span data-en>Billing Information</span></div>
+
+          <div class="om-addr-toggle">
+            <button type="button" id="om-addr-jp-btn" class="active" onclick="setAddressMode('jp')"><span data-jp>日本国内</span><span data-en>Within Japan</span></button>
+            <button type="button" id="om-addr-intl-btn" onclick="setAddressMode('intl')"><span data-jp>海外</span><span data-en>Outside Japan</span></button>
+          </div>
+
+          <div id="om-addr-jp">
+            <div class="field-row">
+              <div class="field"><label for="om-jp-postal"><span data-jp>郵便番号</span><span data-en>Postal code</span> <span class="req">*</span></label><input type="text" id="om-jp-postal" inputmode="numeric" placeholder="150-0001"><div class="om-postal-hint" id="om-postal-hint"></div></div>
+              <div class="field"><label for="om-jp-prefecture"><span data-jp>都道府県</span><span data-en>Prefecture</span> <span class="req">*</span></label>
+                <select id="om-jp-prefecture">
+                  <option value="">選択 / Select</option>
+                  <option>北海道</option><option>青森県</option><option>岩手県</option><option>宮城県</option><option>秋田県</option>
+                  <option>山形県</option><option>福島県</option><option>茨城県</option><option>栃木県</option><option>群馬県</option>
+                  <option>埼玉県</option><option>千葉県</option><option>東京都</option><option>神奈川県</option><option>新潟県</option>
+                  <option>富山県</option><option>石川県</option><option>福井県</option><option>山梨県</option><option>長野県</option>
+                  <option>岐阜県</option><option>静岡県</option><option>愛知県</option><option>三重県</option><option>滋賀県</option>
+                  <option>京都府</option><option>大阪府</option><option>兵庫県</option><option>奈良県</option><option>和歌山県</option>
+                  <option>鳥取県</option><option>島根県</option><option>岡山県</option><option>広島県</option><option>山口県</option>
+                  <option>徳島県</option><option>香川県</option><option>愛媛県</option><option>高知県</option><option>福岡県</option>
+                  <option>佐賀県</option><option>長崎県</option><option>熊本県</option><option>大分県</option><option>宮崎県</option>
+                  <option>鹿児島県</option><option>沖縄県</option>
+                </select>
+              </div>
+            </div>
+            <div class="field">
+              <label for="om-jp-city"><span data-jp>市区町村</span><span data-en>City / Ward</span> <span class="req">*</span> <span class="om-autofill-unlock" id="om-jp-addr-unlock" onclick="unlockJpAddressFields()" style="display:none"><span data-jp>（違う場合はこちらをタップして修正）</span><span data-en>(tap here to correct if wrong)</span></span></label>
+              <input type="text" id="om-jp-city" placeholder="渋谷区">
+            </div>
+            <div class="field"><label for="om-jp-street"><span data-jp>番地・建物名</span><span data-en>Street address / building</span> <span class="req">*</span></label><input type="text" id="om-jp-street" placeholder="神宮前1-2-3 ○○ビル101"></div>
+          </div>
+
+          <div id="om-addr-intl" style="display:none">
+            <div class="field-row">
+              <div class="field"><label for="om-intl-country"><span data-jp>国名</span><span data-en>Country</span> <span class="req">*</span></label><input type="text" id="om-intl-country" placeholder="Saudi Arabia"></div>
+              <div class="field"><label for="om-intl-postal"><span data-jp>郵便番号</span><span data-en>Postal code</span> <span class="req">*</span></label><input type="text" id="om-intl-postal"></div>
+            </div>
+            <div class="field"><label for="om-intl-city"><span data-jp>市区町村</span><span data-en>City</span> <span class="req">*</span></label><input type="text" id="om-intl-city" placeholder="Riyadh"></div>
+            <div class="field"><label for="om-intl-address"><span data-jp>住所（番地・建物名など）</span><span data-en>Full address (street, building, etc.)</span> <span class="req">*</span></label><textarea id="om-intl-address" style="min-height:70px"></textarea></div>
+          </div>
+        </div>
+
         <div id="om-turnstile" class="cf-turnstile" data-sitekey="0x4AAAAAAD8H_SMh5X5eLg1u"
           data-theme="light" style="margin-top:16px;"></div>
         <button type="button" class="btn btn-primary" style="width:100%;justify-content:center"
@@ -6541,6 +6674,7 @@
 
       var currentPlan = null;
       var pendingBuyer = null;
+      var pendingNotes = '';
       var pendingToken = null;
 
       function hideAllSteps() {
@@ -6552,6 +6686,7 @@
       window.openOrderModal = function (planId) {
         currentPlan = planId;
         pendingBuyer = null;
+        pendingNotes = '';
         pendingToken = null;
         var info = PLAN_INFO[planId];
         document.getElementById('om-plan-title').textContent = info.titleJp + ' / ' + info.titleEn;
@@ -6563,10 +6698,24 @@
         document.getElementById('om-success').classList.remove('show');
         document.getElementById('om-bank-success').classList.remove('show');
         document.getElementById('om-error').classList.remove('show');
+        document.getElementById('om-project-name').value = '';
         document.getElementById('om-name').value = '';
         document.getElementById('om-phone').value = '';
         document.getElementById('om-email').value = '';
-        document.getElementById('om-address').value = '';
+        document.getElementById('om-jp-postal').value = '';
+        document.getElementById('om-jp-prefecture').value = '';
+        document.getElementById('om-jp-city').value = '';
+        document.getElementById('om-jp-street').value = '';
+        document.getElementById('om-intl-country').value = '';
+        document.getElementById('om-intl-postal').value = '';
+        document.getElementById('om-intl-city').value = '';
+        document.getElementById('om-intl-address').value = '';
+        document.getElementById('om-jp-prefecture').disabled = false;
+        document.getElementById('om-jp-city').readOnly = false;
+        document.getElementById('om-jp-addr-unlock').style.display = 'none';
+        document.getElementById('om-postal-hint').textContent = '';
+        document.getElementById('om-postal-hint').className = 'om-postal-hint';
+        setAddressMode('jp');
         document.body.style.overflow = 'hidden';
         if (typeof turnstile !== 'undefined') {
           try { turnstile.reset('#om-turnstile'); } catch (e) { /* not yet rendered on first open */ }
@@ -6639,6 +6788,7 @@
           body: JSON.stringify({
             planId: currentPlan,
             buyer: pendingBuyer,
+            notes: pendingNotes,
             turnstileToken: pendingToken
           })
         })
@@ -6663,15 +6813,121 @@
           });
       };
 
+      // 'jp' or 'intl' -- which set of billing-address fields is currently
+      // shown/required. Kept outside any function so openOrderModal() and
+      // submitOrderForm() both see the current value.
+      var addressMode = 'jp';
+
+      window.setAddressMode = function (mode) {
+        addressMode = mode;
+        document.getElementById('om-addr-jp').style.display = mode === 'jp' ? '' : 'none';
+        document.getElementById('om-addr-intl').style.display = mode === 'intl' ? '' : 'none';
+        document.getElementById('om-addr-jp-btn').classList.toggle('active', mode === 'jp');
+        document.getElementById('om-addr-intl-btn').classList.toggle('active', mode === 'intl');
+      };
+
+      // ---- Japanese postal-code auto-lookup (prefecture + city) ----
+      // Uses zipcloud (https://zipcloud.ibsnet.co.jp/) -- a free, public, no-key
+      // Japanese postal code API, widely used for exactly this. Auto-filled
+      // fields are locked (select disabled / input read-only) per the request
+      // that the customer not be able to accidentally mismatch them against the
+      // postal code; the small "tap to correct" link is a safety net in case
+      // the lookup is ever wrong or the address is genuinely new/unlisted.
+      window.unlockJpAddressFields = function () {
+        document.getElementById('om-jp-prefecture').disabled = false;
+        document.getElementById('om-jp-city').readOnly = false;
+        document.getElementById('om-jp-addr-unlock').style.display = 'none';
+      };
+
+      function resetJpAutoFill() {
+        var prefSelect = document.getElementById('om-jp-prefecture');
+        var cityInput = document.getElementById('om-jp-city');
+        if (prefSelect.disabled || cityInput.readOnly) {
+          prefSelect.value = '';
+          cityInput.value = '';
+        }
+        prefSelect.disabled = false;
+        cityInput.readOnly = false;
+        document.getElementById('om-jp-addr-unlock').style.display = 'none';
+        document.getElementById('om-postal-hint').textContent = '';
+        document.getElementById('om-postal-hint').className = 'om-postal-hint';
+      }
+
+      function lookupJapanesePostalCode(zip7) {
+        var hint = document.getElementById('om-postal-hint');
+        hint.textContent = '検索中… / Looking up…';
+        hint.className = 'om-postal-hint';
+
+        fetch('https://zipcloud.ibsnet.co.jp/api/search?zipcode=' + zip7)
+          .then(function (res) { return res.json(); })
+          .then(function (data) {
+            if (data.status !== 200 || !data.results || !data.results.length) {
+              hint.textContent = '該当する住所が見つかりませんでした。手動でご入力ください。 / No matching address found — please fill in manually.';
+              hint.className = 'om-postal-hint err';
+              return;
+            }
+            var r = data.results[0];
+            var prefSelect = document.getElementById('om-jp-prefecture');
+            var cityInput = document.getElementById('om-jp-city');
+            prefSelect.value = r.address1;
+            cityInput.value = r.address2 + (r.address3 || '');
+            prefSelect.disabled = true;
+            cityInput.readOnly = true;
+            document.getElementById('om-jp-addr-unlock').style.display = '';
+            hint.textContent = '✓ 自動入力しました / Auto-filled';
+            hint.className = 'om-postal-hint ok';
+            document.getElementById('om-jp-street').focus();
+          })
+          .catch(function (err) {
+            console.error('Postal code lookup failed:', err);
+            hint.textContent = '';
+            hint.className = 'om-postal-hint';
+          });
+      }
+
+      var jpPostalEl = document.getElementById('om-jp-postal');
+      if (jpPostalEl) {
+        jpPostalEl.addEventListener('input', function () {
+          var digits = this.value.replace(/[^0-9]/g, '');
+          if (digits.length === 7) {
+            lookupJapanesePostalCode(digits);
+          } else {
+            resetJpAutoFill();
+          }
+        });
+      }
+
+      // Assembles the structured address fields for whichever mode is active
+      // into the single formatted string the backend/D1/admin panel already
+      // expect (buyer.address stays a plain string end-to-end -- no schema
+      // change needed). Returns '' if any required field for that mode is empty.
+      function buildAddressString() {
+        if (addressMode === 'jp') {
+          var postal = document.getElementById('om-jp-postal').value.trim();
+          var pref = document.getElementById('om-jp-prefecture').value;
+          var city = document.getElementById('om-jp-city').value.trim();
+          var street = document.getElementById('om-jp-street').value.trim();
+          if (!postal || !pref || !city || !street) return '';
+          return '〒' + postal + ' ' + pref + city + street;
+        }
+        var country = document.getElementById('om-intl-country').value.trim();
+        var postalIntl = document.getElementById('om-intl-postal').value.trim();
+        var cityIntl = document.getElementById('om-intl-city').value.trim();
+        var addrIntl = document.getElementById('om-intl-address').value.trim();
+        if (!country || !postalIntl || !cityIntl || !addrIntl) return '';
+        return addrIntl + ', ' + cityIntl + ', ' + country + ' ' + postalIntl;
+      }
+
       window.submitOrderForm = function () {
         var name = document.getElementById('om-name').value.trim();
         var phone = document.getElementById('om-phone').value.trim();
         var email = document.getElementById('om-email').value.trim();
-        var address = document.getElementById('om-address').value.trim();
+        var projectName = document.getElementById('om-project-name').value.trim();
+        var address = buildAddressString();
         var emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
         if (!name || !phone || !email || !address) {
-          alert('すべての項目をご入力ください。 / Please fill in all fields.');
+          alert('すべての必須項目をご入力ください。 / Please fill in all required fields.');
           return;
         }
         if (!emailRe.test(email)) {
@@ -6686,6 +6942,7 @@
         }
 
         pendingBuyer = { name: name, phone: phone, email: email, address: address };
+        pendingNotes = projectName ? ('希望のウェブサイト名 / Desired site name: ' + projectName) : '';
         pendingToken = turnstileToken;
 
         hideAllSteps();
@@ -6715,7 +6972,7 @@
         fetch('/api/stripe-create-checkout', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ planId: currentPlan, buyer: pendingBuyer, turnstileToken: pendingToken })
+          body: JSON.stringify({ planId: currentPlan, buyer: pendingBuyer, notes: pendingNotes, turnstileToken: pendingToken })
         })
           .then(function (res) { return res.json(); })
           .then(function (data) {

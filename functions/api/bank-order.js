@@ -19,6 +19,7 @@ export async function onRequestPost({ request, env }) {
     const body = await request.json();
     const planId = (body.planId || "").toString();
     const buyerRaw = body.buyer || {};
+    const notes = (body.notes || "").toString().trim().slice(0, 500);
     const turnstileToken = (body.turnstileToken || "").toString();
 
     const plan = await getPlan(env, planId);
@@ -70,7 +71,7 @@ export async function onRequestPost({ request, env }) {
       paymentMethod: "bank",
       status,
       buyer,
-      notes: "",
+      notes,
     });
 
     return jsonResponse({

@@ -110,6 +110,7 @@ export async function confirmStripeSession(env, session) {
   const plan = await getPlan(env, parsed.planId);
   if (!plan) return { ok: false, error: "unknown_plan" };
   const buyer = { name: parsed.name, phone: parsed.phone, email: parsed.email, address: parsed.address };
+  const notes = parsed.notes || "";
 
   const orderID = session.id;
   // JPY is a zero-decimal currency in Stripe: amount_total is already whole yen,
@@ -132,7 +133,7 @@ export async function confirmStripeSession(env, session) {
       paymentMethod: "stripe",
       status: "paid",
       buyer,
-      notes: "",
+      notes,
     });
     if (emailResult.ok) {
       await env.ORDERS_KV.put(`emailed:${orderID}`, "1", { expirationTtl: 60 * 60 * 24 * 7 });
