@@ -176,7 +176,7 @@ curl -X POST "https://www.hexapoint-jp.com/api/indexnow?secret=YOUR_SECRET" \
 | **Bot Fight Mode / WAF** | 問い合わせフォーム・決済経路の保護を強化 |
 | **Email Routing** | `info@hexapoint-jp.com` を既存メールへ無料転送。日本の顧客の信頼度向上 |
 | **Always Online** | 障害時もキャッシュ済みページを配信 |
-| **Cloudflare Access** | `/admin.html` と `/api/admin/*` の追加保護に使える機能だが、**2026-09-04 に削除済み**（下記参照）。現在はパスワードログインのみ |
+| **Cloudflare Access** | `/admin.html` と `/api/admin/*` の追加保護に使える機能だが、**2026-09-04 に削除済み**（下記参照）。代わりにアプリ内蔵の TOTP（認証アプリの6桁コード）を追加済み |
 
 **Bot Fight Mode を有効化する手順（推奨・決済のあるサイトなので）：**
 そのゾーン（`hexapoint-jp.com`）のダッシュボード → 左メニュー **Security → Bots** →
@@ -377,9 +377,34 @@ Google のログイン画面へリダイレクトしようとしますが、`fet
 5. 削除後、シークレットウィンドウで `https://www.hexapoint-jp.com/admin.html` を開き、
    Google のログイン画面を経由せず直接パスワードログイン画面が表示されることを確認。
 
-もし将来また二段階認証を検討する場合は、Access のような「別ドメインへのリダイレクト」を
-伴う方式ではなく、`fetch` で完結する方式（例: TOTP をパスワードログインの中に直接組み込む）
-を選ぶこと。
+Access を削除した代わりに、`fetch` で完結する二段階認証（TOTP・認証アプリの6桁コード）を
+パスワードログインの中に直接組み込みました（`functions/_shared/totp.js`・
+`functions/api/admin/verify-totp.js`）。別ドメインへのリダイレクトが一切発生しないため、
+Access で起きた `Failed to fetch` の問題は構造的に起こりません。
+
+**TOTP の設定手順**
+
+1. ランダムな秘密鍵（Base32・20バイト）を1つだけ生成します。チャットで生成してもらった
+   ものをそのまま使うか、自分で生成する場合は例えば：
+   ```
+   node -e "const c=require('crypto');const b=c.randomBytes(20);const a='ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';let s='';for(const x of b)s+=x.toString(2).padStart(8,'0');let o='';for(let i=0;i+5<=s.length;i+=5)o+=a[parseInt(s.slice(i,i+5),2)];console.log(o);"
+   ```
+2. その値を Cloudflare Pages → Settings → Environment variables に
+   `ADMIN_TOTP_SECRET` として **Secret** で追加（下表参照）。
+3. 認証アプリ（Google Authenticator / Authy など）で「手動でキーを入力」を選び：
+   - アカウント名: 任意（例 `HexaPoint Admin`）
+   - キー: 手順1で生成した Base32 の値
+   - 種類: **時間ベース（Time-based）**
+   で追加。QRコードは使わず手入力にすることで、秘密鍵が一切ネットワークを
+   経由しません。
+4. `ADMIN_TOTP_SECRET` を設定していない間は、この second factor は自動的に
+   スキップされます（パスワードのみでログイン可能）ので、上記1〜3を終えてから
+   有効になります。ロックアウトが心配な場合は、まず自分のテスト用の値で
+   1〜3を試し、実際にログインできることを確認してから本番の秘密鍵に置き換えても
+   構いません。
+5. 万一 `ADMIN_TOTP_SECRET` を紛失・変更したくなった場合は、Cloudflare の
+   環境変数を新しい値に上書きし、認証アプリ側も同じ新しい値で登録し直すだけです
+   （サーバー側にセッション/秘密鍵の状態は保存されないため、他に手順は不要）。
 
 Cloudflare Pages → Settings → Environment variables に以下を **Secret** として追加してください：
 
@@ -387,14 +412,15 @@ Cloudflare Pages → Settings → Environment variables に以下を **Secret** 
 |---|---|
 | `ADMIN_PASSWORD` | 管理画面ログイン用のパスワード（長め・使い回さない文字列を推奨） |
 | `ADMIN_SESSION_SECRET` | セッション署名専用のランダム文字列（生成例：`openssl rand -hex 32`） |
+| `ADMIN_TOTP_SECRET` | 認証アプリ用の Base32 秘密鍵（上記手順1で生成したもの。未設定ならTOTP自体がスキップされる） |
 
 `TURNSTILE_SECRET_KEY` はログインフォームの Bot 対策にもそのまま再利用されるため、
 追加設定は不要です（すでに設定済みのはずです）。
 
 ログイン試行はサーバー側でも IP ごとに 15 分あたり最大 5 回まで制限しています
-（`ORDERS_KV` を利用）。これらの環境変数を設定し忘れると、管理画面に一切ログイン
-できなくなります（`ADMIN_PASSWORD`／`ADMIN_SESSION_SECRET` が未設定の間は
-ログイン API が 500 エラーを返します）。
+（`ORDERS_KV` を利用、パスワードと TOTP コードそれぞれ別カウントで）。これらの環境変数を
+設定し忘れると、管理画面に一切ログインできなくなります（`ADMIN_PASSWORD`／
+`ADMIN_SESSION_SECRET` が未設定の間はログイン API が 500 エラーを返します）。
 
 > ⚠️ **Stripe は Checkout（ホスト型決済ページ）方式です。**
 > `index.html` に Stripe の SDK は一切読み込まれていません — 「Pay with Stripe」ボタンを押すと

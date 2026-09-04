@@ -381,6 +381,12 @@
 
   .login-card .btn { width: 100%; justify-content: center; margin-top: 4px; }
 
+  .login-card .totp-input {
+    text-align: center;
+    font-size: 22px;
+    letter-spacing: 8px;
+  }
+
   #dashboard-screen { display: none; }
   #dashboard-screen.show { display: block; }
 
@@ -850,12 +856,23 @@
     <img src="/logo.webp" alt="HexaPoint" class="logo">
     <h1>管理画面ログイン <span class="mono" style="font-size:12px;opacity:.5">Admin Login</span></h1>
     <div class="modal-error" id="login-error"></div>
-    <div class="field">
-      <label>パスワード</label>
-      <input type="password" id="login-password" autocomplete="current-password">
+    <div id="login-step-password">
+      <div class="field">
+        <label>パスワード</label>
+        <input type="password" id="login-password" autocomplete="current-password">
+      </div>
+      <div class="cf-turnstile" id="login-turnstile" data-sitekey="0x4AAAAAAD8H_SMh5X5eLg1u"></div>
+      <button type="button" class="btn" id="login-submit" onclick="submitLogin()">ログイン</button>
     </div>
-    <div class="cf-turnstile" id="login-turnstile" data-sitekey="0x4AAAAAAD8H_SMh5X5eLg1u"></div>
-    <button type="button" class="btn" id="login-submit" onclick="submitLogin()">ログイン</button>
+    <div id="login-step-totp" style="display:none">
+      <div class="field">
+        <label>認証アプリの6桁コード</label>
+        <input type="text" id="login-totp" class="mono totp-input" inputmode="numeric" pattern="[0-9]*"
+          autocomplete="one-time-code" maxlength="6" placeholder="000000">
+      </div>
+      <button type="button" class="btn" id="totp-submit" onclick="submitTotp()">確認</button>
+      <button type="button" class="btn btn-ghost" style="margin-top:8px" onclick="cancelTotp()">パスワードに戻る</button>
+    </div>
   </div>
 </div>
 
@@ -4295,6 +4312,7 @@
   function showLogin() {
     document.getElementById('dashboard-screen').classList.remove('show');
     document.getElementById('login-screen').classList.add('show');
+    showPasswordStep();
     stopPolling();
   }
 
@@ -4349,7 +4367,11 @@
           return;
         }
         document.getElementById('login-password').value = '';
-        showDashboard();
+        if (result.data.step === 'totp') {
+          showTotpStep();
+        } else {
+          showDashboard();
+        }
       })
       .catch(function (err) {
         btn.disabled = false;
@@ -4362,6 +4384,71 @@
       });
   };
 
+  function showTotpStep() {
+    document.getElementById('login-error').classList.remove('show');
+    document.getElementById('login-step-password').style.display = 'none';
+    document.getElementById('login-step-totp').style.display = 'block';
+    var totpInput = document.getElementById('login-totp');
+    totpInput.value = '';
+    totpInput.focus();
+  }
+
+  function showPasswordStep() {
+    document.getElementById('login-error').classList.remove('show');
+    document.getElementById('login-step-totp').style.display = 'none';
+    document.getElementById('login-step-password').style.display = 'block';
+  }
+
+  window.cancelTotp = function () {
+    showPasswordStep();
+    if (typeof turnstile !== 'undefined') {
+      try { turnstile.reset('#login-turnstile'); } catch (e) { /* ignore */ }
+    }
+  };
+
+  window.submitTotp = function () {
+    var errEl = document.getElementById('login-error');
+    errEl.classList.remove('show');
+    var btn = document.getElementById('totp-submit');
+    var code = document.getElementById('login-totp').value;
+
+    btn.disabled = true;
+    fetch('/api/admin/verify-totp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: code })
+    })
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (result) {
+        btn.disabled = false;
+        if (!result.ok || !result.data.ok) {
+          var err = result.data && result.data.error;
+          document.getElementById('login-totp').value = '';
+          if (err === 'too_many_attempts') {
+            errEl.textContent = '試行回数が多すぎます。しばらくしてから再度お試しください。';
+          } else if (err === 'invalid_code') {
+            errEl.textContent = 'コードが違います。';
+            document.getElementById('login-totp').focus();
+          } else if (err === 'expired') {
+            errEl.textContent = '時間切れです。もう一度パスワードから入力してください。';
+            showPasswordStep();
+          } else {
+            errEl.textContent = '確認に失敗しました: ' + (err || 'unknown');
+          }
+          errEl.classList.add('show');
+          return;
+        }
+        document.getElementById('login-totp').value = '';
+        showDashboard();
+      })
+      .catch(function (err) {
+        btn.disabled = false;
+        console.error('verify-totp error:', err);
+        errEl.textContent = '確認に失敗しました: ' + err.message;
+        errEl.classList.add('show');
+      });
+  };
+
   window.submitLogout = function () {
     fetch('/api/admin/logout', { method: 'POST' })
       .catch(function (err) { console.error('logout error:', err); })
@@ -4370,6 +4457,10 @@
 
   document.getElementById('login-password').addEventListener('keydown', function (e) {
     if (e.key === 'Enter') submitLogin();
+  });
+
+  document.getElementById('login-totp').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') submitTotp();
   });
 
   fetch('/api/admin/whoami')
