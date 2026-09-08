@@ -120,7 +120,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
-    href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=Spectral:ital,wght@1,400&family=DM+Mono:wght@400&family=Cairo:wght@600;700;800&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@700;800&family=Spectral:ital,wght@1,400&family=DM+Mono:wght@400&family=Cairo:wght@600;700;800&display=swap"
     rel="stylesheet">
   <!-- No-JS fallback: see index.html for rationale. -->
   <noscript>
@@ -172,7 +172,7 @@
     body {
       background: var(--paper);
       color: var(--ink);
-      font-family: "Zen Kaku Gothic New", sans-serif;
+      font-family: -apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic UI","Yu Gothic",Meiryo, sans-serif;
       font-size: 1.0625rem;
       line-height: 1.7;
       -webkit-font-smoothing: antialiased;
@@ -245,7 +245,7 @@
     .logo .mark img { width: 100%; height: 100%; object-fit: contain }
     .logo:hover .mark { transform: rotate(-8deg) scale(1.05) }
     .logo .name { font-family: "DM Mono", monospace; font-size: 13px; letter-spacing: .2em; text-transform: uppercase }
-    .logo .kana { font-family: "Zen Kaku Gothic New", sans-serif; font-size: 10.5px; letter-spacing: 0; text-transform: none; opacity: .55; margin-left: 1px }
+    .logo .kana { font-family: -apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic UI","Yu Gothic",Meiryo, sans-serif; font-size: 10.5px; letter-spacing: 0; text-transform: none; opacity: .55; margin-left: 1px }
     @media(max-width:480px) { .logo .kana { display: none } }
 
     nav { display: flex; align-items: center; gap: 4px }
@@ -329,7 +329,7 @@
     .foot-grid a { display: block; color: var(--ink); text-decoration: none; font-size: 14px; opacity: .8; padding: 5px 0; transition: .2s }
     .foot-grid a:hover { opacity: 1; color: var(--emerald) }
     .foot-btm { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 14px; padding-top: 24px; font-family: "DM Mono", monospace; font-size: 12px; opacity: .6 }
-    .pdf-dl { display: inline-flex; align-items: center; gap: 7px; background: var(--mint); border: 1px solid var(--mint-2); color: var(--emerald-deep) !important; font-family: "Zen Kaku Gothic New", sans-serif !important; font-size: 12.5px !important; font-weight: 700; padding: 7px 15px; border-radius: 30px; text-decoration: none !important; opacity: 1 !important; transition: .2s }
+    .pdf-dl { display: inline-flex; align-items: center; gap: 7px; background: var(--mint); border: 1px solid var(--mint-2); color: var(--emerald-deep) !important; font-family: -apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic UI","Yu Gothic",Meiryo, sans-serif !important; font-size: 12.5px !important; font-weight: 700; padding: 7px 15px; border-radius: 30px; text-decoration: none !important; opacity: 1 !important; transition: .2s }
     .pdf-dl:hover { background: var(--emerald-deep); border-color: var(--emerald-deep); color: #fff !important }
     .pdf-dl svg { width: 13px; height: 13px; flex: 0 0 auto }
     .foot-docs summary { display: flex; align-items: center; gap: 7px; color: var(--ink); font-size: 14px; opacity: .8; padding: 5px 0; cursor: pointer; list-style: none; user-select: none; transition: .2s }
@@ -373,7 +373,7 @@
     .lf-card .big { font-family: "Shippori Mincho", serif; font-weight: 800; font-size: 30px; margin-bottom: 6px }
     .lf-card .rom { font-family: "DM Mono", monospace; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; opacity: .55 }
     .lf-card.jp .big { color: var(--emerald-deep) }
-    .lf-card.ar .big { color: var(--azure-deep); direction: rtl; font-family: "Cairo", "Zen Kaku Gothic New", sans-serif }
+    .lf-card.ar .big { color: var(--azure-deep); direction: rtl; font-family: "Cairo", -apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic UI","Yu Gothic",Meiryo, sans-serif }
     .lf-card.en .big { color: var(--coral) }
     .lf-arrow { display: flex; align-items: center; justify-content: center; flex: 0 0 auto; width: 56px; color: var(--ink); opacity: .35 }
     .lf-arrow svg { width: 100%; height: 26px }
@@ -417,7 +417,7 @@
     .greet .gword b { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: "Shippori Mincho", serif; font-size: 20px; opacity: 0; transform: translateY(8px); transition: opacity .5s ease, transform .5s ease; white-space: nowrap }
     .greet .gword b.active { opacity: 1; transform: translateY(0) }
     .greet .gword b:nth-child(1) { color: var(--emerald-deep) }
-    .greet .gword b:nth-child(2) { color: var(--azure-deep); direction: rtl; font-family: "Cairo", "Zen Kaku Gothic New", sans-serif }
+    .greet .gword b:nth-child(2) { color: var(--azure-deep); direction: rtl; font-family: "Cairo", -apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic UI","Yu Gothic",Meiryo, sans-serif }
     .greet .gword b:nth-child(3) { color: var(--coral) }
     .greet .garrow { opacity: .4; font-family: "DM Mono", monospace; font-size: 12px }
 

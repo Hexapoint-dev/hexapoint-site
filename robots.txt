@@ -3,4 +3,21 @@ Allow: /
 Disallow: /admin.html
 Disallow: /api/
 
+# AI training-data crawlers (not search/answer-engine retrieval bots) --
+# blocked 2026-09-08 per site owner decision. Search/citation crawlers
+# (GPTBot, OAI-SearchBot, PerplexityBot, ClaudeBot, Google's regular
+# Googlebot, Bingbot, etc.) are deliberately left allowed above so the
+# site can still appear in AI Overviews / ChatGPT / Perplexity answers.
+User-agent: CCBot
+Disallow: /
+
+User-agent: Google-Extended
+Disallow: /
+
+User-agent: anthropic-ai
+Disallow: /
+
+User-agent: Bytespider
+Disallow: /
+
 Sitemap: https://www.hexapoint-jp.com/sitemap.xml
