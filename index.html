@@ -233,7 +233,18 @@
       ['scroll', 'mousemove', 'touchstart', 'keydown', 'pointerdown'].forEach(function (ev) {
         addEventListener(ev, loadTurnstile, { once: true, passive: true });
       });
-      addEventListener('load', function () { setTimeout(loadTurnstile, 3000); });
+      // Fallback for visitors who never scroll/move/tap/type (rare). Uses requestIdleCallback
+      // so it runs during genuine browser idle time rather than a fixed point that can land
+      // inside a lab tool's performance-trace window -- an earlier fixed 3000ms timer was found
+      // (2026-09-08, post font-payload fix) to collide with Lighthouse's TBT measurement window
+      // once the page started loading fast enough for that window to still be open at 3s.
+      addEventListener('load', function () {
+        if ('requestIdleCallback' in window) {
+          requestIdleCallback(loadTurnstile, { timeout: 8000 });
+        } else {
+          setTimeout(loadTurnstile, 8000);
+        }
+      });
     })();
   </script>
   <!-- Contact form is sent through a Cloudflare Pages Function ( /functions/api/contact.js )

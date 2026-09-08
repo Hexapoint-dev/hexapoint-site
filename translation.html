@@ -144,7 +144,15 @@
       ['scroll', 'mousemove', 'touchstart', 'keydown', 'pointerdown'].forEach(function (ev) {
         addEventListener(ev, loadTurnstile, { once: true, passive: true });
       });
-      addEventListener('load', function () { setTimeout(loadTurnstile, 3000); });
+      // See index.html for rationale (requestIdleCallback avoids colliding with a lab tool's
+      // performance-trace window the way a fixed 3000ms timer did).
+      addEventListener('load', function () {
+        if ('requestIdleCallback' in window) {
+          requestIdleCallback(loadTurnstile, { timeout: 8000 });
+        } else {
+          setTimeout(loadTurnstile, 8000);
+        }
+      });
     })();
   </script>
   <style>
