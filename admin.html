@@ -1,0 +1,4661 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>注文管理 | HexaPoint Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet"
+  href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap">
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+<style>
+  :root {
+    --ink: #0e1633;
+    --paper: #fbf9f6;
+    --cream: #fff;
+    --emerald: #f5912a;
+    --emerald-deep: #e8631f;
+    --coral: #e63548;
+    --coral-soft: #ffe0e3;
+    --line: rgba(14, 22, 51, .12);
+    --line-strong: rgba(14, 22, 51, .22);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Zen Kaku Gothic New", sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .mono { font-family: "DM Mono", monospace; }
+
+  header.top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding: 20px 28px;
+    border-bottom: 1px solid var(--line);
+    background: var(--cream);
+  }
+
+  header.top h1 {
+    font-family: "Shippori Mincho", serif;
+    font-size: 22px;
+    margin: 0;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1.5px solid var(--ink);
+    background: var(--ink);
+    color: var(--cream);
+    border-radius: 999px;
+    padding: 9px 18px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--ink);
+  }
+
+  #gsc-range-buttons button.active {
+    background: var(--ink);
+    color: var(--cream);
+  }
+
+  .btn-danger {
+    background: var(--coral);
+    border-color: var(--coral);
+  }
+
+  .btn:disabled { opacity: .4; cursor: default; }
+
+  main { padding: 24px 28px 60px; max-width: 1280px; margin: 0 auto; }
+
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+  }
+
+  .toolbar input[type="search"],
+  .toolbar select {
+    border: 1.5px solid var(--line-strong);
+    border-radius: 10px;
+    padding: 9px 12px;
+    font-size: 13px;
+    font-family: inherit;
+    background: var(--cream);
+    color: var(--ink);
+  }
+
+  .toolbar input[type="search"] { min-width: 240px; }
+
+  #error-banner {
+    display: none;
+    background: var(--coral-soft);
+    color: var(--coral);
+    border: 1px solid var(--coral);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 13px;
+    margin-bottom: 16px;
+  }
+
+  #error-banner.show { display: block; }
+
+  .table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--cream);
+  }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+
+  th, td {
+    padding: 11px 14px;
+    text-align: left;
+    border-bottom: 1px solid var(--line);
+    white-space: nowrap;
+  }
+
+  th {
+    font-weight: 700;
+    color: var(--ink);
+    opacity: .7;
+    font-size: 12px;
+    letter-spacing: .03em;
+    user-select: none;
+    position: sticky;
+    top: 0;
+    background: var(--cream);
+  }
+
+  th.sortable { cursor: pointer; }
+  th.sortable:hover { opacity: 1; }
+  th .arrow { opacity: .5; font-size: 10px; margin-left: 3px; }
+
+  tbody tr { cursor: pointer; }
+  tbody tr:hover { background: var(--paper); }
+  tbody tr:last-child td { border-bottom: none; }
+
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .badge-pending { background: var(--line); color: var(--ink); }
+  .badge-paid { background: var(--emerald); color: #fff; }
+  .badge-refunded { background: var(--coral-soft); color: var(--coral); }
+  .badge-cancelled { background: var(--coral); color: #fff; }
+  .badge-msg-new { background: var(--coral); color: #fff; }
+  .badge-msg-read { background: var(--line); color: var(--ink); }
+  .badge-msg-replied { background: #4f86e8; color: #fff; }
+  .badge-msg-archived { background: #9aa0b4; color: #fff; }
+
+  .row-actions button {
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--ink);
+    opacity: .6;
+    padding: 4px 6px;
+    font-family: inherit;
+  }
+  .row-actions button:hover { opacity: 1; }
+
+  .empty-state, .loading-state {
+    padding: 40px 20px;
+    text-align: center;
+    opacity: .5;
+    font-size: 13px;
+  }
+
+  .pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin-top: 18px;
+    font-size: 13px;
+  }
+
+  /* ---- modal ---- */
+  .overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(14, 22, 51, .55);
+    z-index: 999;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .overlay.show { display: flex; }
+
+  .modal {
+    background: var(--paper);
+    border-radius: 20px;
+    width: 100%;
+    max-width: 560px;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 28px;
+    position: relative;
+  }
+
+  .modal h2 {
+    font-family: "Shippori Mincho", serif;
+    font-size: 19px;
+    margin: 0 0 4px;
+  }
+
+  .modal .sub { font-size: 12px; opacity: .55; margin-bottom: 18px; }
+
+  .modal .close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1.5px solid var(--line);
+    background: var(--cream);
+    cursor: pointer;
+    font-size: 15px;
+  }
+
+  .field { margin-bottom: 14px; }
+  .field label {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    opacity: .65;
+    margin-bottom: 5px;
+  }
+  .field input, .field select, .field textarea {
+    width: 100%;
+    border: 1.5px solid var(--line-strong);
+    border-radius: 10px;
+    padding: 9px 12px;
+    font-size: 13px;
+    font-family: inherit;
+    background: var(--cream);
+    color: var(--ink);
+  }
+  .field textarea { min-height: 70px; resize: vertical; }
+
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .modal-meta {
+    font-size: 11px;
+    opacity: .5;
+    margin: 14px 0;
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 22px;
+  }
+  .modal-actions .btn { flex: 1; justify-content: center; }
+
+  .modal-error {
+    display: none;
+    background: var(--coral-soft);
+    color: var(--coral);
+    border-radius: 10px;
+    padding: 8px 12px;
+    font-size: 12px;
+    margin-bottom: 12px;
+  }
+  .modal-error.show { display: block; }
+
+  /* ---- live-update toast + status dot ---- */
+  #toast-stack {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+  }
+
+  .toast {
+    background: var(--ink);
+    color: var(--cream);
+    border-radius: 12px;
+    padding: 12px 18px;
+    font-size: 13px;
+    font-weight: 700;
+    box-shadow: 0 10px 30px -8px rgba(14, 22, 51, .4);
+    opacity: 0;
+    transform: translateY(-8px);
+    transition: opacity .25s, transform .25s;
+  }
+
+  .toast.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .live-dot-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    opacity: .6;
+    margin-inline-start: 8px;
+  }
+
+  .live-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--emerald);
+    animation: live-pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes live-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: .35; }
+  }
+
+  /* ---- login screen ---- */
+  #login-screen {
+    display: none;
+    min-height: 100vh;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  #login-screen.show { display: flex; }
+
+  .login-card {
+    background: var(--cream);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    width: 100%;
+    max-width: 380px;
+    padding: 32px 28px;
+    text-align: center;
+  }
+
+  .login-card h1 {
+    font-family: "Shippori Mincho", serif;
+    font-size: 20px;
+    margin: 0 0 22px;
+  }
+
+  .login-card .field { text-align: left; }
+
+  .login-card .cf-turnstile { margin: 16px 0; display: flex; justify-content: center; }
+
+  .login-card .btn { width: 100%; justify-content: center; margin-top: 4px; }
+
+  .login-card .totp-input {
+    text-align: center;
+    font-size: 22px;
+    letter-spacing: 8px;
+  }
+
+  #dashboard-screen { display: none; }
+  #dashboard-screen.show { display: block; }
+
+  /* ---- logo ---- */
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand img.logo { height: 34px; width: auto; display: block; }
+  .login-card img.logo { height: 40px; width: auto; margin: 0 auto 16px; display: block; }
+
+  /* ---- stats tiles ---- */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 22px;
+  }
+  .stat-tile {
+    background: var(--cream);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 16px 18px;
+  }
+  .stat-tile .num { font-family: "DM Mono", monospace; font-size: 24px; font-weight: 500; color: var(--ink); }
+  .stat-tile .label { font-size: 11px; opacity: .6; margin-top: 4px; }
+  .stat-tile.accent { border-color: var(--emerald); background: linear-gradient(180deg, rgba(245,145,42,.08), transparent); }
+  .stat-tile .sub-note { font-size: 10.5px; opacity: .5; margin-top: 6px; }
+
+  /* ---- tabs ---- */
+  .tabs {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--line);
+    border-radius: 12px;
+    padding: 4px;
+    width: fit-content;
+    max-width: 100%;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+  .tab-divider {
+    width: 1px;
+    align-self: stretch;
+    background: rgba(14, 22, 51, .16);
+    margin: 4px 2px;
+  }
+  .tab-badge {
+    display: inline-block;
+    min-width: 16px;
+    padding: 1px 5px;
+    margin-left: 5px;
+    border-radius: 999px;
+    background: var(--coral);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1.4;
+    text-align: center;
+  }
+  .tabs button {
+    border: none;
+    background: transparent;
+    color: var(--ink);
+    opacity: .55;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 8px 18px;
+    border-radius: 9px;
+    cursor: pointer;
+  }
+  .tabs button.active {
+    background: var(--cream);
+    opacity: 1;
+    box-shadow: 0 2px 8px -2px rgba(14, 22, 51, .25);
+  }
+  .tab-view { display: none; }
+  .tab-view.active { display: block; }
+
+  /* ---- finance tab ---- */
+  .fin-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .fin-card {
+    background: var(--cream);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 18px 20px;
+  }
+  .fin-card h3 {
+    font-family: "Shippori Mincho", serif;
+    font-size: 15px;
+    margin: 0 0 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .fin-card h3 .count { font-family: "DM Mono", monospace; font-size: 11px; opacity: .45; font-weight: 400; }
+
+  .fee-settings {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .fee-settings label { font-size: 12px; font-weight: 700; opacity: .65; }
+  .fee-settings input {
+    width: 80px;
+    border: 1.5px solid var(--line-strong);
+    border-radius: 10px;
+    padding: 8px 10px;
+    font-family: "DM Mono", monospace;
+    font-size: 14px;
+    background: var(--paper);
+    color: var(--ink);
+    text-align: right;
+  }
+  .fee-settings .fee-hint { font-size: 11px; opacity: .5; flex-basis: 100%; }
+  .fee-saved-note { font-size: 11px; color: var(--emerald-deep); font-weight: 700; opacity: 0; transition: opacity .3s; }
+  .fee-saved-note.show { opacity: 1; }
+
+  .bar-row { margin-bottom: 14px; }
+  .bar-row:last-child { margin-bottom: 0; }
+  .bar-row .bar-head {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12.5px;
+    margin-bottom: 5px;
+  }
+  .bar-row .bar-head .amt { font-family: "DM Mono", monospace; font-weight: 500; }
+  .bar-row .bar-track {
+    height: 9px;
+    background: var(--paper);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .bar-row .bar-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--emerald), var(--emerald-deep));
+  }
+  .bar-row .bar-fill.method-bank { background: linear-gradient(90deg, #4f86e8, #3a68c2); }
+  .bar-row .bar-fill.method-manual { background: linear-gradient(90deg, #9aa0b4, #6b7189); }
+  .bar-row .bar-fill.usage-warn { background: linear-gradient(90deg, var(--coral), #c81f34); }
+
+  /* ---- calendar tab: live Google Calendar month grid ---- */
+  .cal-grid-head, .cal-grid-body { display: grid; grid-template-columns: repeat(7, 1fr); }
+  .cal-grid-head { margin-bottom: 6px; }
+  .cal-grid-headcell { text-align: center; font-size: 11px; font-weight: 700; opacity: .55; padding: 4px 0; }
+  .cal-grid-headcell.sun { color: var(--coral); }
+  .cal-grid-headcell.sat { color: #4f86e8; }
+  .cal-grid-body { gap: 4px; }
+  .cal-grid-cell {
+    min-height: 84px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 6px;
+    cursor: pointer;
+    transition: background .12s;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    overflow: hidden;
+  }
+  .cal-grid-cell:hover { background: rgba(245, 145, 42, .06); }
+  .cal-grid-cell.empty { border: none; cursor: default; }
+  .cal-grid-cell.empty:hover { background: transparent; }
+  .cal-grid-cell.today { border-color: var(--emerald-deep); background: rgba(245, 145, 42, .07); }
+  .cal-grid-cell.sun .cal-grid-daynum { color: var(--coral); }
+  .cal-grid-cell.sat .cal-grid-daynum { color: #4f86e8; }
+  .cal-grid-daynum { font-size: 12px; font-weight: 700; font-family: "DM Mono", monospace; }
+  .cal-grid-events { display: flex; flex-direction: column; gap: 2px; overflow: hidden; }
+  .cal-event-chip {
+    background: linear-gradient(90deg, var(--emerald), var(--emerald-deep));
+    color: #fff;
+    border-radius: 5px;
+    padding: 2px 5px;
+    font-size: 10.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .cal-event-more { font-size: 10px; opacity: .55; padding-left: 3px; }
+  .cal-event-chip.booking { background: linear-gradient(90deg, #4f86e8, #3a68c2); }
+  .cal-holiday-label { font-size: 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 700; }
+  .cal-holiday-label.jp { color: var(--coral); }
+  .cal-holiday-label.sa { color: #1a7a3c; }
+  .cal-legend-dot {
+    display: inline-block; width: 9px; height: 9px; border-radius: 3px;
+    background: linear-gradient(90deg, var(--emerald), var(--emerald-deep));
+    margin-right: 4px; vertical-align: middle;
+  }
+  .cal-legend-dot.booking { background: linear-gradient(90deg, #4f86e8, #3a68c2); }
+  .cal-agenda-item { display: flex; align-items: center; gap: 14px; padding: 10px 0; border-bottom: 1px solid var(--line); cursor: pointer; }
+  .cal-agenda-item:last-child { border-bottom: none; }
+  .cal-agenda-date { width: 76px; flex-shrink: 0; font-size: 11.5px; opacity: .6; }
+  .cal-agenda-date .num { font-family: "DM Mono", monospace; font-size: 15px; opacity: 1; color: var(--ink); display: block; }
+  .cal-agenda-badge { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: var(--emerald); }
+  .cal-agenda-badge.booking { background: #4f86e8; }
+  .cal-agenda-main { flex: 1; min-width: 0; }
+  .cal-agenda-time { font-size: 11px; opacity: .55; font-family: "DM Mono", monospace; }
+  .cal-agenda-title { font-size: 13.5px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  @media (max-width: 900px) {
+    .cal-grid-cell { min-height: 56px; }
+    .cal-event-chip { font-size: 9.5px; }
+  }
+
+  .trend-chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    height: 140px;
+    padding-top: 8px;
+  }
+  .trend-chart .trend-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+    justify-content: flex-end;
+    gap: 6px;
+  }
+  .trend-chart .trend-bar {
+    width: 100%;
+    max-width: 26px;
+    border-radius: 5px 5px 2px 2px;
+    background: linear-gradient(180deg, var(--emerald), var(--emerald-deep));
+    min-height: 3px;
+    position: relative;
+  }
+  .trend-chart .trend-col.current .trend-bar { background: linear-gradient(180deg, #4f86e8, #3a68c2); }
+  .trend-chart .trend-label { font-size: 10px; opacity: .55; white-space: nowrap; }
+  .trend-chart .trend-val { font-size: 9.5px; opacity: 0; font-family: "DM Mono", monospace; transition: opacity .15s; white-space: nowrap; }
+  .trend-chart .trend-col:hover .trend-val { opacity: .8; }
+
+  .top-cust-list { list-style: none; margin: 0; padding: 0; }
+  .top-cust-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 13px;
+  }
+  .top-cust-list li:last-child { border-bottom: none; }
+  .top-cust-list .rank {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--paper);
+    display: inline-flex; align-items: center; justify-content: center;
+    font-family: "DM Mono", monospace;
+    font-size: 11px;
+    flex-shrink: 0;
+  }
+  .top-cust-list .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .top-cust-list .name small { display: block; opacity: .5; font-size: 10.5px; }
+  .top-cust-list .amt { font-family: "DM Mono", monospace; font-weight: 500; white-space: nowrap; }
+
+  /* ---- orders-tab fee summary strip ---- */
+  .fee-summary-strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+  .fee-summary-strip .fs-tile {
+    border: 1px dashed var(--line-strong);
+    border-radius: 12px;
+    padding: 12px 16px;
+    background: var(--paper);
+  }
+  .fee-summary-strip .fs-tile .num { font-family: "DM Mono", monospace; font-size: 18px; font-weight: 500; }
+  .fee-summary-strip .fs-tile .label { font-size: 10.5px; opacity: .6; margin-top: 3px; }
+  .fee-summary-strip .fs-tile.net { border-style: solid; border-color: var(--emerald); background: linear-gradient(180deg, rgba(245,145,42,.08), transparent); }
+  .fee-summary-strip .fs-tile.tax { border-style: solid; border-color: #4f86e8; }
+  .fee-summary-strip.tax-hidden { grid-template-columns: repeat(3, 1fr); }
+  .fee-summary-strip.tax-hidden .fs-tile.tax { display: none; }
+
+  .tax-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 400;
+    opacity: .7;
+    cursor: pointer;
+  }
+  .tax-toggle input { accent-color: var(--emerald-deep); cursor: pointer; }
+
+  /* ---- quick filter chips ---- */
+  .quick-filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+  .quick-filters button {
+    border: 1.5px solid var(--line-strong);
+    background: var(--cream);
+    color: var(--ink);
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 7px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+    opacity: .75;
+  }
+  .quick-filters button:hover { opacity: 1; }
+  .quick-filters button.active { background: var(--ink); color: var(--cream); border-color: var(--ink); opacity: 1; }
+
+  /* ---- Zoho status badge (order detail modal) ---- */
+  .zoho-status-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    background: var(--paper);
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin-bottom: 14px;
+    font-size: 12.5px;
+  }
+  .zoho-badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+  .zoho-badge.created { background: var(--emerald); color: #fff; }
+  .zoho-badge.failed { background: var(--coral-soft); color: var(--coral); }
+  .zoho-badge.none { background: var(--line); color: var(--ink); opacity: .7; }
+  .zoho-badge.sent { background: var(--line); color: var(--ink); opacity: .8; }
+  .zoho-badge.delivered { background: var(--emerald); color: #fff; }
+  .zoho-badge.bounced, .zoho-badge.complained { background: var(--coral-soft); color: var(--coral); }
+  .zoho-badge.delayed { background: var(--coral-soft); color: var(--coral); opacity: .8; }
+  .zoho-status-row .zoho-error { opacity: .6; font-size: 11px; flex-basis: 100%; }
+  .zoho-status-row button { margin-inline-start: auto; }
+  .email-log-list { display: flex; flex-direction: column; gap: 5px; font-size: 11.5px; }
+  .email-log-list .email-log-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .email-log-list .email-log-type { opacity: .7; }
+  .email-log-list .email-log-time { opacity: .45; font-size: 10.5px; }
+  .email-log-list .empty { opacity: .5; }
+
+  /* ---- renewals tab ---- */
+  .renewal-list-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 13px 16px;
+    border-bottom: 1px solid var(--line);
+  }
+  .renewal-list-item:last-child { border-bottom: none; }
+  .renewal-list-item .r-badge {
+    width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+    background: var(--emerald);
+  }
+  .renewal-list-item .r-badge.warn { background: var(--coral); }
+  .renewal-list-item .r-badge.ok { background: #4f86e8; }
+  .renewal-list-item .r-main { flex: 1; min-width: 0; }
+  .renewal-list-item .r-name { font-weight: 700; font-size: 13.5px; }
+  .renewal-list-item .r-sub { font-size: 11.5px; opacity: .55; margin-top: 2px; }
+  .renewal-list-item .r-days { text-align: right; }
+  .renewal-list-item .r-days .num { font-family: "DM Mono", monospace; font-size: 16px; }
+  .renewal-list-item .r-days.warn .num { color: var(--coral); }
+  .renewal-list-item .r-days .lbl { font-size: 10px; opacity: .55; }
+
+  /* ---- history tab ---- */
+  .history-item {
+    display: flex;
+    gap: 14px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--line);
+    font-size: 12.5px;
+    align-items: flex-start;
+  }
+  .history-item:last-child { border-bottom: none; }
+  .history-item .h-time { font-family: "DM Mono", monospace; font-size: 11px; opacity: .5; width: 130px; flex-shrink: 0; }
+  .history-item .h-action { font-weight: 700; width: 130px; flex-shrink: 0; }
+  .history-item .h-detail { flex: 1; opacity: .75; word-break: break-word; }
+
+  /* ---- bulk action bar ---- */
+  #bulk-bar {
+    display: none;
+    align-items: center;
+    gap: 12px;
+    background: var(--paper);
+    border: 1px solid var(--line-strong);
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-bottom: 14px;
+    font-size: 13px;
+    flex-wrap: wrap;
+  }
+  #bulk-bar.show { display: flex; }
+  #bulk-bar select { border: 1.5px solid var(--line-strong); border-radius: 8px; padding: 6px 10px; font-family: inherit; background: var(--cream); }
+
+  /* ---- renewal badge ---- */
+  .renewal-note { display: block; font-size: 10px; margin-top: 3px; opacity: .7; white-space: nowrap; }
+  .renewal-note.warn { color: var(--coral); opacity: 1; font-weight: 700; }
+
+  /* ---- notes thread ---- */
+  .notes-thread { max-height: 160px; overflow-y: auto; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; margin-bottom: 10px; background: var(--cream); }
+  .notes-thread .note-item { padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 12.5px; }
+  .notes-thread .note-item:last-child { border-bottom: none; }
+  .notes-thread .note-time { display: block; font-size: 10px; opacity: .5; margin-bottom: 2px; }
+  .notes-thread .empty { opacity: .5; font-size: 12px; padding: 6px 0; }
+  .legacy-note { font-size: 12px; opacity: .7; background: var(--paper); border-radius: 8px; padding: 8px 10px; margin-bottom: 10px; }
+  .notes-add-row { display: flex; gap: 8px; align-items: flex-start; }
+  .notes-add-row textarea { flex: 1; min-height: 44px; }
+  .notes-add-row button { white-space: nowrap; }
+
+  /* ---- responsive ---- */
+  @media (max-width: 720px) {
+    header.top { padding: 14px 16px; }
+    main { padding: 16px 14px 40px; }
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+    .toolbar { flex-direction: column; align-items: stretch; }
+    .toolbar input[type="search"], .toolbar select, .toolbar input[type="date"] { min-width: 0; width: 100%; }
+    .btn { min-height: 40px; }
+
+    .table-wrap { border: none; background: none; overflow-x: visible; }
+    table, thead, tbody, th, td, tr { display: block; }
+    thead { display: none; }
+    tbody tr {
+      background: var(--cream);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      margin-bottom: 12px;
+      padding: 6px 12px;
+    }
+    td {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      white-space: normal;
+      text-align: right;
+      border-bottom: 1px solid var(--line);
+      padding: 9px 0;
+    }
+    td:last-child { border-bottom: none; }
+    td::before {
+      content: attr(data-label);
+      font-weight: 700;
+      opacity: .6;
+      font-size: 11px;
+      text-align: left;
+      flex-shrink: 0;
+    }
+    td.checkbox-cell { justify-content: flex-start; }
+    td.checkbox-cell::before { content: ''; }
+
+    .modal { max-width: 100%; width: 100%; height: 100%; max-height: 100%; border-radius: 0; padding: 20px 16px 30px; }
+    .overlay { padding: 0; }
+    .field-row { grid-template-columns: 1fr; }
+
+    .fin-grid { grid-template-columns: 1fr; }
+    .fee-summary-strip { grid-template-columns: 1fr; }
+    .trend-chart { height: 110px; }
+    #fin-stats-row { grid-template-columns: repeat(2, 1fr) !important; }
+    .history-item { flex-direction: column; gap: 3px; }
+    .history-item .h-time, .history-item .h-action { width: auto; }
+  }
+
+  /* ---- printing the finance report (used by the "PDFで保存" button, via
+     the browser's native print-to-PDF — no client-side PDF library needed) ---- */
+  @media print {
+    #login-screen, header.top, .tabs, #error-banner,
+    #view-orders, #view-renewals, #view-history,
+    .fee-settings, #fin-print-btn, #fin-export-btn, .fin-date-range { display: none !important; }
+    body { background: #fff; }
+    main { padding: 0; max-width: none; }
+    .fin-card, .stat-tile { break-inside: avoid; border-color: #ccc; }
+  }
+</style>
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="login-card">
+    <img src="/logo.webp" alt="HexaPoint" class="logo">
+    <h1>管理画面ログイン <span class="mono" style="font-size:12px;opacity:.5">Admin Login</span></h1>
+    <div class="modal-error" id="login-error"></div>
+    <div id="login-step-password">
+      <div class="field">
+        <label>パスワード</label>
+        <input type="password" id="login-password" autocomplete="current-password">
+      </div>
+      <div class="cf-turnstile" id="login-turnstile" data-sitekey="0x4AAAAAAD8H_SMh5X5eLg1u"></div>
+      <button type="button" class="btn" id="login-submit" onclick="submitLogin()">ログイン</button>
+    </div>
+    <div id="login-step-totp" style="display:none">
+      <div class="field">
+        <label>認証アプリの6桁コード</label>
+        <input type="text" id="login-totp" class="mono totp-input" inputmode="numeric" pattern="[0-9]*"
+          autocomplete="one-time-code" maxlength="6" placeholder="000000">
+      </div>
+      <button type="button" class="btn" id="totp-submit" onclick="submitTotp()">確認</button>
+      <button type="button" class="btn btn-ghost" style="margin-top:8px" onclick="cancelTotp()">パスワードに戻る</button>
+    </div>
+  </div>
+</div>
+
+<div id="dashboard-screen">
+<header class="top">
+  <div class="brand">
+    <img src="/logo.webp" alt="HexaPoint" class="logo">
+    <h1>注文管理 <span class="mono" style="font-size:13px;opacity:.5">Orders</span></h1>
+    <span class="live-dot-wrap"><span class="live-dot"></span>リアルタイム更新中</span>
+  </div>
+  <div style="display:flex;gap:10px;align-items:center">
+    <button type="button" class="btn btn-ghost" id="notif-permission-btn" onclick="enableDesktopNotifications()" style="display:none;">🔔 デスクトップ通知を有効化</button>
+    <button type="button" class="btn" onclick="openAddModal()">+ 新規注文を追加</button>
+    <button type="button" class="btn btn-ghost" onclick="submitLogout()">ログアウト</button>
+  </div>
+</header>
+
+<main>
+  <div id="error-banner"></div>
+
+  <div class="tabs">
+    <!-- 受信・日常業務 / Inbox & daily work -->
+    <button type="button" class="active" id="tab-btn-orders" onclick="switchTab('orders')">注文 <span class="mono" style="font-size:10px;opacity:.7">Orders</span></button>
+    <button type="button" id="tab-btn-messages" onclick="switchTab('messages')">お問い合わせ <span class="mono" style="font-size:10px;opacity:.7">Messages</span><span class="tab-badge" id="messages-unread-badge" style="display:none;"></span></button>
+    <button type="button" id="tab-btn-calendar" onclick="switchTab('calendar')">予約カレンダー <span class="mono" style="font-size:10px;opacity:.7">Calendar</span></button>
+    <span class="tab-divider"></span>
+    <!-- 顧客管理 / Customers -->
+    <button type="button" id="tab-btn-customers" onclick="switchTab('customers')">顧客 <span class="mono" style="font-size:10px;opacity:.7">Customers</span></button>
+    <button type="button" id="tab-btn-renewals" onclick="switchTab('renewals')">更新 <span class="mono" style="font-size:10px;opacity:.7">Renewals</span></button>
+    <span class="tab-divider"></span>
+    <!-- 経理 / Finance -->
+    <button type="button" id="tab-btn-finance" onclick="switchTab('finance')">会計 <span class="mono" style="font-size:10px;opacity:.7">Accounts</span></button>
+    <span class="tab-divider"></span>
+    <!-- カタログ設定 / Catalog -->
+    <button type="button" id="tab-btn-plans" onclick="switchTab('plans')">プラン <span class="mono" style="font-size:10px;opacity:.7">Plans</span></button>
+    <span class="tab-divider"></span>
+    <!-- インサイト・運用監視 / Insights & ops -->
+    <button type="button" id="tab-btn-analytics" onclick="switchTab('analytics')">分析 <span class="mono" style="font-size:10px;opacity:.7">Analytics</span></button>
+    <button type="button" id="tab-btn-status" onclick="switchTab('status')">システム状況 <span class="mono" style="font-size:10px;opacity:.7">Status</span></button>
+    <span class="tab-divider"></span>
+    <!-- 監査ログ / Audit -->
+    <button type="button" id="tab-btn-history" onclick="switchTab('history')">履歴 <span class="mono" style="font-size:10px;opacity:.7">History</span></button>
+  </div>
+
+<div id="view-orders" class="tab-view active">
+
+  <div class="stats-row" id="stats-row">
+    <div class="stat-tile"><div class="num mono" id="stat-revenue">—</div><div class="label">支払い済み合計</div></div>
+    <div class="stat-tile"><div class="num mono" id="stat-pending-bank">—</div><div class="label">銀行振込待ち</div></div>
+    <div class="stat-tile"><div class="num mono" id="stat-month">—</div><div class="label">今月の注文</div></div>
+    <div class="stat-tile"><div class="num mono" id="stat-customers">—</div><div class="label">顧客数</div></div>
+  </div>
+
+  <div class="fee-summary-strip" id="fee-summary-strip">
+    <div class="fs-tile">
+      <div class="num mono" id="fs-gross">—</div>
+      <div class="label">現在の絞り込み条件の合計 / Gross (filtered)</div>
+    </div>
+    <div class="fs-tile">
+      <div class="num mono" id="fs-fee">—</div>
+      <div class="label">Stripe手数料概算 (<span id="fs-fee-pct">3.6</span>%) / Est. Stripe fee</div>
+    </div>
+    <div class="fs-tile net">
+      <div class="num mono" id="fs-net">—</div>
+      <div class="label">手数料差引後の純額 / Net after fees</div>
+    </div>
+    <div class="fs-tile tax">
+      <div class="num mono" id="fs-tax" style="font-size:14px;">—</div>
+      <div class="label">内消費税10% (税抜: <span id="fs-pretax">—</span>) / incl. 10% tax</div>
+    </div>
+  </div>
+
+  <div class="quick-filters">
+    <button type="button" onclick="applyQuickFilter('week', this)">今週 / This week</button>
+    <button type="button" onclick="applyQuickFilter('month', this)">今月 / This month</button>
+    <button type="button" onclick="applyQuickFilter('stalePending', this)">3日以上保留中 / Pending 3+ days</button>
+    <button type="button" onclick="applyQuickFilter('', this)">クリア / Clear</button>
+  </div>
+
+  <div class="toolbar">
+    <select id="filter-status" onchange="onFilterChange()">
+      <option value="">すべてのステータス</option>
+      <option value="pending">保留中 (Pending)</option>
+      <option value="paid">支払済 (Paid)</option>
+      <option value="refunded">返金済 (Refunded)</option>
+      <option value="cancelled">キャンセル (Cancelled)</option>
+    </select>
+    <input type="search" id="filter-search" placeholder="名前・メール・注文IDで検索…" oninput="onSearchInput()">
+    <input type="date" id="filter-date-from" onchange="onFilterChange()" title="開始日">
+    <input type="date" id="filter-date-to" onchange="onFilterChange()" title="終了日">
+    <select id="filter-plan" onchange="onFilterChange()">
+      <option value="">すべてのプラン</option>
+    </select>
+    <select id="filter-payment-method" onchange="onFilterChange()">
+      <option value="">すべての支払方法</option>
+      <option value="stripe">Stripe</option>
+      <option value="bank">銀行振込</option>
+      <option value="manual">手動登録</option>
+    </select>
+    <button type="button" class="btn btn-ghost" onclick="exportCsv()">CSVエクスポート</button>
+  </div>
+
+  <div id="bulk-bar">
+    <span id="bulk-count" class="mono"></span>
+    <select id="bulk-status">
+      <option value="pending">保留中 (Pending)</option>
+      <option value="paid">支払済 (Paid)</option>
+      <option value="refunded">返金済 (Refunded)</option>
+      <option value="cancelled">キャンセル (Cancelled)</option>
+    </select>
+    <button type="button" class="btn" onclick="applyBulkStatus()">適用</button>
+    <button type="button" class="btn btn-ghost" onclick="exportSelectedCsv()">選択をCSVで書き出す</button>
+    <button type="button" class="btn btn-ghost" onclick="clearSelection()">選択解除</button>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th class="checkbox-cell"><input type="checkbox" id="select-all" onchange="onSelectAllChange()"></th>
+          <th>Order ID</th>
+          <th>プラン</th>
+          <th class="sortable" data-sort="amount" onclick="onSortClick('amount')">金額<span class="arrow"></span></th>
+          <th>方法</th>
+          <th class="sortable" data-sort="status" onclick="onSortClick('status')">ステータス<span class="arrow"></span></th>
+          <th class="sortable" data-sort="buyer_name" onclick="onSortClick('buyer_name')">お客様名<span class="arrow"></span></th>
+          <th>メール</th>
+          <th class="sortable" data-sort="created_at" onclick="onSortClick('created_at')">作成日時<span class="arrow"></span></th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody id="orders-tbody">
+        <tr><td colspan="10" class="loading-state">読み込み中…</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="pagination">
+    <button type="button" class="btn btn-ghost" id="prev-page" onclick="changePage(-1)">← 前へ</button>
+    <span id="page-indicator" class="mono"></span>
+    <button type="button" class="btn btn-ghost" id="next-page" onclick="changePage(1)">次へ →</button>
+  </div>
+
+</div><!-- /#view-orders -->
+
+<div id="view-messages" class="tab-view">
+
+  <div class="toolbar">
+    <select id="msg-filter-status" onchange="onMessageFilterChange()">
+      <option value="">すべて / All</option>
+      <option value="new">未読 / New</option>
+      <option value="read">既読 / Read</option>
+      <option value="replied">返信済み / Replied</option>
+      <option value="archived">アーカイブ / Archived</option>
+    </select>
+    <input type="search" id="msg-filter-search" placeholder="名前・メール・内容で検索…" oninput="onMessageSearchInput()">
+    <button type="button" class="btn btn-ghost" onclick="fetchMessages()">更新 / Refresh</button>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>受信日時</th>
+          <th>お名前</th>
+          <th>メール</th>
+          <th>サービス</th>
+          <th>内容</th>
+          <th>状態</th>
+        </tr>
+      </thead>
+      <tbody id="messages-tbody">
+        <tr><td colspan="6" class="loading-state">読み込み中…</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="pagination">
+    <button type="button" class="btn btn-ghost" id="msg-prev-page" onclick="changeMessagePage(-1)">← 前へ</button>
+    <span id="msg-page-indicator" class="mono"></span>
+    <button type="button" class="btn btn-ghost" id="msg-next-page" onclick="changeMessagePage(1)">次へ →</button>
+  </div>
+
+</div><!-- /#view-messages -->
+
+<div id="view-calendar" class="tab-view">
+
+  <!-- ===== ライブカレンダー (Google Calendar) ===== -->
+  <div style="text-align:right;font-size:12px;opacity:.6;margin-bottom:6px;" id="cal-dual-clock">—</div>
+  <div class="fin-card" style="margin-bottom:16px;">
+    <div class="toolbar" style="justify-content:space-between;margin-bottom:0;flex-wrap:wrap;gap:10px;">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <button type="button" class="btn btn-ghost" onclick="navigateCalMonth(-1)">← 前月</button>
+        <div class="mono" id="cal-month-label" style="font-size:15px;min-width:110px;text-align:center;">—</div>
+        <button type="button" class="btn btn-ghost" onclick="navigateCalMonth(1)">次月 →</button>
+        <button type="button" class="btn btn-ghost" onclick="goToCalToday()">今日</button>
+        <input type="date" id="cal-jump-date" onchange="jumpToCalDate()" title="日付にジャンプ / Jump to date" style="width:auto;">
+        <button type="button" class="btn btn-ghost" onclick="fetchCalendarEvents()">更新 / Refresh</button>
+      </div>
+      <button type="button" class="btn" onclick="openAddEventModal()">+ 予定を追加 / Add</button>
+    </div>
+  </div>
+
+  <div id="cal-grid-not-configured" class="empty-state" style="display:none;padding:20px 0;">
+    Google Calendar 連携が未設定です。<code>GOOGLE_SERVICE_ACCOUNT_EMAIL</code>・
+    <code>GOOGLE_SERVICE_ACCOUNT_KEY</code>・<code>GOOGLE_CALENDAR_ID</code>（"primary"は不可 —
+    あなた自身のGoogleアカウントのメールアドレスを指定）を環境変数に設定し、あなたの
+    Googleカレンダーをサービスアカウントと共有してください（SETUP-cloudflare.md 参照）。
+  </div>
+
+  <div id="cal-grid-wrap">
+    <div class="fin-card" style="margin-bottom:12px;">
+      <div id="cal-grid"><div class="loading-state">読み込み中…</div></div>
+      <div style="display:flex;gap:16px;margin-top:12px;font-size:11px;opacity:.65;flex-wrap:wrap;">
+        <span><span class="cal-legend-dot booking"></span> お客様の予約 / Client booking</span>
+        <span><span class="cal-legend-dot block"></span> 個人の予定 / Personal block</span>
+        <span>🇯🇵 日本の祝日 ・ 🇸🇦 サウジアラビアの祝日</span>
+      </div>
+      <div id="cal-holiday-error" class="mono" style="display:none;font-size:10.5px;color:var(--coral);margin-top:6px;white-space:pre-wrap;"></div>
+    </div>
+
+    <div class="fin-card" style="margin-bottom:24px;">
+      <h3>今後の予定 <span class="mono" style="font-size:11px;opacity:.5">Upcoming (7 days)</span></h3>
+      <div id="cal-agenda"><div class="loading-state">読み込み中…</div></div>
+    </div>
+  </div>
+
+  <!-- ===== 定期的な対応時間 (Cal.com schedule) ===== -->
+  <h3 style="margin:0 0 12px;font-size:14px;opacity:.6;font-weight:700;">定期的な対応時間の設定 <span class="mono" style="font-size:11px;opacity:.6">Recurring Availability (Cal.com)</span></h3>
+
+  <div class="toolbar" style="justify-content:space-between;">
+    <div style="font-size:13px;opacity:.7;">
+      タイムゾーン / Timezone: <span class="mono" id="cal-timezone">—</span>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <button type="button" class="btn btn-ghost" onclick="fetchCalendar()">更新 / Refresh</button>
+      <button type="button" class="btn" onclick="saveCalendar()">保存する / Save</button>
+    </div>
+  </div>
+
+  <div id="cal-not-configured" class="empty-state" style="display:none;padding:20px 0;">
+    Cal.com の予約カレンダー連携が未設定です。<code>CAL_API_KEY</code>・
+    <code>CAL_SCHEDULE_ID</code> を環境変数に設定してください（SETUP-cloudflare.md 参照）。
+  </div>
+
+  <div id="cal-unexpected-format" class="empty-state" style="display:none;padding:20px 0;flex-direction:column;align-items:flex-start;gap:10px;">
+    <div>Cal.com から想定外の形式のデータが返ってきました。下のJSONを開発者に共有してください：</div>
+    <pre id="cal-raw-json" class="mono" style="white-space:pre-wrap;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:14px;font-size:11px;max-height:300px;overflow:auto;width:100%;"></pre>
+  </div>
+
+  <div id="cal-content">
+    <div class="fin-card" style="margin-bottom:16px;">
+      <h3>週次の対応可能時間 <span class="mono" style="font-size:11px;opacity:.5">Weekly Availability</span></h3>
+      <div id="cal-weekly"><div class="loading-state">読み込み中…</div></div>
+    </div>
+
+    <div class="fin-card">
+      <h3>
+        <span>特別な日 <span class="mono" style="font-size:11px;opacity:.5">Date Overrides</span></span>
+      </h3>
+      <div class="fee-hint" style="margin-bottom:14px;">特定の日だけ休みにしたり、通常と違う時間で対応したりできます。<br>
+        <span style="opacity:.75">Mark specific dates as fully unavailable, or give them different hours than usual.</span></div>
+      <div id="cal-overrides"><div class="loading-state">読み込み中…</div></div>
+      <div class="field-row" style="margin-top:16px;align-items:flex-end;">
+        <div class="field"><label>日付を追加</label><input type="date" id="cal-new-override-date"></div>
+        <button type="button" class="btn btn-ghost" onclick="addOverride()">+ 特別な日を追加</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /#view-calendar -->
+
+<div id="view-finance" class="tab-view">
+
+  <div class="toolbar fin-date-range" style="justify-content:space-between;">
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+      <input type="date" id="fin-date-from" onchange="fetchFinance()" title="開始日（プラン別・支払方法別に適用）">
+      <span style="opacity:.5;font-size:12px;">〜</span>
+      <input type="date" id="fin-date-to" onchange="fetchFinance()" title="終了日">
+      <button type="button" class="btn btn-ghost" onclick="clearFinanceRange()">期間クリア</button>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <button type="button" class="btn btn-ghost" id="fin-export-btn" onclick="exportFinanceCsv()">CSVで書き出す</button>
+      <button type="button" class="btn btn-ghost" id="fin-print-btn" onclick="window.print()">PDFで保存 (印刷)</button>
+    </div>
+  </div>
+
+  <div class="fin-card" style="margin-bottom:16px;">
+    <h3>Stripe手数料率の設定 <span class="mono" style="font-size:11px;opacity:.5">Fee rate</span></h3>
+    <div class="fee-settings">
+      <label>手数料率</label>
+      <input type="number" id="fee-pct-input" step="0.1" min="0" max="20" value="3.6">
+      <span class="mono" style="font-size:13px;opacity:.7">%</span>
+      <button type="button" class="btn btn-ghost" onclick="saveFeePct()">保存</button>
+      <span class="fee-saved-note" id="fee-saved-note">✓ 保存しました</span>
+      <div class="fee-hint">
+        銀行振込・手動登録の注文には手数料はかからないものとして計算されます。この率はこのブラウザにのみ保存され、実際の請求には影響しません（見積もり専用）。<br>
+        <span style="opacity:.75">Bank-transfer and manually-added orders are assumed fee-free. Saved only in this browser — for estimation, not actual billing.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats-row" id="fin-stats-row" style="grid-template-columns:repeat(4,1fr);">
+    <div class="stat-tile accent">
+      <div class="num mono" id="fin-gross">—</div>
+      <div class="label">総売上（期間内・支払済み）/ Gross Revenue</div>
+      <div class="sub-note" id="fin-yoy">—</div>
+    </div>
+    <div class="stat-tile"><div class="num mono" id="fin-fee">—</div><div class="label">Stripe手数料概算 / Est. Fees</div></div>
+    <div class="stat-tile accent"><div class="num mono" id="fin-net">—</div><div class="label">純利益概算 / Est. Net Revenue</div></div>
+    <div class="stat-tile"><div class="num mono" id="fin-avg">—</div><div class="label">平均注文単価 / Avg Order Value</div><div class="sub-note" id="fin-mom">—</div></div>
+  </div>
+
+  <div class="fin-card" style="margin-bottom:16px;">
+    <h3>
+      <span>消費税内訳（10%）<span class="mono" style="font-size:11px;opacity:.5">Consumption Tax Breakdown</span></span>
+      <label class="tax-toggle">
+        <input type="checkbox" id="tax-toggle-input" checked onchange="onTaxToggleChange()">
+        <span>表示する / Show</span>
+      </label>
+    </h3>
+    <div id="tax-breakdown-body">
+      <div style="display:flex;gap:28px;flex-wrap:wrap;font-size:13px;">
+        <div><div class="sub-note" style="margin:0;">税抜売上 / Ex-tax</div><div class="mono" id="fin-tax-pretax" style="font-size:17px;">—</div></div>
+        <div><div class="sub-note" style="margin:0;">消費税額 / Tax (10%)</div><div class="mono" id="fin-tax-amount" style="font-size:17px;">—</div></div>
+        <div><div class="sub-note" style="margin:0;">税込合計 / Incl. tax</div><div class="mono" id="fin-tax-total" style="font-size:17px;">—</div></div>
+      </div>
+      <div class="fee-hint" style="margin-top:8px;">表示価格は税込であると仮定して逆算した概算です。実際の税務処理は税理士にご確認ください。 / Estimated by working backward from tax-inclusive prices — confirm with your accountant for actual filings.</div>
+    </div>
+  </div>
+
+  <div class="fin-grid">
+    <div class="fin-card">
+      <h3>プラン別売上 <span class="mono" style="font-size:11px;opacity:.5">Revenue by Plan</span></h3>
+      <div id="fin-by-plan"><div class="loading-state">読み込み中…</div></div>
+    </div>
+    <div class="fin-card">
+      <h3>支払い方法別 <span class="mono" style="font-size:11px;opacity:.5">By Payment Method</span></h3>
+      <div id="fin-by-method"><div class="loading-state">読み込み中…</div></div>
+    </div>
+  </div>
+
+  <div class="fin-grid">
+    <div class="fin-card">
+      <h3>月別売上推移（過去12ヶ月）<span class="mono" style="font-size:11px;opacity:.5">Last 12 Months</span></h3>
+      <div id="fin-trend"><div class="loading-state">読み込み中…</div></div>
+    </div>
+    <div class="fin-card">
+      <h3>上位顧客 <span class="mono" style="font-size:11px;opacity:.5">Top Customers</span></h3>
+      <ul class="top-cust-list" id="fin-top-customers"><li class="loading-state" style="border:none;">読み込み中…</li></ul>
+    </div>
+  </div>
+
+</div><!-- /#view-finance -->
+
+<div id="view-renewals" class="tab-view">
+  <div class="fin-card">
+    <h3>年間プランの更新予定 <span class="mono count" id="renewals-count"></span></h3>
+    <div class="fee-hint" style="margin-bottom:14px;">支払済みの年間プラン注文を、加入日から365日後の更新予定日が近い順に表示します。赤は14日以内です。<br>
+      <span style="opacity:.75">Paid annual-plan orders, soonest renewal first. Red = due within 14 days.</span></div>
+    <div id="renewals-list"><div class="loading-state">読み込み中…</div></div>
+  </div>
+</div><!-- /#view-renewals -->
+
+<div id="view-history" class="tab-view">
+  <div class="fin-card">
+    <h3>
+      <span>管理操作履歴 <span class="mono" style="font-size:11px;opacity:.5">Admin Action History</span></span>
+      <button type="button" class="btn btn-danger" style="font-size:11px;padding:6px 14px;" onclick="clearHistory()">全履歴を削除 / Clear all</button>
+    </h3>
+    <div id="history-list"><div class="loading-state">読み込み中…</div></div>
+    <div class="pagination">
+      <button type="button" class="btn btn-ghost" id="history-prev" onclick="changeHistoryPage(-1)">← 前へ</button>
+      <span id="history-page-indicator" class="mono"></span>
+      <button type="button" class="btn btn-ghost" id="history-next" onclick="changeHistoryPage(1)">次へ →</button>
+    </div>
+  </div>
+</div><!-- /#view-history -->
+
+<div id="view-customers" class="tab-view">
+  <div class="toolbar">
+    <input type="search" id="customer-search" placeholder="名前・メールで検索…" oninput="onCustomerSearchInput()">
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>お客様名</th>
+          <th>メール</th>
+          <th>電話番号</th>
+          <th>注文数</th>
+          <th>支払済合計</th>
+          <th>最終注文日</th>
+        </tr>
+      </thead>
+      <tbody id="customers-tbody">
+        <tr><td colspan="6" class="loading-state">読み込み中…</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="pagination">
+    <button type="button" class="btn btn-ghost" id="customers-prev" onclick="changeCustomersPage(-1)">← 前へ</button>
+    <span id="customers-page-indicator" class="mono"></span>
+    <button type="button" class="btn btn-ghost" id="customers-next" onclick="changeCustomersPage(1)">次へ →</button>
+  </div>
+</div><!-- /#view-customers -->
+
+<div id="view-plans" class="tab-view">
+  <div class="fin-card" style="margin-bottom:16px;">
+    <h3>プラン一覧 <span class="mono" style="font-size:11px;opacity:.5">Plans</span></h3>
+    <div class="fee-hint" style="margin-bottom:14px;">ここで編集した名前・価格は、次回のチェックアウトから即座に反映されます。プランID（annual等）は変更できません — 更新管理タブの判定に使われているためです。<br>
+      <span style="opacity:.75">Edits here take effect on the very next checkout. Plan IDs (e.g. "annual") can't be changed — the Renewals tab depends on them.</span></div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>プラン名 (JA)</th>
+            <th>プラン名 (EN)</th>
+            <th>価格 (¥)</th>
+            <th>有効</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="plans-tbody">
+          <tr><td colspan="6" class="loading-state">読み込み中…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="fin-card">
+    <h3>新規プランを追加 <span class="mono" style="font-size:11px;opacity:.5">Add Plan</span></h3>
+    <div class="modal-error" id="add-plan-error"></div>
+    <div class="field-row">
+      <div class="field"><label>プランID <span class="mono">*</span></label><input type="text" id="add-plan-id-field" placeholder="例: rush"></div>
+      <div class="field"><label>価格 (¥) <span class="mono">*</span></label><input type="number" id="add-plan-price"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>プラン名 (JA) <span class="mono">*</span></label><input type="text" id="add-plan-name-ja-field"></div>
+      <div class="field"><label>プラン名 (EN) <span class="mono">*</span></label><input type="text" id="add-plan-name-en-field"></div>
+    </div>
+    <button type="button" class="btn" onclick="submitAddPlan()">追加する</button>
+  </div>
+</div><!-- /#view-plans -->
+
+<div id="view-analytics" class="tab-view">
+
+  <div class="toolbar" style="justify-content:space-between;flex-wrap:wrap;gap:10px;">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;" id="gsc-range-buttons">
+      <button type="button" class="btn btn-ghost" data-range="7d" onclick="setAnalyticsRange('7d')">過去7日間</button>
+      <button type="button" class="btn btn-ghost active" data-range="28d" onclick="setAnalyticsRange('28d')">過去28日間</button>
+      <button type="button" class="btn btn-ghost" data-range="90d" onclick="setAnalyticsRange('90d')">過去90日間</button>
+      <input type="date" id="gsc-date-from" onchange="setAnalyticsCustomRange()" title="開始日">
+      <span style="opacity:.5;font-size:12px;align-self:center;">〜</span>
+      <input type="date" id="gsc-date-to" onchange="setAnalyticsCustomRange()" title="終了日">
+      <button type="button" class="btn btn-ghost" onclick="clearAnalyticsCustomRange()">期間クリア</button>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <button type="button" class="btn btn-ghost" onclick="exportAnalyticsCsv()">CSVで書き出す</button>
+      <button type="button" class="btn btn-ghost" onclick="fetchAnalytics(true)">更新 / Refresh</button>
+    </div>
+  </div>
+
+  <div id="gsc-not-configured" class="empty-state" style="display:none;padding:20px 0;">
+    Google Search Console が未設定です。<code>GOOGLE_SERVICE_ACCOUNT_EMAIL</code>・
+    <code>GOOGLE_SERVICE_ACCOUNT_KEY</code>・<code>SEARCH_CONSOLE_SITE_URL</code> を
+    環境変数に設定してください（SETUP-cloudflare.md 参照）。
+  </div>
+
+  <div id="gsc-content">
+    <div class="fin-card" style="margin-bottom:16px;">
+      <h3>サイトマップの状態 <span class="mono" style="font-size:11px;opacity:.5">Sitemap Status</span></h3>
+      <div id="gsc-sitemaps"><div class="loading-state">読み込み中…</div></div>
+    </div>
+
+    <div class="fee-hint" style="margin-bottom:14px;" id="gsc-range-note">&nbsp;</div>
+
+    <div class="stats-row" style="grid-template-columns:repeat(4,1fr);">
+      <div class="stat-tile accent"><div class="num mono" id="gsc-clicks">—</div><div class="label">クリック数 / Clicks</div><div class="sub-note" id="gsc-clicks-change">—</div></div>
+      <div class="stat-tile"><div class="num mono" id="gsc-impressions">—</div><div class="label">表示回数 / Impressions</div><div class="sub-note" id="gsc-impressions-change">—</div></div>
+      <div class="stat-tile"><div class="num mono" id="gsc-ctr">—</div><div class="label">平均CTR / Avg. CTR</div></div>
+      <div class="stat-tile"><div class="num mono" id="gsc-position">—</div><div class="label">平均掲載順位 / Avg. Position</div></div>
+    </div>
+
+    <div class="fin-card" style="margin-bottom:16px;">
+      <h3>クリック数の推移 <span class="mono" style="font-size:11px;opacity:.5">Clicks Over Time</span></h3>
+      <div id="gsc-trend"><div class="loading-state">読み込み中…</div></div>
+    </div>
+
+    <div class="fin-grid">
+      <div class="fin-card">
+        <h3>検索キーワード <span class="mono" style="font-size:11px;opacity:.5">Top Queries</span></h3>
+        <div id="gsc-queries"><div class="loading-state">読み込み中…</div></div>
+      </div>
+      <div class="fin-card">
+        <h3>人気ページ <span class="mono" style="font-size:11px;opacity:.5">Top Pages</span></h3>
+        <div id="gsc-pages"><div class="loading-state">読み込み中…</div></div>
+      </div>
+    </div>
+
+    <div class="fin-grid">
+      <div class="fin-card">
+        <h3>デバイス <span class="mono" style="font-size:11px;opacity:.5">Devices</span></h3>
+        <div id="gsc-devices"><div class="loading-state">読み込み中…</div></div>
+      </div>
+      <div class="fin-card">
+        <h3>国別 <span class="mono" style="font-size:11px;opacity:.5">Countries</span></h3>
+        <div id="gsc-countries"><div class="loading-state">読み込み中…</div></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /#view-analytics -->
+
+<div id="view-status" class="tab-view">
+
+  <div class="toolbar" style="justify-content:flex-end;">
+    <button type="button" class="btn btn-ghost" onclick="fetchStatus(true)">更新 / Refresh</button>
+  </div>
+
+  <div class="fee-hint" style="margin-bottom:14px;">
+    このサイトが依存している外部サービスの無料枠使用状況です。データはおおよその目安であり
+    （特に Resend は自己集計、Zoho は今年作成した請求書数の自社DBカウント）、各サービスの
+    正式な数値は各ダッシュボードでご確認ください。<br>
+    <span style="opacity:.75">Free-plan usage across the external services this site depends on. These are
+    approximate (Resend is self-tracked, Zoho counts invoices from our own DB) -- check each
+    provider's own dashboard for the authoritative number.</span>
+  </div>
+
+  <div class="fin-grid">
+    <div class="fin-card">
+      <h3>Zoho Invoice <span class="mono" style="font-size:11px;opacity:.5">今年作成した請求書</span></h3>
+      <div id="status-zoho"><div class="loading-state">読み込み中…</div></div>
+    </div>
+    <div class="fin-card">
+      <h3>Resend <span class="mono" style="font-size:11px;opacity:.5">メール送信数</span></h3>
+      <div id="status-resend"><div class="loading-state">読み込み中…</div></div>
+      <div class="fee-settings" style="margin-top:10px;">
+        <label>本日</label>
+        <input type="number" id="resend-today-input" step="1" min="0" style="width:70px;">
+        <label>今月</label>
+        <input type="number" id="resend-month-input" step="1" min="0" style="width:70px;">
+        <button type="button" class="btn btn-ghost" onclick="saveResendUsage()">修正して保存</button>
+        <span class="fee-saved-note" id="resend-saved-note">✓ 保存しました</span>
+        <div class="fee-hint">
+          Resend の実際のダッシュボード（Settings → Usage）の数値とズレている場合、
+          ここで手動修正できます。自動同期ではありません — 修正した値がそのまま次の
+          集計の基準になります。<br>
+          <span style="opacity:.75">Manually correct if this drifts from Resend's own dashboard. Not an auto-sync — the value you set becomes the new baseline.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="status-cf-not-configured" class="empty-state" style="display:none;padding:20px 0;">
+    Cloudflare の使用量チェックは未設定です。<code>CLOUDFLARE_API_TOKEN</code>・
+    <code>CLOUDFLARE_ACCOUNT_ID</code> を環境変数に設定してください（SETUP-cloudflare.md 参照）。
+  </div>
+
+  <div id="status-cf-content">
+    <div class="fin-grid">
+      <div class="fin-card">
+        <h3>Cloudflare D1 <span class="mono" style="font-size:11px;opacity:.5">本日の使用量</span></h3>
+        <div id="status-d1"><div class="loading-state">読み込み中…</div></div>
+        <div id="status-d1-note" class="mono" style="font-size:11px;opacity:.6;margin-top:6px;display:none;"></div>
+      </div>
+      <div class="fin-card">
+        <h3>Cloudflare KV <span class="mono" style="font-size:11px;opacity:.5">本日の使用量</span></h3>
+        <div id="status-kv"><div class="loading-state">読み込み中…</div></div>
+      </div>
+    </div>
+    <div class="fin-card">
+      <h3>Cloudflare Pages <span class="mono" style="font-size:11px;opacity:.5">今月のビルド数</span></h3>
+      <div id="status-pages"><div class="loading-state">読み込み中…</div></div>
+    </div>
+  </div>
+
+  <div class="fin-card" style="margin-top:14px;">
+    <h3>Oracle Object Storage <span class="mono" style="font-size:11px;opacity:.5">D1バックアップの保存状況</span></h3>
+    <div id="status-oracle"><div class="loading-state">読み込み中…</div></div>
+    <div id="status-oracle-meta" class="mono" style="font-size:11px;opacity:.6;margin-top:6px;"></div>
+  </div>
+
+</div><!-- /#view-status -->
+
+</main>
+
+<!-- ===== Detail / edit modal ===== -->
+<div class="overlay" id="detail-overlay">
+  <div class="modal">
+    <button type="button" class="close" onclick="closeDetailModal()">✕</button>
+    <h2>注文詳細</h2>
+    <div class="sub mono" id="detail-order-id"></div>
+    <div class="modal-error" id="detail-error"></div>
+
+    <div class="zoho-status-row" id="zoho-status-row">
+      <span>Zoho請求書:</span>
+      <span class="zoho-badge none" id="zoho-badge">—</span>
+      <button type="button" class="btn btn-ghost" id="zoho-retry-btn" onclick="retryZohoInvoice()" style="display:none;">再試行 / Retry</button>
+      <div class="zoho-error" id="zoho-error-detail"></div>
+    </div>
+
+    <div class="zoho-status-row" style="align-items:flex-start;">
+      <span>メール送信状況:</span>
+      <div class="email-log-list" id="order-email-log-list"><span class="empty">読み込み中…</span></div>
+    </div>
+
+    <div class="field">
+      <label>ステータス</label>
+      <select id="edit-status">
+        <option value="pending">保留中 (Pending)</option>
+        <option value="paid">支払済 (Paid)</option>
+        <option value="refunded">返金済 (Refunded)</option>
+        <option value="cancelled">キャンセル (Cancelled)</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>変更理由（返金・キャンセル時）/ Reason (for refund/cancel)</label>
+      <textarea id="edit-status-reason"></textarea>
+    </div>
+    <div class="field" style="display:flex;align-items:center;gap:8px;">
+      <input type="checkbox" id="edit-notify-customer" style="width:auto;">
+      <label style="margin:0;" for="edit-notify-customer">顧客にメールで通知する / Email the customer about this change</label>
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label>プランID</label>
+        <input type="text" id="edit-plan-id">
+      </div>
+      <div class="field">
+        <label>金額 (¥)</label>
+        <input type="number" id="edit-amount">
+      </div>
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label>プラン名 (JA)</label>
+        <input type="text" id="edit-plan-name-ja">
+      </div>
+      <div class="field">
+        <label>プラン名 (EN)</label>
+        <input type="text" id="edit-plan-name-en">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>お客様名</label>
+      <input type="text" id="edit-buyer-name">
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>電話番号</label>
+        <input type="text" id="edit-buyer-phone">
+      </div>
+      <div class="field">
+        <label>メールアドレス</label>
+        <input type="email" id="edit-buyer-email">
+      </div>
+    </div>
+    <div class="field">
+      <label>住所</label>
+      <textarea id="edit-buyer-address"></textarea>
+    </div>
+    <div class="field">
+      <label>メモ</label>
+      <div class="legacy-note" id="detail-legacy-note" style="display:none"></div>
+      <div class="notes-thread" id="notes-thread"><div class="empty">読み込み中…</div></div>
+      <div class="notes-add-row">
+        <textarea id="new-note-text" placeholder="新しいメモを追加…"></textarea>
+        <button type="button" class="btn btn-ghost" onclick="submitNewNote()">追加</button>
+      </div>
+    </div>
+
+    <div class="modal-meta mono">
+      <span id="detail-payment-method"></span>
+      <span id="detail-created-at"></span>
+      <span id="detail-updated-at"></span>
+    </div>
+
+    <div class="modal-actions">
+      <button type="button" class="btn btn-danger" onclick="deleteOrder()">削除</button>
+      <button type="button" class="btn" onclick="saveOrder()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Add order modal ===== -->
+<div class="overlay" id="add-overlay">
+  <div class="modal">
+    <button type="button" class="close" onclick="closeAddModal()">✕</button>
+    <h2>新規注文を追加</h2>
+    <div class="sub">手動で注文を記録します（支払い方法は "manual" になります）</div>
+    <div class="modal-error" id="add-error"></div>
+
+    <div class="field-row">
+      <div class="field">
+        <label>プランID <span class="mono">*</span></label>
+        <input type="text" id="add-plan-id" placeholder="basic / maintenance / annual">
+      </div>
+      <div class="field">
+        <label>金額 (¥) <span class="mono">*</span></label>
+        <input type="number" id="add-amount">
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>プラン名 (JA) <span class="mono">*</span></label>
+        <input type="text" id="add-plan-name-ja">
+      </div>
+      <div class="field">
+        <label>プラン名 (EN) <span class="mono">*</span></label>
+        <input type="text" id="add-plan-name-en">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>ステータス</label>
+      <select id="add-status">
+        <option value="pending">保留中 (Pending)</option>
+        <option value="paid">支払済 (Paid)</option>
+        <option value="refunded">返金済 (Refunded)</option>
+        <option value="cancelled">キャンセル (Cancelled)</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>お客様名 <span class="mono">*</span></label>
+      <input type="text" id="add-buyer-name">
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>電話番号 <span class="mono">*</span></label>
+        <input type="text" id="add-buyer-phone">
+      </div>
+      <div class="field">
+        <label>メールアドレス <span class="mono">*</span></label>
+        <input type="email" id="add-buyer-email">
+      </div>
+    </div>
+    <div class="field">
+      <label>住所 <span class="mono">*</span></label>
+      <textarea id="add-buyer-address"></textarea>
+    </div>
+    <div class="field">
+      <label>メモ</label>
+      <textarea id="add-notes"></textarea>
+    </div>
+
+    <div class="modal-actions">
+      <button type="button" class="btn" onclick="submitAddOrder()">追加する</button>
+    </div>
+  </div>
+</div>
+<!-- ===== Customer detail modal ===== -->
+<div class="overlay" id="customer-overlay">
+  <div class="modal">
+    <button type="button" class="close" onclick="closeCustomerModal()">✕</button>
+    <h2 id="customer-modal-name"></h2>
+    <div class="sub mono" id="customer-modal-email"></div>
+    <div id="customer-modal-orders"><div class="loading-state">読み込み中…</div></div>
+  </div>
+</div>
+
+<div class="overlay" id="message-overlay">
+  <div class="modal">
+    <button type="button" class="close" onclick="closeMessageModal()">✕</button>
+    <h2>お問い合わせ詳細</h2>
+    <div class="sub mono" id="msg-modal-date"></div>
+
+    <div class="field-row">
+      <div class="field"><label>お名前</label><div class="mono" id="msg-modal-name" style="padding:10px 0;"></div></div>
+      <div class="field"><label>メール</label><div class="mono" id="msg-modal-email" style="padding:10px 0;"></div></div>
+    </div>
+    <div class="field">
+      <label>ご希望のサービス</label>
+      <div class="mono" id="msg-modal-service" style="padding:10px 0;"></div>
+    </div>
+    <div class="field">
+      <label>メッセージ</label>
+      <div id="msg-modal-body" style="white-space:pre-wrap;line-height:1.8;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:16px;"></div>
+    </div>
+
+    <div class="zoho-status-row" style="align-items:flex-start;">
+      <span>通知メール状況:</span>
+      <div class="email-log-list" id="msg-email-log-list"><span class="empty">—</span></div>
+    </div>
+
+    <div class="modal-actions" style="flex-wrap:wrap;">
+      <a id="msg-modal-reply" href="#" class="btn" style="text-decoration:none;text-align:center;">メールで返信する</a>
+      <button type="button" class="btn btn-ghost" onclick="setMessageStatus('replied')">返信済みにする</button>
+      <button type="button" class="btn btn-ghost" onclick="setMessageStatus('archived')">アーカイブ</button>
+      <button type="button" class="btn btn-danger" onclick="deleteCurrentMessage()">削除</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="calendar-event-overlay">
+  <div class="modal">
+    <button type="button" class="close" onclick="closeEventModal()">✕</button>
+    <h2 id="cal-event-modal-title">予定を追加</h2>
+    <div class="modal-error" id="cal-event-error"></div>
+    <div class="fee-hint" id="cal-event-booking-notice" style="display:none;background:rgba(79,134,232,.1);border:1px solid rgba(79,134,232,.3);padding:10px 14px;border-radius:10px;margin-bottom:14px;">
+      📅 これはお客様の予約です（Cal.com経由）。日時変更・削除は慎重に行ってください —
+      ここでの変更はお客様には自動通知されません。キャンセル・日時変更が必要な場合は
+      Cal.comダッシュボードから対応することを推奨します。
+    </div>
+
+    <div class="field">
+      <label>タイトル</label>
+      <input type="text" id="cal-event-summary" placeholder="例: 歯医者の予約 / Dentist appointment">
+    </div>
+    <div class="field-row">
+      <div class="field"><label>日付</label><input type="date" id="cal-event-date" onchange="updateSaudiTimePreview()"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>開始時刻 (JST)</label><input type="time" id="cal-event-start" onchange="updateSaudiTimePreview()"></div>
+      <div class="field"><label>終了時刻 (JST)</label><input type="time" id="cal-event-end" onchange="updateSaudiTimePreview()"></div>
+    </div>
+    <div class="mono" id="cal-event-saudi-preview" style="font-size:11.5px;opacity:.65;margin:-8px 0 14px;">🇸🇦 —</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin:-6px 0 14px;">
+      <button type="button" class="btn btn-ghost" style="font-size:11px;padding:6px 12px;" onclick="applyQuickDuration(30)">30分</button>
+      <button type="button" class="btn btn-ghost" style="font-size:11px;padding:6px 12px;" onclick="applyQuickDuration(60)">1時間</button>
+      <button type="button" class="btn btn-ghost" style="font-size:11px;padding:6px 12px;" onclick="applyQuickDuration(120)">2時間</button>
+      <button type="button" class="btn btn-ghost" style="font-size:11px;padding:6px 12px;" onclick="applyQuickDuration('day')">終日 (00:00-23:59)</button>
+    </div>
+    <div class="field">
+      <label>メモ（任意）</label>
+      <textarea id="cal-event-description" placeholder="詳細やメモがあれば"></textarea>
+    </div>
+    <div id="cal-event-conflict-warning" class="modal-error" style="display:none;background:var(--coral-soft);color:var(--coral);"></div>
+
+    <div class="modal-actions">
+      <button type="button" class="btn btn-danger" id="cal-event-delete-btn" style="display:none;" onclick="deleteCalendarEventFromModal()">削除</button>
+      <button type="button" class="btn" onclick="saveCalendarEvent()">保存する</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-stack" aria-live="polite"></div>
+</div><!-- /#dashboard-screen -->
+
+<script>
+(function () {
+  var state = { status: '', search: '', dateFrom: '', dateTo: '', planId: '', paymentMethod: '', sort: 'created_at', dir: 'desc', page: 1, limit: 25 };
+  var currentOrders = [];
+  var currentOrderId = null;
+  var currentNotes = [];
+  var selectedIds = {};
+  var searchDebounce = null;
+
+  function fmtYen(n) {
+    return '¥' + Number(n || 0).toLocaleString('ja-JP');
+  }
+
+  function fmtDate(s) {
+    if (!s) return '';
+    try {
+      return new Intl.DateTimeFormat('ja-JP', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Tokyo' })
+        .format(new Date(s.replace(' ', 'T') + 'Z'));
+    } catch (e) {
+      return s;
+    }
+  }
+
+  // Japan's consumption tax is 10% and displayed prices are tax-inclusive —
+  // used to back out the tax-exclusive portion of any tax-inclusive total.
+  var TAX_RATE = 0.10;
+
+  // Whether to show the consumption-tax breakdown at all (Finance tab card +
+  // the 4th tile in the Orders tab summary strip), and the Stripe fee %
+  // estimate — both server-backed via /api/admin/settings (migrations/
+  // 0005_admin_settings.sql) so they persist per-account instead of
+  // per-browser. Cached here in memory, populated by fetchSettings() on
+  // dashboard init (see showDashboard()).
+  var cachedTaxShown = true;
+  var cachedFeePct = 3.6;
+
+  function isTaxBreakdownEnabled() { return cachedTaxShown; }
+  function getFeePct() { return cachedFeePct; }
+
+  function fetchSettings() {
+    fetch('/api/admin/settings')
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (!data.ok) return;
+        cachedFeePct = data.feePct;
+        cachedTaxShown = data.taxBreakdownShown;
+        applyTaxVisibility();
+        if (lastSummaryByMethod.length) renderFeeSummary(lastSummaryByMethod);
+        if (lastFinanceData) renderFinance(lastFinanceData);
+      })
+      .catch(function (err) { console.error('fetchSettings error:', err); });
+  }
+
+  window.onTaxToggleChange = function () {
+    var on = document.getElementById('tax-toggle-input').checked;
+    fetch('/api/admin/settings', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ taxBreakdownShown: on })
+    })
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (data.ok) cachedTaxShown = data.taxBreakdownShown;
+        applyTaxVisibility();
+        // Turning it back on: the math was skipped entirely while off, so the
+        // tiles would otherwise still show stale "—" placeholders until the next
+        // full data refresh — recompute immediately from whatever's cached.
+        if (on) {
+          if (lastSummaryByMethod.length) renderFeeSummary(lastSummaryByMethod);
+          if (lastFinanceData) renderTaxBreakdown(lastFinanceData.byMethod.reduce(function (s, r) { return s + r.total; }, 0));
+        }
+      })
+      .catch(function (err) { console.error('onTaxToggleChange error:', err); });
+  };
+
+  function applyTaxVisibility() {
+    var on = isTaxBreakdownEnabled();
+    document.getElementById('tax-toggle-input').checked = on;
+    document.getElementById('tax-breakdown-body').style.display = on ? '' : 'none';
+    document.getElementById('fee-summary-strip').classList.toggle('tax-hidden', !on);
+  }
+  // "stripe" orders carry the fee; bank/manual/anything else don't, since
+  // they never pass through Stripe at all.
+  function netAfterFee(method, gross, feePct) {
+    return method === 'stripe' ? gross * (1 - feePct / 100) : gross;
+  }
+
+  function showError(msg) {
+    var el = document.getElementById('error-banner');
+    el.textContent = msg;
+    el.classList.add('show');
+  }
+
+  function clearError() {
+    document.getElementById('error-banner').classList.remove('show');
+  }
+
+  function statusLabel(status) {
+    return { pending: '保留中', paid: '支払済', refunded: '返金済', cancelled: 'キャンセル' }[status] || status;
+  }
+
+  function badgeHtml(status) {
+    var cls = { pending: 'badge-pending', paid: 'badge-paid', refunded: 'badge-refunded', cancelled: 'badge-cancelled' }[status] || 'badge-pending';
+    return '<span class="badge ' + cls + '">' + statusLabel(status) + '</span>';
+  }
+
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function updateSortArrows() {
+    document.querySelectorAll('th.sortable').forEach(function (th) {
+      var arrow = th.querySelector('.arrow');
+      if (th.dataset.sort === state.sort) {
+        arrow.textContent = state.dir === 'asc' ? '▲' : '▼';
+      } else {
+        arrow.textContent = '';
+      }
+    });
+  }
+
+  window.onSortClick = function (col) {
+    if (state.sort === col) {
+      state.dir = state.dir === 'asc' ? 'desc' : 'asc';
+    } else {
+      state.sort = col;
+      state.dir = 'desc';
+    }
+    state.page = 1;
+    fetchOrders();
+  };
+
+  window.onFilterChange = function () {
+    state.status = document.getElementById('filter-status').value;
+    state.dateFrom = document.getElementById('filter-date-from').value;
+    state.dateTo = document.getElementById('filter-date-to').value;
+    state.planId = document.getElementById('filter-plan').value;
+    state.paymentMethod = document.getElementById('filter-payment-method').value;
+    state.page = 1;
+    fetchOrders();
+  };
+
+  function isoDate(d) { return d.toISOString().slice(0, 10); }
+
+  // One-click presets over the same status/date filters the toolbar already
+  // uses — "3+ days pending" is just status=pending with dateTo set to 3
+  // days ago (created_at <= that), no new filtering logic needed server-side.
+  window.applyQuickFilter = function (kind, btnEl) {
+    document.querySelectorAll('.quick-filters button').forEach(function (b) { b.classList.remove('active'); });
+    if (kind && btnEl) btnEl.classList.add('active');
+
+    document.getElementById('filter-status').value = '';
+    document.getElementById('filter-search').value = '';
+    document.getElementById('filter-date-from').value = '';
+    document.getElementById('filter-date-to').value = '';
+
+    var now = new Date();
+    if (kind === 'week') {
+      var day = now.getDay() || 7; // Sunday=0 -> 7, so Monday is always day 1 of the week
+      var monday = new Date(now); monday.setDate(now.getDate() - day + 1);
+      document.getElementById('filter-date-from').value = isoDate(monday);
+    } else if (kind === 'month') {
+      document.getElementById('filter-date-from').value = isoDate(new Date(now.getFullYear(), now.getMonth(), 1));
+    } else if (kind === 'stalePending') {
+      var threeDaysAgo = new Date(now.getTime() - 3 * 86400000);
+      document.getElementById('filter-status').value = 'pending';
+      document.getElementById('filter-date-to').value = isoDate(threeDaysAgo);
+    }
+
+    onFilterChange();
+  };
+
+  window.onSearchInput = function () {
+    clearTimeout(searchDebounce);
+    searchDebounce = setTimeout(function () {
+      state.search = document.getElementById('filter-search').value.trim();
+      state.page = 1;
+      fetchOrders();
+    }, 350);
+  };
+
+  window.changePage = function (delta) {
+    state.page = Math.max(1, state.page + delta);
+    fetchOrders();
+  };
+
+  function buildQuery() {
+    var params = new URLSearchParams();
+    if (state.status) params.set('status', state.status);
+    if (state.search) params.set('search', state.search);
+    if (state.dateFrom) params.set('dateFrom', state.dateFrom);
+    if (state.dateTo) params.set('dateTo', state.dateTo);
+    if (state.planId) params.set('planId', state.planId);
+    if (state.paymentMethod) params.set('paymentMethod', state.paymentMethod);
+    params.set('sort', state.sort);
+    params.set('dir', state.dir);
+    params.set('page', state.page);
+    params.set('limit', state.limit);
+    return params.toString();
+  }
+
+  function fetchStats() {
+    fetch('/api/admin/stats')
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (!data.ok) return;
+        document.getElementById('stat-revenue').textContent = fmtYen(data.totalRevenuePaid);
+        document.getElementById('stat-pending-bank').textContent = data.pendingBankCount;
+        document.getElementById('stat-month').textContent = data.ordersThisMonth;
+        document.getElementById('stat-customers').textContent = data.totalCustomers;
+      })
+      .catch(function (err) { console.error('fetchStats error:', err); });
+  }
+
+  // `silent` (used by the live-update poller below) skips the loading-state
+  // flicker and error banner, and — the whole point of polling — notices when
+  // a genuinely new order has shown up since the last check and toasts it.
+  function fetchOrders(silent) {
+    if (!silent) {
+      clearError();
+      updateSortArrows();
+      document.getElementById('orders-tbody').innerHTML = '<tr><td colspan="10" class="loading-state">読み込み中…</td></tr>';
+    }
+
+    fetch('/api/admin/orders?' + buildQuery())
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (result) {
+        if (!result.ok || !result.data.ok) {
+          throw new Error((result.data && result.data.error) || 'request_failed');
+        }
+        var orders = result.data.orders;
+        var maxId = orders.reduce(function (m, o) { return Math.max(m, o.id); }, 0);
+
+        if (silent && lastSeenMaxId !== null && maxId > lastSeenMaxId) {
+          showToast('🔔 新しい注文があります');
+          notifyNewOrder();
+          fetchStats();
+        }
+        lastSeenMaxId = maxId;
+
+        currentOrders = orders;
+        renderTable(currentOrders);
+        renderPagination(result.data.total, result.data.page, result.data.limit);
+        renderFeeSummary(result.data.summaryByMethod || []);
+      })
+      .catch(function (err) {
+        console.error('fetchOrders error:', err);
+        if (!silent) {
+          showError('注文一覧の取得に失敗しました: ' + err.message);
+          document.getElementById('orders-tbody').innerHTML = '<tr><td colspan="10" class="empty-state">読み込みエラー</td></tr>';
+        }
+      });
+  }
+
+  // ---- Live updates: silent background polling ----
+  var lastSeenMaxId = null;
+  var POLL_INTERVAL_MS = 15000;
+  var pollTimer = null;
+
+  function isAnyModalOpen() {
+    var d = document.getElementById('detail-overlay');
+    var a = document.getElementById('add-overlay');
+    var c = document.getElementById('customer-overlay');
+    var m = document.getElementById('message-overlay');
+    var ce = document.getElementById('calendar-event-overlay');
+    return (d && d.classList.contains('show')) || (a && a.classList.contains('show')) || (c && c.classList.contains('show')) || (m && m.classList.contains('show')) || (ce && ce.classList.contains('show'));
+  }
+
+  function pollForUpdates() {
+    if (document.hidden || isAnyModalOpen()) return;
+    fetchOrders(true);
+    // Keeps the "meeting starting soon" desktop reminder accurate even while
+    // the admin is working in a different tab, not just when Calendar is open.
+    if (calGridInited) fetchCalAgenda();
+  }
+
+  function startPolling() {
+    stopPolling();
+    pollTimer = setInterval(pollForUpdates, POLL_INTERVAL_MS);
+  }
+
+  function stopPolling() {
+    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+  }
+
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden) pollForUpdates();
+  });
+
+  function showToast(message) {
+    var stack = document.getElementById('toast-stack');
+    if (!stack) return;
+    var el = document.createElement('div');
+    el.className = 'toast';
+    el.textContent = message;
+    stack.appendChild(el);
+    requestAnimationFrame(function () { el.classList.add('show'); });
+    setTimeout(function () {
+      el.classList.remove('show');
+      setTimeout(function () { el.remove(); }, 300);
+    }, 5000);
+  }
+
+  // ---- Desktop (OS-level) push notifications for new orders ----
+  // Works while this tab is open in any browser window, even unfocused —
+  // unlike the in-page toast alone, which only helps if you're already
+  // looking at the tab. Genuine "browser closed" alerts would need a real
+  // push service (and a backend subscription/VAPID setup) or a LINE/Slack
+  // webhook wired into email.js — out of scope here since it needs a new
+  // external account, but this covers "browser open, tab in the background."
+  function updateNotifButton() {
+    var btn = document.getElementById('notif-permission-btn');
+    if (!btn) return;
+    if (typeof Notification === 'undefined' || Notification.permission === 'granted' || Notification.permission === 'denied') {
+      btn.style.display = 'none';
+    } else {
+      btn.style.display = '';
+    }
+  }
+
+  window.enableDesktopNotifications = function () {
+    if (typeof Notification === 'undefined') return;
+    Notification.requestPermission().then(updateNotifButton);
+  };
+
+  function notifyNewOrder() {
+    if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+    try {
+      var n = new Notification('新しい注文があります / New order', {
+        body: 'HexaPoint 管理画面で確認してください',
+        icon: '/favicon-192.png',
+      });
+      n.onclick = function () { window.focus(); n.close(); };
+    } catch (e) { /* some contexts (e.g. no window focus) can throw — non-fatal */ }
+  }
+
+  function renewalBadgeHtml(o) {
+    if (o.plan_id !== 'annual' || !o.created_at) return '';
+    var created = new Date(o.created_at.replace(' ', 'T') + 'Z');
+    if (isNaN(created.getTime())) return '';
+    var renewal = new Date(created.getTime() + 365 * 24 * 60 * 60 * 1000);
+    var daysLeft = Math.ceil((renewal.getTime() - Date.now()) / (24 * 60 * 60 * 1000));
+    var warn = daysLeft <= 14;
+    var text = daysLeft >= 0 ? ('更新まで ' + daysLeft + '日') : ('更新超過 ' + Math.abs(daysLeft) + '日');
+    return '<span class="renewal-note' + (warn ? ' warn' : '') + '">' + text + '</span>';
+  }
+
+  function renderTable(orders) {
+    var tbody = document.getElementById('orders-tbody');
+    if (!orders.length) {
+      tbody.innerHTML = '<tr><td colspan="10" class="empty-state">注文がありません</td></tr>';
+      updateSelectAllState();
+      return;
+    }
+    tbody.innerHTML = orders.map(function (o) {
+      return '<tr onclick="openDetailModal(' + o.id + ')">' +
+        '<td class="checkbox-cell" data-label="" onclick="event.stopPropagation()"><input type="checkbox" class="row-check" value="' + o.id + '" onchange="onRowCheckChange()"></td>' +
+        '<td class="mono" data-label="Order ID">' + esc(o.order_id) + '</td>' +
+        '<td data-label="プラン">' + esc(o.plan_name_ja) + '</td>' +
+        '<td class="mono" data-label="金額">' + fmtYen(o.amount) + '</td>' +
+        '<td data-label="方法">' + esc(o.payment_method) + '</td>' +
+        '<td data-label="ステータス">' + badgeHtml(o.status) + '</td>' +
+        '<td data-label="お客様名">' + esc(o.buyer_name) + '</td>' +
+        '<td data-label="メール">' + esc(o.buyer_email) + '</td>' +
+        '<td class="mono" data-label="作成日時">' + esc(fmtDate(o.created_at)) + renewalBadgeHtml(o) + '</td>' +
+        '<td class="row-actions" data-label="操作" onclick="event.stopPropagation()">' +
+          '<button type="button" onclick="openDetailModal(' + o.id + ')">表示</button>' +
+        '</td>' +
+      '</tr>';
+    }).join('');
+    updateSelectAllState();
+  }
+
+  // ---- Bulk selection ----
+  window.onSelectAllChange = function () {
+    var checked = document.getElementById('select-all').checked;
+    document.querySelectorAll('.row-check').forEach(function (cb) {
+      cb.checked = checked;
+      if (checked) selectedIds[cb.value] = true; else delete selectedIds[cb.value];
+    });
+    updateBulkBar();
+  };
+
+  window.onRowCheckChange = function () {
+    document.querySelectorAll('.row-check').forEach(function (cb) {
+      if (cb.checked) selectedIds[cb.value] = true; else delete selectedIds[cb.value];
+    });
+    updateSelectAllState();
+    updateBulkBar();
+  };
+
+  function updateSelectAllState() {
+    var boxes = document.querySelectorAll('.row-check');
+    boxes.forEach(function (cb) { cb.checked = !!selectedIds[cb.value]; });
+    var all = boxes.length > 0 && Array.prototype.every.call(boxes, function (cb) { return selectedIds[cb.value]; });
+    var selAll = document.getElementById('select-all');
+    if (selAll) selAll.checked = all;
+    updateBulkBar();
+  }
+
+  function updateBulkBar() {
+    var ids = Object.keys(selectedIds);
+    var bar = document.getElementById('bulk-bar');
+    if (ids.length > 0) {
+      bar.classList.add('show');
+      document.getElementById('bulk-count').textContent = ids.length + '件選択中';
+    } else {
+      bar.classList.remove('show');
+    }
+  }
+
+  window.clearSelection = function () {
+    selectedIds = {};
+    document.querySelectorAll('.row-check').forEach(function (cb) { cb.checked = false; });
+    var selAll = document.getElementById('select-all');
+    if (selAll) selAll.checked = false;
+    updateBulkBar();
+  };
+
+  window.applyBulkStatus = function () {
+    var ids = Object.keys(selectedIds);
+    if (!ids.length) return;
+    var status = document.getElementById('bulk-status').value;
+    if (!confirm(ids.length + '件のステータスを「' + statusLabel(status) + '」に変更しますか？')) return;
+
+    var okCount = 0, failCount = 0;
+    Promise.all(ids.map(function (id) {
+      return fetch('/api/admin/orders/' + id, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: status })
+      }).then(function (res) { return res.json(); })
+        .then(function (data) { if (data && data.ok) okCount++; else failCount++; })
+        .catch(function () { failCount++; });
+    })).then(function () {
+      clearSelection();
+      fetchOrders();
+      fetchStats();
+      if (failCount > 0) {
+        showError('一括更新: 成功 ' + okCount + '件、失敗 ' + failCount + '件');
+      }
+    });
+  };
+
+  function csvFieldClient(v) {
+    var s = String(v == null ? '' : v);
+    if (/^[=+\-@]/.test(s)) s = "'" + s;
+    if (/[",\n\r]/.test(s)) s = '"' + s.replace(/"/g, '""') + '"';
+    return s;
+  }
+
+  function downloadCsv(rows, filenamePrefix) {
+    var header = ['Order ID', 'Plan', 'Amount', 'Payment Method', 'Status', 'Buyer Name', 'Email', 'Phone', 'Address', 'Notes', 'Created At'];
+    var lines = [header.map(csvFieldClient).join(',')];
+    rows.forEach(function (o) {
+      lines.push([o.order_id, o.plan_name_ja, o.amount, o.payment_method, o.status, o.buyer_name, o.buyer_email, o.buyer_phone, o.buyer_address, o.notes, o.created_at].map(csvFieldClient).join(','));
+    });
+    var csv = '﻿' + lines.join('\r\n');
+    var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = filenamePrefix + '-' + new Date().toISOString().slice(0, 10) + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  window.exportSelectedCsv = function () {
+    var rows = currentOrders.filter(function (o) { return selectedIds[o.id]; });
+    if (!rows.length) return;
+    downloadCsv(rows, 'orders-selected');
+  };
+
+  window.exportCsv = function () {
+    window.location.href = '/api/admin/orders-export?' + buildQuery();
+  };
+
+  function renderPagination(total, page, limit) {
+    var totalPages = Math.max(1, Math.ceil(total / limit));
+    document.getElementById('page-indicator').textContent = page + ' / ' + totalPages + '（全 ' + total + ' 件）';
+    document.getElementById('prev-page').disabled = page <= 1;
+    document.getElementById('next-page').disabled = page >= totalPages;
+  }
+
+  // ---- Orders-tab fee summary strip: respects whatever filters (status /
+  // search / date range) are currently applied, since summaryByMethod comes
+  // from listOrders() using the exact same WHERE clause as the table itself. ----
+  var lastSummaryByMethod = [];
+  function renderFeeSummary(summaryByMethod) {
+    lastSummaryByMethod = summaryByMethod;
+    var feePct = getFeePct();
+    document.getElementById('fs-fee-pct').textContent = feePct;
+
+    var gross = 0, fee = 0, net = 0;
+    summaryByMethod.forEach(function (row) {
+      var rowTotal = row.total || 0;
+      gross += rowTotal;
+      var rowNet = netAfterFee(row.payment_method, rowTotal, feePct);
+      net += rowNet;
+      if (row.payment_method === 'stripe') fee += rowTotal - rowNet;
+    });
+
+    document.getElementById('fs-gross').textContent = fmtYen(gross);
+    document.getElementById('fs-fee').textContent = '−' + fmtYen(fee);
+    document.getElementById('fs-net').textContent = fmtYen(net);
+
+    if (isTaxBreakdownEnabled()) {
+      var pretax = gross / (1 + TAX_RATE);
+      document.getElementById('fs-tax').textContent = fmtYen(Math.round(gross - pretax));
+      document.getElementById('fs-pretax').textContent = fmtYen(Math.round(pretax));
+    }
+  }
+
+  // ---- Tabs ----
+  var TAB_NAMES = ['orders', 'messages', 'calendar', 'customers', 'renewals', 'finance', 'plans', 'analytics', 'status', 'history'];
+  window.switchTab = function (name) {
+    TAB_NAMES.forEach(function (t) {
+      document.getElementById('view-' + t).classList.toggle('active', t === name);
+      document.getElementById('tab-btn-' + t).classList.toggle('active', t === name);
+    });
+    if (name === 'finance') fetchFinance();
+    if (name === 'renewals') fetchRenewals();
+    if (name === 'history') fetchHistory();
+    if (name === 'customers') fetchCustomers();
+    if (name === 'plans') fetchPlansTab();
+    if (name === 'analytics') fetchAnalytics();
+    if (name === 'status') fetchStatus();
+    if (name === 'messages') fetchMessages();
+    if (name === 'calendar') { fetchCalendar(); initCalGridIfNeeded(); }
+  };
+
+  window.saveFeePct = function () {
+    var n = parseFloat(document.getElementById('fee-pct-input').value);
+    if (!Number.isFinite(n) || n < 0) return;
+    fetch('/api/admin/settings', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ feePct: n })
+    })
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (!data.ok) return;
+        cachedFeePct = data.feePct;
+        var note = document.getElementById('fee-saved-note');
+        note.classList.add('show');
+        setTimeout(function () { note.classList.remove('show'); }, 2000);
+        // Both tabs read the same rate — refresh whichever data is already loaded.
+        fetchFinance();
+        renderFeeSummary(lastSummaryByMethod);
+      })
+      .catch(function (err) { console.error('saveFeePct error:', err); });
+  };
+
+  // ---- Finance / Accounts tab ----
+  var MONTH_LABELS_JA = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+  var METHOD_LABELS = { stripe: 'Stripe', bank: '銀行振込 / Bank', manual: '手動登録 / Manual' };
+
+  function renderBarList(containerId, rows, opts) {
+    var el = document.getElementById(containerId);
+    if (!rows.length) {
+      el.innerHTML = '<div class="empty-state" style="padding:20px 0;">データがありません</div>';
+      return;
+    }
+    var max = Math.max.apply(null, rows.map(function (r) { return r.total; }));
+    el.innerHTML = rows.map(function (r) {
+      var pct = max > 0 ? Math.max(2, Math.round((r.total / max) * 100)) : 0;
+      var label = opts.label(r);
+      var fillClass = opts.fillClass ? opts.fillClass(r) : '';
+      return '<div class="bar-row">' +
+        '<div class="bar-head"><span>' + esc(label) + ' <span class="mono" style="opacity:.45;font-size:10.5px;">(' + r.count + ')</span></span>' +
+        '<span class="amt">' + fmtYen(r.total) + '</span></div>' +
+        '<div class="bar-track"><div class="bar-fill ' + fillClass + '" style="width:' + pct + '%"></div></div>' +
+      '</div>';
+    }).join('');
+  }
+
+  function renderTrendChart(monthly) {
+    // Fill in every one of the last 12 months, even ones with zero revenue,
+    // so the chart's x-axis is always a continuous 12-month strip.
+    var now = new Date();
+    var byMonth = {};
+    monthly.forEach(function (r) { byMonth[r.month] = r; });
+    var months = [];
+    for (var i = 11; i >= 0; i--) {
+      var d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      var key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+      months.push({ key: key, label: MONTH_LABELS_JA[d.getMonth()], row: byMonth[key], isCurrent: i === 0 });
+    }
+    var max = Math.max.apply(null, months.map(function (m) { return m.row ? m.row.total : 0; })) || 1;
+
+    var el = document.getElementById('fin-trend');
+    el.innerHTML = '<div class="trend-chart">' + months.map(function (m) {
+      var total = m.row ? m.row.total : 0;
+      var h = Math.max(3, Math.round((total / max) * 100));
+      return '<div class="trend-col' + (m.isCurrent ? ' current' : '') + '">' +
+        '<span class="trend-val">' + fmtYen(total) + '</span>' +
+        '<div class="trend-bar" style="height:' + h + '%"></div>' +
+        '<span class="trend-label">' + m.label + '</span>' +
+      '</div>';
+    }).join('') + '</div>';
+
+    // Month-over-month change, shown under the Avg Order Value tile — a
+    // quick "are we trending up or down" signal that's otherwise invisible
+    // in a table of raw totals.
+    var thisMonth = months[11].row ? months[11].row.total : 0;
+    var lastMonth = months[10].row ? months[10].row.total : 0;
+    var momEl = document.getElementById('fin-mom');
+    if (lastMonth > 0) {
+      var change = ((thisMonth - lastMonth) / lastMonth) * 100;
+      var sign = change >= 0 ? '+' : '';
+      momEl.textContent = '前月比 ' + sign + change.toFixed(0) + '% (今月 / this month so far)';
+      momEl.style.color = change >= 0 ? 'var(--emerald-deep)' : 'var(--coral)';
+    } else {
+      momEl.textContent = '前月比データなし';
+    }
+  }
+
+  function renderTopCustomers(rows) {
+    var el = document.getElementById('fin-top-customers');
+    if (!rows.length) {
+      el.innerHTML = '<li class="empty-state" style="border:none;">データがありません</li>';
+      return;
+    }
+    el.innerHTML = rows.map(function (r, i) {
+      return '<li style="cursor:pointer;" onclick="filterByCustomer(\'' + esc(r.buyer_email).replace(/'/g, "\\'") + '\')" title="この顧客の注文をすべて表示">' +
+        '<span class="rank mono">' + (i + 1) + '</span>' +
+        '<span class="name">' + esc(r.buyer_name) + '<small>' + esc(r.buyer_email) + ' · ' + r.orders + '件</small></span>' +
+        '<span class="amt">' + fmtYen(r.total) + '</span></li>';
+    }).join('');
+  }
+
+  // Clicking a Top Customer jumps to the Orders tab pre-filtered to just
+  // their orders — reuses the existing search filter (buyer_email LIKE) as
+  // a lightweight "customer profile" instead of a whole new endpoint/view.
+  window.filterByCustomer = function (email) {
+    document.getElementById('filter-search').value = email;
+    state.search = email;
+    state.page = 1;
+    switchTab('orders');
+    fetchOrders();
+  };
+
+  function renderTaxBreakdown(grossTotal) {
+    if (!isTaxBreakdownEnabled()) return; // toggle off: skip the math entirely, not just hide it
+    var pretax = grossTotal / (1 + TAX_RATE);
+    var tax = grossTotal - pretax;
+    document.getElementById('fin-tax-pretax').textContent = fmtYen(Math.round(pretax));
+    document.getElementById('fin-tax-amount').textContent = fmtYen(Math.round(tax));
+    document.getElementById('fin-tax-total').textContent = fmtYen(Math.round(grossTotal));
+  }
+
+  var lastFinanceData = null;
+  function renderFinance(data) {
+    lastFinanceData = data;
+    var feePct = getFeePct();
+    document.getElementById('fee-pct-input').value = feePct;
+
+    var gross = 0, net = 0;
+    data.byMethod.forEach(function (r) {
+      gross += r.total;
+      net += netAfterFee(r.payment_method, r.total, feePct);
+    });
+    var totalOrders = data.byMethod.reduce(function (s, r) { return s + r.count; }, 0);
+
+    document.getElementById('fin-gross').textContent = fmtYen(gross);
+    document.getElementById('fin-fee').textContent = '−' + fmtYen(gross - net);
+    document.getElementById('fin-net').textContent = fmtYen(net);
+    document.getElementById('fin-avg').textContent = fmtYen(totalOrders > 0 ? Math.round(gross / totalOrders) : 0);
+    renderTaxBreakdown(gross);
+
+    if (data.yoy) {
+      var yoyEl = document.getElementById('fin-yoy');
+      if (data.yoy.sameMonthLastYear > 0) {
+        var yoyChange = ((data.yoy.thisMonth - data.yoy.sameMonthLastYear) / data.yoy.sameMonthLastYear) * 100;
+        var yoySign = yoyChange >= 0 ? '+' : '';
+        yoyEl.textContent = '前年同月比 ' + yoySign + yoyChange.toFixed(0) + '% (今月進行中)';
+        yoyEl.style.color = yoyChange >= 0 ? 'var(--emerald-deep)' : 'var(--coral)';
+      } else {
+        yoyEl.textContent = '前年同月のデータなし';
+      }
+    }
+
+    renderBarList('fin-by-plan', data.byPlan, {
+      label: function (r) { return (r.plan_name_ja || r.plan_id) + ' / ' + (r.plan_name_en || ''); },
+    });
+    renderBarList('fin-by-method', data.byMethod, {
+      label: function (r) { return METHOD_LABELS[r.payment_method] || r.payment_method; },
+      fillClass: function (r) { return r.payment_method === 'bank' ? 'method-bank' : (r.payment_method === 'stripe' ? '' : 'method-manual'); },
+    });
+    renderTrendChart(data.monthly);
+    renderTopCustomers(data.topCustomers);
+  }
+
+  function financeQuery() {
+    var params = new URLSearchParams();
+    var from = document.getElementById('fin-date-from').value;
+    var to = document.getElementById('fin-date-to').value;
+    if (from) params.set('dateFrom', from);
+    if (to) params.set('dateTo', to);
+    return params.toString();
+  }
+
+  // Exposed on window (unlike other internal render/fetch helpers) because
+  // the finance date-range inputs call it directly via inline onchange=.
+  window.fetchFinance = function fetchFinance() {
+    fetch('/api/admin/finance?' + financeQuery())
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (result) {
+        if (!result.ok || !result.data.ok) {
+          throw new Error((result.data && result.data.error) || 'request_failed');
+        }
+        renderFinance(result.data);
+      })
+      .catch(function (err) {
+        console.error('fetchFinance error:', err);
+        showError('会計データの取得に失敗しました: ' + err.message);
+      });
+  };
+
+  window.clearFinanceRange = function () {
+    document.getElementById('fin-date-from').value = '';
+    document.getElementById('fin-date-to').value = '';
+    fetchFinance();
+  };
+
+  // Exports the currently-rendered breakdown (by plan / by method) as CSV —
+  // the charts themselves aren't exportable, but the numbers behind them are.
+  window.exportFinanceCsv = function () {
+    if (!lastFinanceData) return;
+    var lines = [['Section', 'Label', 'Count', 'Total (JPY)'].map(csvFieldClient).join(',')];
+    lastFinanceData.byPlan.forEach(function (r) {
+      lines.push(['Plan', r.plan_name_ja + ' / ' + r.plan_name_en, r.count, r.total].map(csvFieldClient).join(','));
+    });
+    lastFinanceData.byMethod.forEach(function (r) {
+      lines.push(['Payment Method', r.payment_method, r.count, r.total].map(csvFieldClient).join(','));
+    });
+    lastFinanceData.monthly.forEach(function (r) {
+      lines.push(['Monthly', r.month, r.count, r.total].map(csvFieldClient).join(','));
+    });
+    lastFinanceData.topCustomers.forEach(function (r) {
+      lines.push(['Top Customer', r.buyer_name + ' <' + r.buyer_email + '>', r.orders, r.total].map(csvFieldClient).join(','));
+    });
+    var csv = '﻿' + lines.join('\r\n');
+    var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'finance-report-' + new Date().toISOString().slice(0, 10) + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  // ---- Analytics tab (Google Search Console) ----
+  var DEVICE_LABELS_JA = { desktop: 'デスクトップ / Desktop', mobile: 'モバイル / Mobile', tablet: 'タブレット / Tablet' };
+  var gscState = { range: '28d', from: '', to: '' };
+  var lastAnalyticsData = null;
+
+  function fmtNum(n) {
+    return Number(n || 0).toLocaleString('ja-JP');
+  }
+
+  function fmtBytes(n) {
+    var bytes = Number(n || 0);
+    var units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    var i = 0;
+    while (bytes >= 1024 && i < units.length - 1) {
+      bytes /= 1024;
+      i++;
+    }
+    return bytes.toFixed(i === 0 ? 0 : 1) + ' ' + units[i];
+  }
+
+  // Google's sitemap `lastDownloaded` is already a full ISO 8601 timestamp
+  // (unlike our own DB's "YYYY-MM-DD HH:MM:SS" rows that fmtDate() expects),
+  // so it can be parsed directly without the space->T / +Z massaging.
+  function fmtGscTimestamp(iso) {
+    try {
+      return new Intl.DateTimeFormat('ja-JP', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Tokyo' })
+        .format(new Date(iso));
+    } catch (e) {
+      return iso;
+    }
+  }
+
+  window.setAnalyticsRange = function (range) {
+    gscState.range = range;
+    gscState.from = '';
+    gscState.to = '';
+    document.getElementById('gsc-date-from').value = '';
+    document.getElementById('gsc-date-to').value = '';
+    Array.prototype.forEach.call(document.querySelectorAll('#gsc-range-buttons button[data-range]'), function (b) {
+      b.classList.toggle('active', b.getAttribute('data-range') === range);
+    });
+    fetchAnalytics();
+  };
+
+  // A custom date range takes priority over the preset buttons -- both dates
+  // must be filled in before it's applied (a lone "from" with no "to" isn't
+  // a valid Search Console query).
+  window.setAnalyticsCustomRange = function () {
+    var from = document.getElementById('gsc-date-from').value;
+    var to = document.getElementById('gsc-date-to').value;
+    if (!from || !to) return;
+    gscState.from = from;
+    gscState.to = to;
+    Array.prototype.forEach.call(document.querySelectorAll('#gsc-range-buttons button[data-range]'), function (b) {
+      b.classList.remove('active');
+    });
+    fetchAnalytics();
+  };
+
+  window.clearAnalyticsCustomRange = function () {
+    document.getElementById('gsc-date-from').value = '';
+    document.getElementById('gsc-date-to').value = '';
+    setAnalyticsRange(gscState.range || '28d');
+  };
+
+  function renderGscBarList(containerId, rows, labelFn, valueFn) {
+    var el = document.getElementById(containerId);
+    if (!rows.length) {
+      el.innerHTML = '<div class="empty-state" style="padding:20px 0;">データがありません</div>';
+      return;
+    }
+    var max = Math.max.apply(null, rows.map(valueFn));
+    el.innerHTML = rows.map(function (r) {
+      var val = valueFn(r);
+      var pct = max > 0 ? Math.max(2, Math.round((val / max) * 100)) : 0;
+      return '<div class="bar-row">' +
+        '<div class="bar-head"><span>' + esc(labelFn(r)) + '</span>' +
+        '<span class="amt">' + fmtNum(val) + '</span></div>' +
+        '<div class="bar-track"><div class="bar-fill" style="width:' + pct + '%"></div></div>' +
+      '</div>';
+    }).join('');
+  }
+
+  function renderGscTrend(rows) {
+    var el = document.getElementById('gsc-trend');
+    if (!rows.length) {
+      el.innerHTML = '<div class="empty-state" style="padding:20px 0;">データがありません</div>';
+      return;
+    }
+    var max = Math.max.apply(null, rows.map(function (r) { return r.clicks; })) || 1;
+    // Long ranges (90d) would otherwise cram 90 labels into the strip --
+    // thin them out so only every Nth day is labeled.
+    var showEvery = rows.length > 45 ? 7 : (rows.length > 20 ? 3 : 1);
+    el.innerHTML = '<div class="trend-chart">' + rows.map(function (r, i) {
+      var h = Math.max(3, Math.round((r.clicks / max) * 100));
+      var d = new Date(r.date + 'T00:00:00Z');
+      var label = (i % showEvery === 0) ? (d.getMonth() + 1) + '/' + d.getDate() : '';
+      return '<div class="trend-col' + (i === rows.length - 1 ? ' current' : '') + '">' +
+        '<span class="trend-val">' + fmtNum(r.clicks) + '</span>' +
+        '<div class="trend-bar" style="height:' + h + '%"></div>' +
+        '<span class="trend-label">' + label + '</span>' +
+      '</div>';
+    }).join('') + '</div>';
+  }
+
+  function renderGscSitemaps(rows) {
+    var el = document.getElementById('gsc-sitemaps');
+    if (!rows.length) {
+      el.innerHTML = '<div class="empty-state" style="padding:20px 0;">サイトマップが送信されていません（7節参照）</div>';
+      return;
+    }
+    el.innerHTML = rows.map(function (s) {
+      var totalSubmitted = s.contents.reduce(function (a, c) { return a + c.submitted; }, 0);
+      var totalIndexed = s.contents.reduce(function (a, c) { return a + c.indexed; }, 0);
+      var lastRead = s.lastDownloaded ? fmtGscTimestamp(s.lastDownloaded) : (s.isPending ? '処理待ち / Pending' : '未読み込み / Not read yet');
+      var badgeClass = s.errors > 0 ? 'warn' : (s.warnings > 0 ? 'ok' : '');
+      var noteBits = [];
+      if (s.errors > 0) noteBits.push(s.errors + '件のエラー');
+      if (s.warnings > 0) noteBits.push(s.warnings + '件の警告');
+      return '<div class="renewal-list-item">' +
+        '<span class="r-badge' + (badgeClass ? ' ' + badgeClass : '') + '"></span>' +
+        '<div class="r-main">' +
+          '<div class="r-name">' + esc(s.path) + '</div>' +
+          '<div class="r-sub">最終読み込み: ' + lastRead + (noteBits.length ? ' · ' + noteBits.join(' / ') : '') + '</div>' +
+        '</div>' +
+        '<div class="r-days">' +
+          '<div class="num">' + fmtNum(totalIndexed) + ' / ' + fmtNum(totalSubmitted) + '</div>' +
+          '<div class="lbl">インデックス済み / 送信</div>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  // Renders a "+12% vs previous period" style note under a KPI tile, colored
+  // green/red -- same idea as the Finance tab's month-over-month figure.
+  function renderPctChange(elId, current, previous) {
+    var el = document.getElementById(elId);
+    if (!previous) {
+      el.textContent = '前期間データなし';
+      el.style.color = '';
+      return;
+    }
+    var change = ((current - previous) / previous) * 100;
+    var sign = change >= 0 ? '+' : '';
+    el.textContent = sign + change.toFixed(0) + '% 前期間比';
+    el.style.color = change >= 0 ? 'var(--emerald-deep)' : 'var(--coral)';
+  }
+
+  function renderAnalytics(data) {
+    lastAnalyticsData = data;
+    var totals = data.totals || { clicks: 0, impressions: 0, ctr: 0, position: 0 };
+    var previousTotals = data.previousTotals || { clicks: 0, impressions: 0 };
+    renderGscSitemaps(data.sitemaps || []);
+    document.getElementById('gsc-range-note').textContent =
+      '集計期間: ' + data.startDate + ' 〜 ' + data.endDate +
+      '（前期間: ' + data.previousStartDate + ' 〜 ' + data.previousEndDate + '）' +
+      ' — Search Console のデータは直近2〜3日分が反映されるまで時間がかかるため、今日までではなくこの期間になります。';
+    document.getElementById('gsc-clicks').textContent = fmtNum(totals.clicks);
+    document.getElementById('gsc-impressions').textContent = fmtNum(totals.impressions);
+    document.getElementById('gsc-ctr').textContent = (totals.ctr * 100).toFixed(1) + '%';
+    document.getElementById('gsc-position').textContent = totals.position.toFixed(1);
+    renderPctChange('gsc-clicks-change', totals.clicks, previousTotals.clicks);
+    renderPctChange('gsc-impressions-change', totals.impressions, previousTotals.impressions);
+
+    renderGscTrend(data.trend || []);
+    renderGscBarList('gsc-queries', data.topQueries || [],
+      function (r) { return r.query; },
+      function (r) { return r.clicks; });
+    renderGscBarList('gsc-pages', data.topPages || [],
+      function (r) { return r.page; },
+      function (r) { return r.clicks; });
+    renderGscBarList('gsc-devices', data.devices || [],
+      function (r) { return DEVICE_LABELS_JA[r.device] || r.device; },
+      function (r) { return r.clicks; });
+    renderGscBarList('gsc-countries', data.countries || [],
+      function (r) { return r.country.toUpperCase(); },
+      function (r) { return r.clicks; });
+  }
+
+  window.fetchAnalytics = function fetchAnalytics(forceRefresh) {
+    var qs = (gscState.from && gscState.to)
+      ? 'from=' + gscState.from + '&to=' + gscState.to
+      : 'range=' + gscState.range;
+    if (forceRefresh) qs += '&refresh=1';
+    fetch('/api/admin/search-console?' + qs)
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, status: res.status, data: data }; }); })
+      .then(function (result) {
+        if (result.status === 501 || (result.data && result.data.error === 'google_not_configured')) {
+          document.getElementById('gsc-not-configured').style.display = '';
+          document.getElementById('gsc-content').style.display = 'none';
+          return;
+        }
+        document.getElementById('gsc-not-configured').style.display = 'none';
+        document.getElementById('gsc-content').style.display = '';
+        if (!result.ok || !result.data.ok) {
+          throw new Error((result.data && result.data.error) || 'request_failed');
+        }
+        renderAnalytics(result.data);
+      })
+      .catch(function (err) {
+        console.error('fetchAnalytics error:', err);
+        showError('検索パフォーマンスデータの取得に失敗しました: ' + err.message);
+      });
+  };
+
+  // Exports whatever is currently rendered in the Analytics tab -- same
+  // pattern as exportFinanceCsv().
+  window.exportAnalyticsCsv = function () {
+    if (!lastAnalyticsData) return;
+    var d = lastAnalyticsData;
+    var lines = [['Section', 'Label', 'Clicks', 'Impressions'].map(csvFieldClient).join(',')];
+    lines.push(['Totals', d.startDate + ' to ' + d.endDate, d.totals.clicks, d.totals.impressions].map(csvFieldClient).join(','));
+    lines.push(['Previous Period', d.previousStartDate + ' to ' + d.previousEndDate, d.previousTotals.clicks, d.previousTotals.impressions].map(csvFieldClient).join(','));
+    d.trend.forEach(function (r) {
+      lines.push(['Daily Trend', r.date, r.clicks, ''].map(csvFieldClient).join(','));
+    });
+    d.topQueries.forEach(function (r) {
+      lines.push(['Top Query', r.query, r.clicks, r.impressions].map(csvFieldClient).join(','));
+    });
+    d.topPages.forEach(function (r) {
+      lines.push(['Top Page', r.page, r.clicks, r.impressions].map(csvFieldClient).join(','));
+    });
+    d.devices.forEach(function (r) {
+      lines.push(['Device', r.device, r.clicks, ''].map(csvFieldClient).join(','));
+    });
+    d.countries.forEach(function (r) {
+      lines.push(['Country', r.country, r.clicks, ''].map(csvFieldClient).join(','));
+    });
+    var csv = '﻿' + lines.join('\r\n');
+    var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'search-console-' + d.startDate + '-to-' + d.endDate + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  // ---- System Status tab (Zoho / Resend / Cloudflare usage) ----
+  function renderUsageBars(containerId, rows) {
+    var el = document.getElementById(containerId);
+    if (!rows.length) {
+      el.innerHTML = '<div class="empty-state" style="padding:20px 0;">データがありません</div>';
+      return;
+    }
+    el.innerHTML = rows.map(function (r) {
+      var pct = r.limit > 0 ? Math.min(100, Math.round((r.used / r.limit) * 100)) : 0;
+      var fillClass = pct >= 90 ? 'usage-warn' : '';
+      var fmt = r.fmt || fmtNum;
+      return '<div class="bar-row">' +
+        '<div class="bar-head"><span>' + esc(r.label) + '</span>' +
+        '<span class="amt">' + fmt(r.used) + ' / ' + fmt(r.limit) + ' (' + pct + '%)</span></div>' +
+        '<div class="bar-track"><div class="bar-fill ' + fillClass + '" style="width:' + pct + '%"></div></div>' +
+      '</div>';
+    }).join('');
+  }
+
+  function renderStatusError(containerId, message) {
+    document.getElementById(containerId).innerHTML = '<div class="empty-state" style="padding:20px 0;">' + esc(message) + '</div>';
+  }
+
+  function renderStatus(data) {
+    // Zoho
+    if (data.zoho.error) {
+      renderStatusError('status-zoho', 'エラー: ' + data.zoho.error);
+    } else if (!data.zoho.configured) {
+      renderStatusError('status-zoho', 'Zoho Invoice が未設定です');
+    } else {
+      renderUsageBars('status-zoho', [
+        { label: data.zoho.year + '年の請求書', used: data.zoho.invoicesThisYear, limit: data.zoho.limit }
+      ]);
+    }
+
+    // Resend
+    if (!data.resend.tracking) {
+      renderStatusError('status-resend', 'ORDERS_KV が未設定のため集計できません');
+    } else {
+      renderUsageBars('status-resend', [
+        { label: '本日の送信数', used: data.resend.sentToday, limit: data.resend.limits.dailyLimit },
+        { label: '今月の送信数', used: data.resend.sentThisMonth, limit: data.resend.limits.monthlyLimit }
+      ]);
+      var resendTodayInput = document.getElementById('resend-today-input');
+      var resendMonthInput = document.getElementById('resend-month-input');
+      if (resendTodayInput && document.activeElement !== resendTodayInput) resendTodayInput.value = data.resend.sentToday;
+      if (resendMonthInput && document.activeElement !== resendMonthInput) resendMonthInput.value = data.resend.sentThisMonth;
+    }
+
+    // Oracle Object Storage (D1 backup bucket) -- independent of Cloudflare's
+    // own configured/not-configured state below, so this runs regardless.
+    if (!data.oracle.configured) {
+      renderStatusError('status-oracle', 'ORACLE_STORAGE_LIST_PAR_URL が未設定です');
+    } else if (!data.oracle.usage) {
+      renderStatusError('status-oracle', 'データを取得できませんでした');
+    } else if (data.oracle.usage.error) {
+      renderStatusError('status-oracle', 'エラー: ' + data.oracle.usage.error);
+    } else {
+      var oracle = data.oracle.usage;
+      renderUsageBars('status-oracle', [
+        { label: 'ストレージ使用量', used: oracle.totalBytes, limit: oracle.limits.standardStorageBytes, fmt: fmtBytes }
+      ]);
+      var lastBackupEl = document.getElementById('status-oracle-meta');
+      if (lastBackupEl) {
+        lastBackupEl.textContent = 'バックアップ数: ' + fmtNum(oracle.objectCount) +
+          ' / 最新バックアップ: ' + (oracle.lastBackupAt ? new Date(oracle.lastBackupAt).toLocaleString('ja-JP') : '—');
+      }
+    }
+
+    // Cloudflare
+    if (!data.cloudflare.configured) {
+      document.getElementById('status-cf-not-configured').style.display = '';
+      document.getElementById('status-cf-content').style.display = 'none';
+      return;
+    }
+    document.getElementById('status-cf-not-configured').style.display = 'none';
+    document.getElementById('status-cf-content').style.display = '';
+
+    var d1 = data.cloudflare.d1;
+    var d1Storage = data.cloudflare.d1Storage;
+    if (!d1 && !d1Storage) {
+      renderStatusError('status-d1', 'CLOUDFLARE_D1_DATABASE_ID が未設定です');
+    } else {
+      var d1Rows = [];
+      if (d1 && !d1.error) {
+        d1Rows.push({ label: '読み取り行数', used: d1.rowsRead, limit: d1.limits.rowsReadPerDay });
+        d1Rows.push({ label: '書き込み行数', used: d1.rowsWritten, limit: d1.limits.rowsWrittenPerDay });
+      }
+      if (d1Storage && !d1Storage.error) {
+        d1Rows.push({ label: 'ストレージ使用量', used: d1Storage.bytes, limit: d1Storage.limit, fmt: fmtBytes });
+      }
+      if (d1Rows.length) {
+        renderUsageBars('status-d1', d1Rows);
+      } else {
+        var d1Errs = [d1 && d1.error, d1Storage && d1Storage.error].filter(Boolean).join(' / ');
+        renderStatusError('status-d1', 'エラー: ' + d1Errs);
+      }
+
+      var d1NoteEl = document.getElementById('status-d1-note');
+      if (d1NoteEl) {
+        if (d1Storage && d1Storage.error) {
+          d1NoteEl.textContent = 'ストレージ使用量が取得できません: ' + d1Storage.error +
+            '（トークンに D1:Read 権限を追加して再デプロイしてください。SETUP-cloudflare.md 11章参照）';
+          d1NoteEl.style.display = '';
+        } else {
+          d1NoteEl.style.display = 'none';
+        }
+      }
+    }
+
+    var kv = data.cloudflare.kv;
+    if (!kv) {
+      renderStatusError('status-kv', 'CLOUDFLARE_KV_NAMESPACE_ID が未設定です');
+    } else if (kv.error) {
+      renderStatusError('status-kv', 'エラー: ' + kv.error);
+    } else {
+      renderUsageBars('status-kv', [
+        { label: '読み取り (read)', used: kv.read, limit: kv.limits.readsPerDay },
+        { label: '書き込み (write)', used: kv.write, limit: kv.limits.writesPerDay },
+        { label: '削除 (delete)', used: kv.delete, limit: kv.limits.deletesPerDay },
+        { label: '一覧取得 (list)', used: kv.list, limit: kv.limits.listsPerDay }
+      ]);
+    }
+
+    var pagesBuilds = data.cloudflare.pagesBuilds;
+    if (!pagesBuilds) {
+      renderStatusError('status-pages', 'CLOUDFLARE_PAGES_PROJECT_NAME が未設定です');
+    } else if (pagesBuilds.error) {
+      renderStatusError('status-pages', 'エラー: ' + pagesBuilds.error);
+    } else {
+      renderUsageBars('status-pages', [
+        { label: pagesBuilds.month + ' のビルド数', used: pagesBuilds.count, limit: pagesBuilds.limits.buildsPerMonth }
+      ]);
+    }
+  }
+
+  window.saveResendUsage = function () {
+    var today = parseInt(document.getElementById('resend-today-input').value, 10);
+    var month = parseInt(document.getElementById('resend-month-input').value, 10);
+    var body = {};
+    if (Number.isFinite(today) && today >= 0) body.sentToday = today;
+    if (Number.isFinite(month) && month >= 0) body.sentThisMonth = month;
+    if (!('sentToday' in body) && !('sentThisMonth' in body)) return;
+
+    fetch('/api/admin/resend-usage', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    })
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (!data.ok) { showError('保存に失敗しました: ' + (data.error || '')); return; }
+        var note = document.getElementById('resend-saved-note');
+        note.classList.add('show');
+        setTimeout(function () { note.classList.remove('show'); }, 2000);
+        fetchStatus(true);
+      })
+      .catch(function (err) {
+        console.error('saveResendUsage error:', err);
+        showError('保存に失敗しました: ' + err.message);
+      });
+  };
+
+  window.fetchStatus = function fetchStatus(forceRefresh) {
+    var qs = forceRefresh ? '?refresh=1' : '';
+    fetch('/api/admin/status' + qs)
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (result) {
+        if (!result.ok || !result.data.ok) {
+          throw new Error((result.data && result.data.error) || 'request_failed');
+        }
+        renderStatus(result.data);
+      })
+      .catch(function (err) {
+        console.error('fetchStatus error:', err);
+        showError('システム状況の取得に失敗しました: ' + err.message);
+      });
+  };
+
+  // ---- お問い合わせ (Contact Messages) tab ----
+  var msgState = { status: '', search: '', page: 1, limit: 25 };
+  var currentMessages = [];
+  var currentMessageId = null;
+  var msgSearchDebounce = null;
+
+  function updateMessagesUnreadBadge(count) {
+    var badge = document.getElementById('messages-unread-badge');
+    if (count > 0) {
+      badge.textContent = count > 99 ? '99+' : String(count);
+      badge.style.display = '';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+
+  var MSG_STATUS_LABELS = { new: '未読 / New', read: '既読 / Read', replied: '返信済み / Replied', archived: 'アーカイブ / Archived' };
+  function msgBadgeHtml(status) {
+    return '<span class="badge badge-msg-' + esc(status) + '">' + esc(MSG_STATUS_LABELS[status] || status) + '</span>';
+  }
+
+  function truncate(s, n) {
+    s = String(s || '').replace(/\s+/g, ' ').trim();
+    return s.length > n ? s.slice(0, n) + '…' : s;
+  }
+
+  function renderMessagesTable(messages) {
+    var tbody = document.getElementById('messages-tbody');
+    if (!messages.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="empty-state">お問い合わせはありません</td></tr>';
+      return;
+    }
+    tbody.innerHTML = messages.map(function (m) {
+      return '<tr onclick="openMessageModal(' + m.id + ')"' + (m.status === 'new' ? ' style="font-weight:700;"' : '') + '>' +
+        '<td class="mono" data-label="受信日時">' + esc(fmtDate(m.created_at)) + '</td>' +
+        '<td data-label="お名前">' + esc(m.name) + '</td>' +
+        '<td data-label="メール">' + esc(m.email) + '</td>' +
+        '<td data-label="サービス">' + esc(m.service || '—') + '</td>' +
+        '<td data-label="内容">' + esc(truncate(m.message, 60)) + '</td>' +
+        '<td data-label="状態">' + msgBadgeHtml(m.status) + '</td>' +
+      '</tr>';
+    }).join('');
+  }
+
+  function renderMessagePagination(total, page, limit) {
+    var totalPages = Math.max(1, Math.ceil(total / limit));
+    document.getElementById('msg-page-indicator').textContent = page + ' / ' + totalPages + '（全 ' + total + ' 件）';
+    document.getElementById('msg-prev-page').disabled = page <= 1;
+    document.getElementById('msg-next-page').disabled = page >= totalPages;
+  }
+
+  function buildMessageQuery() {
+    var params = new URLSearchParams();
+    if (msgState.status) params.set('status', msgState.status);
+    if (msgState.search) params.set('search', msgState.search);
+    params.set('page', msgState.page);
+    params.set('limit', msgState.limit);
+    return params.toString();
+  }
+
+  window.fetchMessages = function fetchMessages() {
+    var tbody = document.getElementById('messages-tbody');
+    if (tbody) tbody.innerHTML = '<tr><td colspan="6" class="loading-state">読み込み中…</td></tr>';
+    fetch('/api/admin/messages?' + buildMessageQuery())
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (result) {
+        if (!result.ok || !result.data.ok) {
+          throw new Error((result.data && result.data.error) || 'request_failed');
+        }
+        currentMessages = result.data.messages;
+        renderMessagesTable(currentMessages);
+        renderMessagePagination(result.data.total, result.data.page, result.data.limit);
+        updateMessagesUnreadBadge(result.data.unreadCount);
+      })
+      .catch(function (err) {
+        console.error('fetchMessages error:', err);
+        showError('お問い合わせ一覧の取得に失敗しました: ' + err.message);
+        document.getElementById('messages-tbody').innerHTML = '<tr><td colspan="6" class="empty-state">読み込みエラー</td></tr>';
+      });
+  };
+
+  window.onMessageFilterChange = function () {
+    msgState.status = document.getElementById('msg-filter-status').value;
+    msgState.page = 1;
+    fetchMessages();
+  };
+
+  window.onMessageSearchInput = function () {
+    clearTimeout(msgSearchDebounce);
+    msgSearchDebounce = setTimeout(function () {
+      msgState.search = document.getElementById('msg-filter-search').value.trim();
+      msgState.page = 1;
+      fetchMessages();
+    }, 350);
+  };
+
+  window.changeMessagePage = function (delta) {
+    msgState.page = Math.max(1, msgState.page + delta);
+    fetchMessages();
+  };
+
+  function renderMessageModal(m, emailLog) {
+    currentMessageId = m.id;
+    document.getElementById('msg-modal-date').textContent = fmtDate(m.created_at);
+    document.getElementById('msg-modal-name').textContent = m.name;
+    document.getElementById('msg-modal-email').textContent = m.email;
+    document.getElementById('msg-modal-service').textContent = m.service || '—';
+    document.getElementById('msg-modal-body').textContent = m.message;
+    renderEmailLogList('msg-email-log-list', emailLog);
+    var subject = encodeURIComponent('Re: お問い合わせありがとうございます / Re: your inquiry — HexaPoint');
+    document.getElementById('msg-modal-reply').href = 'mailto:' + encodeURIComponent(m.email) + '?subject=' + subject;
+    document.getElementById('message-overlay').classList.add('show');
+  }
+
+  // GET may flip 'new' -> 'read' server-side (viewing a message marks it
+  // read, same convention as any email inbox) -- fetchMessages() afterward
+  // keeps the table/badge in sync with that in the background.
+  window.openMessageModal = function (id) {
+    fetch('/api/admin/messages/' + id)
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (!data.ok) throw new Error(data.error || 'request_failed');
+        renderMessageModal(data.message, data.emailLog);
+        fetchMessages();
+      })
+      .catch(function (err) {
+        console.error('openMessageModal error:', err);
+        showError('お問い合わせの取得に失敗しました: ' + err.message);
+      });
+  };
+
+  window.closeMessageModal = function () {
+    document.getElementById('message-overlay').classList.remove('show');
+    currentMessageId = null;
+  };
+
+  document.getElementById('message-overlay').addEventListener('click', function (e) {
+    if (e.target === this) closeMessageModal();
+  });
+
+  window.setMessageStatus = function (status) {
+    if (!currentMessageId) return;
+    fetch('/api/admin/messages/' + currentMessageId, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: status })
+    })
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (!data.ok) throw new Error(data.error || 'request_failed');
+        closeMessageModal();
+        fetchMessages();
+      })
+      .catch(function (err) {
+        console.error('setMessageStatus error:', err);
+        showError('更新に失敗しました: ' + err.message);
+      });
+  };
+
+  window.deleteCurrentMessage = function () {
+    if (!currentMessageId) return;
+    if (!confirm('このお問い合わせを削除しますか？この操作は取り消せません。')) return;
+    fetch('/api/admin/messages/' + currentMessageId, { method: 'DELETE' })
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (!data.ok) throw new Error(data.error || 'request_failed');
+        closeMessageModal();
+        fetchMessages();
+      })
+      .catch(function (err) {
+        console.error('deleteCurrentMessage error:', err);
+        showError('削除に失敗しました: ' + err.message);
+      });
+  };
+
+  // ---- 予約カレンダー (Calendar / Cal.com schedule) tab ----
+  var DAY_ORDER = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  var DAY_LABELS_JA = { Sunday: '日', Monday: '月', Tuesday: '火', Wednesday: '水', Thursday: '木', Friday: '金', Saturday: '土' };
+  var calWorking = null; // { perDay, overrides, timeZone, timeSample }
+
+  // Cal.com's schedule times may come back either as plain "HH:mm" or as a
+  // full timestamp anchored to an arbitrary date (e.g.
+  // "1970-01-01T09:00:00.000Z") -- extract/rebuild against a captured sample
+  // so we write back in whatever shape we read, instead of guessing.
+  function extractHHMM(raw) {
+    if (typeof raw !== 'string') return '09:00';
+    var m = /(\d{2}:\d{2})/.exec(raw);
+    return m ? m[1] : '09:00';
+  }
+
+  function rebuildTimeValue(hhmm, sample) {
+    if (typeof sample === 'string' && sample.indexOf('T') !== -1) {
+      return sample.replace(/\d{2}:\d{2}/, hhmm);
+    }
+    return hhmm;
+  }
+
+  function buildCalWorkingModel(schedule) {
+    var perDay = {};
+    DAY_ORDER.forEach(function (d) { perDay[d] = []; });
+    var timeSample = '09:00';
+
+    (schedule.availability || []).forEach(function (rule) {
+      (rule.days || []).forEach(function (day) {
+        if (!perDay[day]) return;
+        perDay[day].push({ start: extractHHMM(rule.startTime), end: extractHHMM(rule.endTime) });
+        timeSample = rule.startTime || timeSample;
+      });
+    });
+
+    var overrides = (schedule.overrides || []).map(function (o) {
+      return {
+        date: o.date,
+        allDayOff: !!o.isUnavailable,
+        start: extractHHMM(o.startTime),
+        end: extractHHMM(o.endTime)
+      };
+    });
+
+    return { perDay: perDay, overrides: overrides, timeZone: schedule.timeZone || '', timeSample: timeSample };
+  }
+
+  function renderWeekly() {
+    var el = document.getElementById('cal-weekly');
+    el.innerHTML = DAY_ORDER.map(function (day, dayIdx) {
+      var ranges = calWorking.perDay[day];
+      var rangesHtml = ranges.length
+        ? ranges.map(function (r, i) {
+            return '<div class="field-row" style="align-items:center;margin-bottom:6px;">' +
+              '<input type="time" value="' + r.start + '" onchange="updateDayRange(' + dayIdx + ',' + i + ',\'start\',this.value)">' +
+              '<span style="opacity:.5;">〜</span>' +
+              '<input type="time" value="' + r.end + '" onchange="updateDayRange(' + dayIdx + ',' + i + ',\'end\',this.value)">' +
+              '<button type="button" class="btn btn-ghost" onclick="removeDayRange(' + dayIdx + ',' + i + ')">削除</button>' +
+            '</div>';
+          }).join('')
+        : '<div style="opacity:.5;font-size:13px;padding:6px 0;">休み / Off</div>';
+
+      return '<div style="display:flex;gap:16px;padding:10px 0;border-bottom:1px solid var(--line);align-items:flex-start;">' +
+        '<div style="width:40px;font-weight:700;padding-top:6px;">' + DAY_LABELS_JA[day] + '</div>' +
+        '<div style="flex:1;">' + rangesHtml +
+          '<button type="button" class="btn btn-ghost" onclick="addDayRange(' + dayIdx + ')" style="font-size:12px;">+ 時間帯を追加</button>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  window.updateDayRange = function (dayIdx, i, field, value) {
+    calWorking.perDay[DAY_ORDER[dayIdx]][i][field] = value;
+  };
+
+  window.removeDayRange = function (dayIdx, i) {
+    calWorking.perDay[DAY_ORDER[dayIdx]].splice(i, 1);
+    renderWeekly();
+  };
+
+  window.addDayRange = function (dayIdx) {
+    calWorking.perDay[DAY_ORDER[dayIdx]].push({ start: '09:00', end: '17:00' });
+    renderWeekly();
+  };
+
+  function renderOverrides() {
+    var el = document.getElementById('cal-overrides');
+    if (!calWorking.overrides.length) {
+      el.innerHTML = '<div class="empty-state" style="padding:14px 0;">特別な日はありません</div>';
+      return;
+    }
+    el.innerHTML = calWorking.overrides.map(function (o, i) {
+      return '<div class="field-row" style="align-items:center;margin-bottom:8px;">' +
+        '<div class="mono" style="width:110px;">' + esc(o.date) + '</div>' +
+        '<label style="display:flex;align-items:center;gap:6px;font-size:13px;white-space:nowrap;">' +
+          '<input type="checkbox" style="width:auto;" ' + (o.allDayOff ? 'checked' : '') + ' onchange="updateOverride(' + i + ',\'allDayOff\',this.checked)"> 終日休み' +
+        '</label>' +
+        (o.allDayOff ? '' :
+          '<input type="time" value="' + o.start + '" onchange="updateOverride(' + i + ',\'start\',this.value)">' +
+          '<span style="opacity:.5;">〜</span>' +
+          '<input type="time" value="' + o.end + '" onchange="updateOverride(' + i + ',\'end\',this.value)">'
+        ) +
+        '<button type="button" class="btn btn-ghost" onclick="removeOverride(' + i + ')">削除</button>' +
+      '</div>';
+    }).join('');
+  }
+
+  window.updateOverride = function (i, field, value) {
+    calWorking.overrides[i][field] = value;
+    if (field === 'allDayOff') renderOverrides();
+  };
+
+  window.removeOverride = function (i) {
+    calWorking.overrides.splice(i, 1);
+    renderOverrides();
+  };
+
+  window.addOverride = function () {
+    var dateInput = document.getElementById('cal-new-override-date');
+    var date = dateInput.value;
+    if (!date) return;
+    calWorking.overrides.push({ date: date, allDayOff: true, start: '09:00', end: '17:00' });
+    dateInput.value = '';
+    renderOverrides();
+  };
+
+  function renderCalendar() {
+    document.getElementById('cal-timezone').textContent = calWorking.timeZone || '—';
+    renderWeekly();
+    renderOverrides();
+  }
+
+  window.fetchCalendar = function () {
+    document.getElementById('cal-not-configured').style.display = 'none';
+    document.getElementById('cal-unexpected-format').style.display = 'none';
+    document.getElementById('cal-content').style.display = 'none';
+    fetch('/api/admin/calendar')
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, status: res.status, data: data }; }); })
+      .then(function (result) {
+        if (result.status === 501 || (result.data && result.data.error === 'calcom_not_configured')) {
+          document.getElementById('cal-not-configured').style.display = '';
+          return;
+        }
+        if (!result.ok || !result.data.ok) {
+          throw new Error((result.data && (result.data.detail || result.data.error)) || 'request_failed');
+        }
+        var schedule = result.data.schedule;
+        if (!schedule || !Array.isArray(schedule.availability) || !Array.isArray(schedule.overrides)) {
+          document.getElementById('cal-raw-json').textContent = JSON.stringify(schedule, null, 2);
+          document.getElementById('cal-unexpected-format').style.display = 'flex';
+          return;
+        }
+        calWorking = buildCalWorkingModel(schedule);
+        document.getElementById('cal-content').style.display = '';
+        renderCalendar();
+      })
+      .catch(function (err) {
+        console.error('fetchCalendar error:', err);
+        showError('カレンダー情報の取得に失敗しました: ' + err.message);
+      });
+  };
+
+  window.saveCalendar = function () {
+    if (!calWorking) return;
+    var availability = [];
+    DAY_ORDER.forEach(function (day) {
+      calWorking.perDay[day].forEach(function (r) {
+        availability.push({
+          days: [day],
+          startTime: rebuildTimeValue(r.start, calWorking.timeSample),
+          endTime: rebuildTimeValue(r.end, calWorking.timeSample)
+        });
+      });
+    });
+    // Cal.com requires startTime/endTime as "HH:MM" strings on every override,
+    // even when isUnavailable is true (confirmed via its own validation error) --
+    // so these are always sent, not just when the day has real hours.
+    var overrides = calWorking.overrides.map(function (o) {
+      return {
+        date: o.date,
+        isUnavailable: o.allDayOff,
+        startTime: rebuildTimeValue(o.start, calWorking.timeSample),
+        endTime: rebuildTimeValue(o.end, calWorking.timeSample)
+      };
+    });
+
+    fetch('/api/admin/calendar', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ availability: availability, overrides: overrides })
+    })
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (result) {
+        if (!result.ok || !result.data.ok) {
+          throw new Error((result.data && (result.data.detail || result.data.error)) || 'request_failed');
+        }
+        showToast('✓ 保存しました');
+        fetchCalendar();
+      })
+      .catch(function (err) {
+        console.error('saveCalendar error:', err);
+        showError('保存に失敗しました: ' + err.message);
+      });
+  };
+
+  // ---- ライブカレンダー (Google Calendar month grid) ----
+  // All calendar-day math here treats Y/M/D as plain JST calendar dates (the
+  // studio's operating timezone, same convention as cal-slots.js/cal-book.js)
+  // -- Date.UTC() is used purely as a date calculator, never as a real instant,
+  // so this works correctly regardless of the admin's own browser timezone
+  // (the site owner is in Asia/Riyadh, not Asia/Tokyo).
+  var calGridState = { year: null, month: null }; // month is 0-11
+  var calGridEvents = [];
+  var calGridInited = false;
+  var calEventModalMode = 'create';
+  var calEventModalId = null;
+  var MONTH_LABELS_JA2 = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+
+  function pad2(n) { return n < 10 ? '0' + n : String(n); }
+  function ymd(year, month, day) { return year + '-' + pad2(month + 1) + '-' + pad2(day); }
+  function daysInMonth(year, month) { return new Date(Date.UTC(year, month + 1, 0)).getUTCDate(); }
+  function weekdayOf(year, month, day) { return new Date(Date.UTC(year, month, day)).getUTCDay(); }
+
+  function jstToday() {
+    var parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Tokyo', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date());
+    var out = {};
+    parts.forEach(function (p) { out[p.type] = p.value; });
+    return { year: parseInt(out.year, 10), month: parseInt(out.month, 10) - 1, day: parseInt(out.day, 10) };
+  }
+
+  function jstDateKeyFromInstant(iso) {
+    return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Tokyo', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(iso));
+  }
+
+  function fmtEventTime(iso) {
+    return new Intl.DateTimeFormat('ja-JP', { timeZone: 'Asia/Tokyo', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(iso));
+  }
+
+  function fmtEventTimeSaudi(iso) {
+    return new Intl.DateTimeFormat('ja-JP', { timeZone: 'Asia/Riyadh', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(iso));
+  }
+
+  function initCalGridIfNeeded() {
+    if (calGridInited) return;
+    calGridInited = true;
+    var t = jstToday();
+    calGridState.year = t.year;
+    calGridState.month = t.month;
+    fetchCalendarEvents();
+    fetchCalAgenda();
+    updateCalClockWidget();
+    if (!calClockInterval) calClockInterval = setInterval(updateCalClockWidget, 30000);
+  }
+
+  // An event created via Cal.com's Google Calendar sync always carries the
+  // client as an attendee; events this admin panel creates never set
+  // attendees at all -- reliable enough to color-code and to warn before an
+  // accidental edit/delete of an actual client booking.
+  function isBookingEvent(ev) {
+    return !!(ev.attendees && ev.attendees.length > 0);
+  }
+
+  window.jumpToCalDate = function () {
+    var val = document.getElementById('cal-jump-date').value;
+    if (!val) return;
+    var parts = val.split('-');
+    calGridState.year = parseInt(parts[0], 10);
+    calGridState.month = parseInt(parts[1], 10) - 1;
+    fetchCalendarEvents();
+  };
+
+  window.navigateCalMonth = function (delta) {
+    var m = calGridState.month + delta;
+    var y = calGridState.year;
+    if (m < 0) { m = 11; y--; }
+    if (m > 11) { m = 0; y++; }
+    calGridState.year = y;
+    calGridState.month = m;
+    fetchCalendarEvents();
+  };
+
+  window.goToCalToday = function () {
+    var t = jstToday();
+    calGridState.year = t.year;
+    calGridState.month = t.month;
+    fetchCalendarEvents();
+  };
+
+  function renderCalGrid() {
+    document.getElementById('cal-month-label').textContent = calGridState.year + '年 ' + MONTH_LABELS_JA2[calGridState.month];
+
+    var today = jstToday();
+    var firstWeekday = weekdayOf(calGridState.year, calGridState.month, 1);
+    var totalDays = daysInMonth(calGridState.year, calGridState.month);
+
+    var byDate = {};
+    calGridEvents.forEach(function (ev) {
+      if (!ev.start) return;
+      var dateKey = ev.start.date || (ev.start.dateTime ? jstDateKeyFromInstant(ev.start.dateTime) : null);
+      if (!dateKey) return;
+      if (!byDate[dateKey]) byDate[dateKey] = [];
+      byDate[dateKey].push(ev);
+    });
+
+    var cells = [];
+    for (var i = 0; i < firstWeekday; i++) cells.push(null);
+    for (var d = 1; d <= totalDays; d++) cells.push(d);
+    while (cells.length % 7 !== 0) cells.push(null);
+
+    var headHtml = ['日', '月', '火', '水', '木', '金', '土'].map(function (w, i) {
+      return '<div class="cal-grid-headcell' + (i === 0 ? ' sun' : i === 6 ? ' sat' : '') + '">' + w + '</div>';
+    }).join('');
+
+    var bodyHtml = cells.map(function (day, idx) {
+      var weekday = idx % 7;
+      if (day === null) return '<div class="cal-grid-cell empty"></div>';
+
+      var dateKey = ymd(calGridState.year, calGridState.month, day);
+      var isToday = today.year === calGridState.year && today.month === calGridState.month && today.day === day;
+      var dayEvents = (byDate[dateKey] || []).sort(function (a, b) {
+        var at = (a.start.dateTime || a.start.date || '');
+        var bt = (b.start.dateTime || b.start.date || '');
+        return at < bt ? -1 : at > bt ? 1 : 0;
+      });
+      var eventsHtml = dayEvents.slice(0, 3).map(function (ev) {
+        var timeLabel = ev.start.dateTime ? fmtEventTime(ev.start.dateTime) : '終日';
+        var chipClass = 'cal-event-chip' + (isBookingEvent(ev) ? ' booking' : '');
+        return '<div class="' + chipClass + '" onclick="event.stopPropagation();openEditEventModal(\'' + ev.id + '\')" title="' + esc(ev.summary || '') + '">' +
+          '<span class="mono" style="opacity:.85;">' + timeLabel + '</span> ' + esc(truncate(ev.summary || '(無題)', 14)) +
+        '</div>';
+      }).join('');
+      var moreLabel = dayEvents.length > 3 ? '<div class="cal-event-more">+' + (dayEvents.length - 3) + '件</div>' : '';
+      var cellClasses = 'cal-grid-cell' + (isToday ? ' today' : '') + (weekday === 0 ? ' sun' : weekday === 6 ? ' sat' : '');
+
+      var jpHoliday = calHolidays.japan[dateKey];
+      var saHoliday = calHolidays.saudi[dateKey];
+      var holidayHtml =
+        (jpHoliday ? '<div class="cal-holiday-label jp" title="' + esc(jpHoliday) + '">🇯🇵 ' + esc(truncate(jpHoliday, 9)) + '</div>' : '') +
+        (saHoliday ? '<div class="cal-holiday-label sa" title="' + esc(saHoliday) + '">🇸🇦 ' + esc(truncate(saHoliday, 9)) + '</div>' : '');
+
+      return '<div class="' + cellClasses + '" onclick="openAddEventModal(\'' + dateKey + '\')">' +
+        '<div class="cal-grid-daynum">' + day + '</div>' +
+        holidayHtml +
+        '<div class="cal-grid-events">' + eventsHtml + moreLabel + '</div>' +
+      '</div>';
+    }).join('');
+
+    document.getElementById('cal-grid').innerHTML =
+      '<div class="cal-grid-head">' + headHtml + '</div><div class="cal-grid-body">' + bodyHtml + '</div>';
+  }
+
+  // Pads the queried range to cover every cell shown on the grid, including
+  // the lead/trail days from adjacent months -- shared by the events fetch
+  // and the holidays fetch so both always cover exactly the visible grid.
+  function getVisibleGridRange() {
+    var firstWeekday = weekdayOf(calGridState.year, calGridState.month, 1);
+    var totalDays = daysInMonth(calGridState.year, calGridState.month);
+    var cellCount = firstWeekday + totalDays;
+    var trailing = (7 - (cellCount % 7)) % 7;
+    var gridStart = new Date(Date.UTC(calGridState.year, calGridState.month, 1 - firstWeekday));
+    var gridEnd = new Date(Date.UTC(calGridState.year, calGridState.month, totalDays + trailing));
+    return {
+      startISO: ymd(gridStart.getUTCFullYear(), gridStart.getUTCMonth(), gridStart.getUTCDate()) + 'T00:00:00+09:00',
+      endISO: ymd(gridEnd.getUTCFullYear(), gridEnd.getUTCMonth(), gridEnd.getUTCDate()) + 'T23:59:59+09:00'
+    };
+  }
+
+  // ---- 日本・サウジアラビアの祝日オーバーレイ ----
+  var calHolidays = { japan: {}, saudi: {} };
+
+  window.fetchCalHolidays = function () {
+    var range = getVisibleGridRange();
+    var errEl = document.getElementById('cal-holiday-error');
+    fetch('/api/admin/calendar-holidays?start=' + encodeURIComponent(range.startISO) + '&end=' + encodeURIComponent(range.endISO))
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (!data.ok) {
+          errEl.textContent = '祝日の取得に失敗しました: ' + (data.detail || data.error || 'unknown error');
+          errEl.style.display = '';
+          return;
+        }
+        calHolidays.japan = {};
+        calHolidays.saudi = {};
+        var errors = [];
+        if (Array.isArray(data.japan)) {
+          data.japan.forEach(function (h) { calHolidays.japan[h.date] = h.title; });
+        } else if (data.japan && data.japan.error) {
+          errors.push('日本の祝日: ' + data.japan.error);
+        }
+        if (Array.isArray(data.saudi)) {
+          data.saudi.forEach(function (h) { calHolidays.saudi[h.date] = h.title; });
+        } else if (data.saudi && data.saudi.error) {
+          errors.push('サウジアラビアの祝日: ' + data.saudi.error);
+        }
+        if (errors.length) {
+          errEl.textContent = errors.join('\n');
+          errEl.style.display = '';
+        } else {
+          errEl.style.display = 'none';
+        }
+        renderCalGrid();
+      })
+      .catch(function (err) {
+        console.error('fetchCalHolidays error:', err);
+        errEl.textContent = '祝日の取得に失敗しました: ' + err.message;
+        errEl.style.display = '';
+      });
+  };
+
+  // ---- 日本時間・サウジ時間の同時表示 ----
+  var calClockInterval = null;
+  function updateCalClockWidget() {
+    var el = document.getElementById('cal-dual-clock');
+    if (!el) return;
+    var now = new Date();
+    var jst = new Intl.DateTimeFormat('ja-JP', { timeZone: 'Asia/Tokyo', hour: '2-digit', minute: '2-digit', hour12: false }).format(now);
+    var sa = new Intl.DateTimeFormat('ja-JP', { timeZone: 'Asia/Riyadh', hour: '2-digit', minute: '2-digit', hour12: false }).format(now);
+    el.textContent = '🇯🇵 ' + jst + ' (JST) ・ 🇸🇦 ' + sa + ' (AST)';
+  }
+
+  window.fetchCalendarEvents = function () {
+    var grid = document.getElementById('cal-grid');
+    if (grid) grid.innerHTML = '<div class="loading-state">読み込み中…</div>';
+
+    var range = getVisibleGridRange();
+    var startISO = range.startISO;
+    var endISO = range.endISO;
+    fetchCalHolidays();
+
+    fetch('/api/admin/calendar-events?start=' + encodeURIComponent(startISO) + '&end=' + encodeURIComponent(endISO))
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, status: res.status, data: data }; }); })
+      .then(function (result) {
+        if (result.status === 501 || (result.data && result.data.error === 'google_calendar_not_configured')) {
+          document.getElementById('cal-grid-not-configured').style.display = '';
+          document.getElementById('cal-grid-wrap').style.display = 'none';
+          return;
+        }
+        document.getElementById('cal-grid-not-configured').style.display = 'none';
+        document.getElementById('cal-grid-wrap').style.display = '';
+        if (!result.ok || !result.data.ok) {
+          throw new Error((result.data && (result.data.detail || result.data.error)) || 'request_failed');
+        }
+        calGridEvents = result.data.events || [];
+        renderCalGrid();
+      })
+      .catch(function (err) {
+        console.error('fetchCalendarEvents error:', err);
+        showError('カレンダーの取得に失敗しました: ' + err.message);
+      });
+  };
+
+  // ---- 今後の予定 (7-day agenda) ----
+  // Fetched independently of the month grid (today..+7 days regardless of
+  // which month is currently displayed) so it stays accurate near month
+  // boundaries without re-fetching the whole visible grid.
+  var calAgendaEvents = [];
+  var calNotifiedEventIds = {};
+  var AGENDA_DAYS = 7;
+
+  function fmtAgendaDate(dateKey) {
+    var d = new Date(dateKey + 'T00:00:00Z');
+    var t = jstToday();
+    var isToday = ymd(t.year, t.month, t.day) === dateKey;
+    var weekdayJa = ['日', '月', '火', '水', '木', '金', '土'][d.getUTCDay()];
+    return { label: (d.getUTCMonth() + 1) + '/' + d.getUTCDate(), weekday: weekdayJa, isToday: isToday };
+  }
+
+  function renderCalAgenda() {
+    var el = document.getElementById('cal-agenda');
+    if (!calAgendaEvents.length) {
+      el.innerHTML = '<div class="empty-state" style="padding:14px 0;">今後7日間の予定はありません</div>';
+      return;
+    }
+    el.innerHTML = calAgendaEvents.map(function (ev) {
+      var dateKey = ev.start.date || jstDateKeyFromInstant(ev.start.dateTime);
+      var d = fmtAgendaDate(dateKey);
+      var timeLabel = ev.start.dateTime
+        ? (fmtEventTime(ev.start.dateTime) + '〜' + fmtEventTime(ev.end.dateTime) + ' JST ・ ' +
+           fmtEventTimeSaudi(ev.start.dateTime) + '〜' + fmtEventTimeSaudi(ev.end.dateTime) + ' AST')
+        : '終日';
+      var booking = isBookingEvent(ev);
+      return '<div class="cal-agenda-item" onclick="openEditEventModal(\'' + ev.id + '\')">' +
+        '<div class="cal-agenda-date">' + (d.isToday ? '本日' : d.weekday + '曜') + '<span class="num">' + d.label + '</span></div>' +
+        '<span class="cal-agenda-badge' + (booking ? ' booking' : '') + '"></span>' +
+        '<div class="cal-agenda-main">' +
+          '<div class="cal-agenda-time">' + timeLabel + '</div>' +
+          '<div class="cal-agenda-title">' + esc(ev.summary || '(無題)') + '</div>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  // A light desktop-notification nudge for meetings starting soon, reusing
+  // the same Notification permission already requested for new orders --
+  // fires once per event (calNotifiedEventIds) so it doesn't repeat on every
+  // background refresh.
+  function checkUpcomingMeetingReminders() {
+    if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+    var now = Date.now();
+    calAgendaEvents.forEach(function (ev) {
+      if (!ev.start.dateTime || calNotifiedEventIds[ev.id]) return;
+      var startMs = new Date(ev.start.dateTime).getTime();
+      var minutesUntil = (startMs - now) / 60000;
+      if (minutesUntil > 0 && minutesUntil <= 30) {
+        calNotifiedEventIds[ev.id] = true;
+        try {
+          var n = new Notification('まもなく予定があります / Upcoming event', {
+            body: (ev.summary || '(無題)') + ' — ' + fmtEventTime(ev.start.dateTime) + '〜',
+            icon: '/favicon-192.png',
+          });
+          n.onclick = function () { window.focus(); n.close(); };
+        } catch (e) { /* non-fatal */ }
+      }
+    });
+  }
+
+  window.fetchCalAgenda = function () {
+    var t = jstToday();
+    var start = ymd(t.year, t.month, t.day) + 'T00:00:00+09:00';
+    var endDate = new Date(Date.UTC(t.year, t.month, t.day + AGENDA_DAYS));
+    var end = ymd(endDate.getUTCFullYear(), endDate.getUTCMonth(), endDate.getUTCDate()) + 'T23:59:59+09:00';
+
+    fetch('/api/admin/calendar-events?start=' + encodeURIComponent(start) + '&end=' + encodeURIComponent(end))
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (result) {
+        if (!result.ok || !result.data.ok) return; // cal-grid-not-configured banner already covers this
+        calAgendaEvents = (result.data.events || []).filter(function (ev) { return ev.start; }).sort(function (a, b) {
+          var at = a.start.dateTime || a.start.date || '';
+          var bt = b.start.dateTime || b.start.date || '';
+          return at < bt ? -1 : at > bt ? 1 : 0;
+        });
+        renderCalAgenda();
+        checkUpcomingMeetingReminders();
+      })
+      .catch(function (err) { console.error('fetchCalAgenda error:', err); });
+  };
+
+  // ---- Add/Edit event modal ----
+  var calEventModalIsBooking = false;
+
+  window.openAddEventModal = function (dateKey) {
+    calEventModalMode = 'create';
+    calEventModalId = null;
+    calEventModalIsBooking = false;
+    document.getElementById('cal-event-modal-title').textContent = '予定を追加 / Add event';
+    document.getElementById('cal-event-delete-btn').style.display = 'none';
+    document.getElementById('cal-event-booking-notice').style.display = 'none';
+    document.getElementById('cal-event-error').classList.remove('show');
+    document.getElementById('cal-event-conflict-warning').style.display = 'none';
+    document.getElementById('cal-event-summary').value = '';
+    document.getElementById('cal-event-description').value = '';
+    document.getElementById('cal-event-date').value = dateKey || ymd(jstToday().year, jstToday().month, jstToday().day);
+    document.getElementById('cal-event-start').value = '09:00';
+    document.getElementById('cal-event-end').value = '10:00';
+    updateSaudiTimePreview();
+    document.getElementById('calendar-event-overlay').classList.add('show');
+  };
+
+  window.openEditEventModal = function (eventId) {
+    // Checks both pools -- an event opened from the "今後の予定" agenda list
+    // may not be in the currently-displayed month's grid data (e.g. viewing
+    // next month while today's agenda is still shown).
+    var ev = calGridEvents.find(function (e) { return e.id === eventId; }) ||
+      calAgendaEvents.find(function (e) { return e.id === eventId; });
+    if (!ev) return;
+    calEventModalMode = 'edit';
+    calEventModalId = eventId;
+    calEventModalIsBooking = isBookingEvent(ev);
+    document.getElementById('cal-event-modal-title').textContent = '予定を編集 / Edit event';
+    document.getElementById('cal-event-delete-btn').style.display = '';
+    document.getElementById('cal-event-booking-notice').style.display = calEventModalIsBooking ? '' : 'none';
+    document.getElementById('cal-event-error').classList.remove('show');
+    document.getElementById('cal-event-conflict-warning').style.display = 'none';
+    document.getElementById('cal-event-summary').value = ev.summary || '';
+    document.getElementById('cal-event-description').value = ev.description || '';
+    if (ev.start.dateTime) {
+      var startD = new Date(ev.start.dateTime);
+      var endD = new Date(ev.end.dateTime);
+      document.getElementById('cal-event-date').value = jstDateKeyFromInstant(ev.start.dateTime);
+      document.getElementById('cal-event-start').value = fmtEventTime(ev.start.dateTime);
+      document.getElementById('cal-event-end').value = fmtEventTime(ev.end.dateTime);
+    } else {
+      document.getElementById('cal-event-date').value = ev.start.date;
+      document.getElementById('cal-event-start').value = '00:00';
+      document.getElementById('cal-event-end').value = '23:59';
+    }
+    updateSaudiTimePreview();
+    document.getElementById('calendar-event-overlay').classList.add('show');
+  };
+
+  window.closeEventModal = function () {
+    document.getElementById('calendar-event-overlay').classList.remove('show');
+    calEventModalId = null;
+  };
+
+  document.getElementById('calendar-event-overlay').addEventListener('click', function (e) {
+    if (e.target === this) closeEventModal();
+  });
+
+  // Converts the JST date+time in the event form to the equivalent Asia/Riyadh
+  // clock time, flagging whether it lands on the previous/next Saudi calendar
+  // day -- JST is UTC+9 and Saudi is UTC+3, a fixed 6-hour gap with no DST on
+  // either side, but the day can still roll over near midnight.
+  window.updateSaudiTimePreview = function () {
+    var el = document.getElementById('cal-event-saudi-preview');
+    var date = document.getElementById('cal-event-date').value;
+    var startTime = document.getElementById('cal-event-start').value;
+    var endTime = document.getElementById('cal-event-end').value;
+    if (!date || !startTime || !endTime) { el.textContent = '🇸🇦 —'; return; }
+
+    var startInstant = new Date(date + 'T' + startTime + ':00+09:00');
+    var endInstant = new Date(date + 'T' + endTime + ':00+09:00');
+    var saudiFmt = new Intl.DateTimeFormat('ja-JP', { timeZone: 'Asia/Riyadh', hour: '2-digit', minute: '2-digit', hour12: false });
+    var saudiDateFmt = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Riyadh', year: 'numeric', month: '2-digit', day: '2-digit' });
+    var saudiDateKey = saudiDateFmt.format(startInstant);
+    var dayNote = saudiDateKey !== date ? (saudiDateKey < date ? '（前日）' : '（翌日）') : '';
+
+    el.textContent = '🇸🇦 ' + saudiFmt.format(startInstant) + '〜' + saudiFmt.format(endInstant) + ' (AST)' + dayNote;
+  };
+
+  window.applyQuickDuration = function (mode) {
+    if (mode === 'day') {
+      document.getElementById('cal-event-start').value = '00:00';
+      document.getElementById('cal-event-end').value = '23:59';
+      updateSaudiTimePreview();
+      return;
+    }
+    var startVal = document.getElementById('cal-event-start').value || '09:00';
+    var parts = startVal.split(':');
+    var startMinutes = parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+    var endMinutes = Math.min(23 * 60 + 59, startMinutes + mode);
+    var eh = Math.floor(endMinutes / 60);
+    var em = endMinutes % 60;
+    document.getElementById('cal-event-end').value = pad2(eh) + ':' + pad2(em);
+    updateSaudiTimePreview();
+  };
+
+  // Overlap check (real timestamp arithmetic, not string slicing, so it's
+  // correct regardless of what offset format Google echoes back) against
+  // whatever's already loaded for the visible month -- a fast local warning,
+  // not a hard block (the owner may deliberately want two things noted at once).
+  function checkEventConflict(dateKey, startTime, endTime, excludeId) {
+    var newStart = new Date(dateKey + 'T' + startTime + ':00+09:00').getTime();
+    var newEnd = new Date(dateKey + 'T' + endTime + ':00+09:00').getTime();
+    return calGridEvents.some(function (ev) {
+      if (ev.id === excludeId || !ev.start || !ev.start.dateTime) return false;
+      var evStart = new Date(ev.start.dateTime).getTime();
+      var evEnd = new Date(ev.end.dateTime).getTime();
+      return newStart < evEnd && newEnd > evStart;
+    });
+  }
+
+  window.saveCalendarEvent = function () {
+    var errEl = document.getElementById('cal-event-error');
+    errEl.classList.remove('show');
+
+    var summary = document.getElementById('cal-event-summary').value.trim();
+    var date = document.getElementById('cal-event-date').value;
+    var startTime = document.getElementById('cal-event-start').value;
+    var endTime = document.getElementById('cal-event-end').value;
+    var description = document.getElementById('cal-event-description').value.trim();
+
+    if (!summary || !date || !startTime || !endTime) {
+      errEl.textContent = 'タイトル・日付・時刻をすべて入力してください。';
+      errEl.classList.add('show');
+      return;
+    }
+    if (startTime >= endTime) {
+      errEl.textContent = '終了時刻は開始時刻より後にしてください。';
+      errEl.classList.add('show');
+      return;
+    }
+
+    var hasConflict = checkEventConflict(date, startTime, endTime, calEventModalId);
+    var warnEl = document.getElementById('cal-event-conflict-warning');
+    if (hasConflict) {
+      warnEl.textContent = '⚠️ この時間帯には既に別の予定があります。内容を確認してください。';
+      warnEl.style.display = '';
+    } else {
+      warnEl.style.display = 'none';
+    }
+
+    var start = date + 'T' + startTime + ':00+09:00';
+    var end = date + 'T' + endTime + ':00+09:00';
+    var payload = { summary: summary, description: description, start: start, end: end, timeZone: 'Asia/Tokyo' };
+
+    var request = calEventModalMode === 'edit'
+      ? fetch('/api/admin/calendar-events/' + encodeURIComponent(calEventModalId), {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        })
+      : fetch('/api/admin/calendar-events', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+    request
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (result) {
+        if (!result.ok || !result.data.ok) {
+          throw new Error((result.data && (result.data.detail || result.data.error)) || 'request_failed');
+        }
+        showToast('✓ 保存しました');
+        closeEventModal();
+        fetchCalendarEvents();
+        fetchCalAgenda();
+      })
+      .catch(function (err) {
+        console.error('saveCalendarEvent error:', err);
+        errEl.textContent = '保存に失敗しました: ' + err.message;
+        errEl.classList.add('show');
+      });
+  };
+
+  window.deleteCalendarEventFromModal = function () {
+    if (!calEventModalId) return;
+    var confirmMsg = calEventModalIsBooking
+      ? '⚠️ これはお客様の予約です。ここから削除してもお客様には通知されません。\n\n本当に削除しますか？（キャンセル連絡が必要な場合は別途ご連絡ください）'
+      : 'この予定を削除しますか？Googleカレンダーからも削除されます。';
+    if (!confirm(confirmMsg)) return;
+    fetch('/api/admin/calendar-events/' + encodeURIComponent(calEventModalId), { method: 'DELETE' })
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (result) {
+        if (!result.ok || !result.data.ok) {
+          throw new Error((result.data && (result.data.detail || result.data.error)) || 'request_failed');
+        }
+        showToast('✓ 削除しました');
+        closeEventModal();
+        fetchCalendarEvents();
+        fetchCalAgenda();
+      })
+      .catch(function (err) {
+        console.error('deleteCalendarEventFromModal error:', err);
+        showError('削除に失敗しました: ' + err.message);
+      });
+  };
+
+  // ---- Renewals tab ----
+  function renderRenewals(rows) {
+    var el = document.getElementById('renewals-list');
+    document.getElementById('renewals-count').textContent = '(' + rows.length + ')';
+    if (!rows.length) {
+      el.innerHTML = '<div class="empty-state">更新予定の年間プランはありません</div>';
+      return;
+    }
+    var withDays = rows.map(function (o) {
+      var created = new Date(o.created_at.replace(' ', 'T') + 'Z');
+      var renewal = new Date(created.getTime() + 365 * 24 * 60 * 60 * 1000);
+      var daysLeft = Math.ceil((renewal.getTime() - Date.now()) / 86400000);
+      return { o: o, renewal: renewal, daysLeft: daysLeft };
+    }).sort(function (a, b) { return a.daysLeft - b.daysLeft; });
+
+    el.innerHTML = withDays.map(function (r) {
+      var warn = r.daysLeft <= 14;
+      var badgeClass = r.daysLeft < 0 ? 'warn' : (warn ? 'warn' : 'ok');
+      var daysLabel = r.daysLeft >= 0 ? (r.daysLeft + '日') : ('超過 ' + Math.abs(r.daysLeft) + '日');
+      return '<div class="renewal-list-item">' +
+        '<span class="r-badge ' + badgeClass + '"></span>' +
+        '<div class="r-main">' +
+          '<div class="r-name">' + esc(r.o.buyer_name) + '</div>' +
+          '<div class="r-sub">' + esc(r.o.buyer_email) + ' · ' + esc(r.o.order_id) + ' · ' + fmtYen(r.o.amount) + '</div>' +
+        '</div>' +
+        '<div class="r-days' + (warn ? ' warn' : '') + '">' +
+          '<div class="num mono">' + daysLabel + '</div>' +
+          '<div class="lbl">更新予定: ' + isoDate(r.renewal) + '</div>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  function fetchRenewals() {
+    document.getElementById('renewals-list').innerHTML = '<div class="loading-state">読み込み中…</div>';
+    fetch('/api/admin/renewals')
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (result) {
+        if (!result.ok || !result.data.ok) throw new Error((result.data && result.data.error) || 'request_failed');
+        renderRenewals(result.data.renewals);
+      })
+      .catch(function (err) {
+        console.error('fetchRenewals error:', err);
+        document.getElementById('renewals-list').innerHTML = '<div class="empty-state">読み込みエラー</div>';
+      });
+  }
+
+  // ---- History tab (admin audit log) ----
+  var historyState = { page: 1, limit: 30 };
+  var ACTION_LABELS = {
+    order_created: '注文作成', order_updated: '注文更新', order_deleted: '注文削除',
+    zoho_retry: 'Zoho再試行', note_added: 'メモ追加',
+    stripe_refund_synced: 'Stripe返金を同期',
+    admin_login: 'ログイン成功', admin_login_failed: 'ログイン失敗', admin_logout: 'ログアウト',
+    audit_log_cleared: '履歴を全削除',
+    plan_created: 'プラン作成', plan_updated: 'プラン更新',
+  };
+
+  function renderHistory(logs) {
+    var el = document.getElementById('history-list');
+    if (!logs.length) {
+      el.innerHTML = '<div class="empty-state">履歴はありません</div>';
+      return;
+    }
+    el.innerHTML = logs.map(function (l) {
+      return '<div class="history-item">' +
+        '<span class="h-time mono">' + esc(fmtDate(l.created_at)) + '</span>' +
+        '<span class="h-action">' + esc(ACTION_LABELS[l.action] || l.action) + '</span>' +
+        '<span class="h-detail">' + (l.order_ref ? esc(l.order_ref) + ' — ' : '') + esc(l.detail) + '</span>' +
+      '</div>';
+    }).join('');
+  }
+
+  function fetchHistory() {
+    document.getElementById('history-list').innerHTML = '<div class="loading-state">読み込み中…</div>';
+    fetch('/api/admin/audit-log?page=' + historyState.page + '&limit=' + historyState.limit)
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (result) {
+        if (!result.ok || !result.data.ok) throw new Error((result.data && result.data.error) || 'request_failed');
+        renderHistory(result.data.logs);
+        var totalPages = Math.max(1, Math.ceil(result.data.total / result.data.limit));
+        document.getElementById('history-page-indicator').textContent = result.data.page + ' / ' + totalPages + '（全 ' + result.data.total + ' 件）';
+        document.getElementById('history-prev').disabled = result.data.page <= 1;
+        document.getElementById('history-next').disabled = result.data.page >= totalPages;
+      })
+      .catch(function (err) {
+        console.error('fetchHistory error:', err);
+        document.getElementById('history-list').innerHTML = '<div class="empty-state">読み込みエラー</div>';
+      });
+  }
+
+  window.changeHistoryPage = function (delta) {
+    historyState.page = Math.max(1, historyState.page + delta);
+    fetchHistory();
+  };
+
+  window.clearHistory = function () {
+    if (!confirm('操作履歴をすべて削除しますか？この操作は取り消せません。\n\nDelete all admin action history? This cannot be undone.')) return;
+    fetch('/api/admin/audit-log', { method: 'DELETE' })
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (result) {
+        if (!result.ok || !result.data.ok) {
+          throw new Error((result.data && result.data.error) || 'request_failed');
+        }
+        historyState.page = 1;
+        fetchHistory();
+      })
+      .catch(function (err) {
+        console.error('clearHistory error:', err);
+        showError('履歴の削除に失敗しました: ' + err.message);
+      });
+  };
+
+  // ---- Customers tab (aggregated view, grouped by buyer_email) ----
+  var customersState = { page: 1, limit: 25, search: '' };
+  var customerSearchDebounce = null;
+
+  function renderCustomersTable(customers) {
+    var tbody = document.getElementById('customers-tbody');
+    if (!customers.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="empty-state">顧客がいません</td></tr>';
+      return;
+    }
+    tbody.innerHTML = customers.map(function (c) {
+      var emailAttr = esc(c.buyer_email).replace(/'/g, "\\'");
+      return '<tr onclick="openCustomerModal(\'' + emailAttr + '\')" style="cursor:pointer;">' +
+        '<td data-label="お客様名">' + esc(c.buyer_name) + '</td>' +
+        '<td data-label="メール">' + esc(c.buyer_email) + '</td>' +
+        '<td data-label="電話番号">' + esc(c.buyer_phone) + '</td>' +
+        '<td class="mono" data-label="注文数">' + c.order_count + '</td>' +
+        '<td class="mono" data-label="支払済合計">' + fmtYen(c.total_paid) + '</td>' +
+        '<td class="mono" data-label="最終注文日">' + esc(fmtDate(c.last_order_at)) + '</td>' +
+      '</tr>';
+    }).join('');
+  }
+
+  function fetchCustomers() {
+    document.getElementById('customers-tbody').innerHTML = '<tr><td colspan="6" class="loading-state">読み込み中…</td></tr>';
+    var params = new URLSearchParams();
+    if (customersState.search) params.set('search', customersState.search);
+    params.set('page', customersState.page);
+    params.set('limit', customersState.limit);
+    fetch('/api/admin/customers?' + params.toString())
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (result) {
+        if (!result.ok || !result.data.ok) throw new Error((result.data && result.data.error) || 'request_failed');
+        renderCustomersTable(result.data.customers);
+        var totalPages = Math.max(1, Math.ceil(result.data.total / result.data.limit));
+        document.getElementById('customers-page-indicator').textContent = result.data.page + ' / ' + totalPages + '（全 ' + result.data.total + ' 件）';
+        document.getElementById('customers-prev').disabled = result.data.page <= 1;
+        document.getElementById('customers-next').disabled = result.data.page >= totalPages;
+      })
+      .catch(function (err) {
+        console.error('fetchCustomers error:', err);
+        document.getElementById('customers-tbody').innerHTML = '<tr><td colspan="6" class="empty-state">読み込みエラー</td></tr>';
+      });
+  }
+
+  window.onCustomerSearchInput = function () {
+    clearTimeout(customerSearchDebounce);
+    customerSearchDebounce = setTimeout(function () {
+      customersState.search = document.getElementById('customer-search').value.trim();
+      customersState.page = 1;
+      fetchCustomers();
+    }, 350);
+  };
+
+  window.changeCustomersPage = function (delta) {
+    customersState.page = Math.max(1, customersState.page + delta);
+    fetchCustomers();
+  };
+
+  window.openCustomerModal = function (email) {
+    document.getElementById('customer-modal-name').textContent = '顧客詳細';
+    document.getElementById('customer-modal-email').textContent = email;
+    document.getElementById('customer-modal-orders').innerHTML = '<div class="loading-state">読み込み中…</div>';
+    document.getElementById('customer-overlay').classList.add('show');
+
+    fetch('/api/admin/customers/' + encodeURIComponent(email))
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (!data.ok) throw new Error(data.error || 'request_failed');
+        if (data.orders.length) {
+          document.getElementById('customer-modal-name').textContent = data.orders[0].buyer_name;
+        }
+        var el = document.getElementById('customer-modal-orders');
+        if (!data.orders.length) {
+          el.innerHTML = '<div class="empty-state">注文がありません</div>';
+          return;
+        }
+        el.innerHTML = data.orders.map(function (o) {
+          return '<div class="renewal-list-item" style="cursor:pointer;" onclick="closeCustomerModal();openDetailModal(' + o.id + ')">' +
+            '<div class="r-main">' +
+              '<div class="r-name">' + esc(o.plan_name_ja) + '</div>' +
+              '<div class="r-sub">' + esc(o.order_id) + ' · ' + fmtYen(o.amount) + ' · ' + esc(fmtDate(o.created_at)) + '</div>' +
+            '</div>' +
+            badgeHtml(o.status) +
+          '</div>';
+        }).join('');
+      })
+      .catch(function (err) {
+        console.error('openCustomerModal error:', err);
+        document.getElementById('customer-modal-orders').innerHTML = '<div class="empty-state">読み込みエラー</div>';
+      });
+  };
+
+  window.closeCustomerModal = function () {
+    document.getElementById('customer-overlay').classList.remove('show');
+  };
+
+  document.getElementById('customer-overlay').addEventListener('click', function (e) {
+    if (e.target === this) closeCustomerModal();
+  });
+
+  // ---- Plans tab ----
+  function renderPlansTab(plans) {
+    var tbody = document.getElementById('plans-tbody');
+    if (!plans.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="empty-state">プランがありません</td></tr>';
+      return;
+    }
+    tbody.innerHTML = plans.map(function (p) {
+      var inputStyle = 'width:100%;min-width:120px;border:1.5px solid var(--line-strong);border-radius:8px;padding:6px 8px;font-family:inherit;background:var(--cream);color:var(--ink);';
+      return '<tr' + (p.active ? '' : ' style="opacity:.5;"') + '>' +
+        '<td class="mono" data-label="ID">' + esc(p.id) + '</td>' +
+        '<td data-label="プラン名 (JA)"><input type="text" id="plan-name-ja-' + esc(p.id) + '" value="' + esc(p.name_ja) + '" style="' + inputStyle + '"></td>' +
+        '<td data-label="プラン名 (EN)"><input type="text" id="plan-name-en-' + esc(p.id) + '" value="' + esc(p.name_en) + '" style="' + inputStyle + '"></td>' +
+        '<td data-label="価格 (¥)"><input type="number" id="plan-price-' + esc(p.id) + '" value="' + p.price_jpy + '" style="' + inputStyle + '"></td>' +
+        '<td data-label="有効"><input type="checkbox" id="plan-active-' + esc(p.id) + '"' + (p.active ? ' checked' : '') + '></td>' +
+        '<td data-label="操作"><button type="button" class="btn btn-ghost" style="font-size:12px;padding:6px 12px;" onclick="savePlanRow(\'' + esc(p.id) + '\')">保存</button></td>' +
+      '</tr>';
+    }).join('');
+  }
+
+  // Populates the Orders toolbar's plan filter <select> from the live plan
+  // catalog (active plans only), so it reflects any custom plans an admin adds
+  // instead of hardcoding basic/maintenance/annual.
+  function populatePlanFilterOptions(plans) {
+    var sel = document.getElementById('filter-plan');
+    var current = sel.value;
+    var options = '<option value="">すべてのプラン</option>';
+    plans.filter(function (p) { return p.active; }).forEach(function (p) {
+      options += '<option value="' + esc(p.id) + '">' + esc(p.name_ja) + '</option>';
+    });
+    sel.innerHTML = options;
+    sel.value = current;
+  }
+
+  function fetchPlansTab() {
+    document.getElementById('plans-tbody').innerHTML = '<tr><td colspan="6" class="loading-state">読み込み中…</td></tr>';
+    fetch('/api/admin/plans')
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (result) {
+        if (!result.ok || !result.data.ok) throw new Error((result.data && result.data.error) || 'request_failed');
+        renderPlansTab(result.data.plans);
+        populatePlanFilterOptions(result.data.plans);
+      })
+      .catch(function (err) {
+        console.error('fetchPlansTab error:', err);
+        document.getElementById('plans-tbody').innerHTML = '<tr><td colspan="6" class="empty-state">読み込みエラー</td></tr>';
+      });
+  }
+
+  window.savePlanRow = function (id) {
+    var nameJa = document.getElementById('plan-name-ja-' + id).value.trim();
+    var nameEn = document.getElementById('plan-name-en-' + id).value.trim();
+    var priceJPY = Number(document.getElementById('plan-price-' + id).value);
+    var active = document.getElementById('plan-active-' + id).checked;
+
+    fetch('/api/admin/plans/' + encodeURIComponent(id), {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nameJa: nameJa, nameEn: nameEn, priceJPY: priceJPY, active: active })
+    })
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (result) {
+        if (!result.ok || !result.data.ok) throw new Error((result.data && result.data.error) || 'request_failed');
+        showToast('✓ プランを保存しました: ' + id);
+        fetchPlansTab();
+      })
+      .catch(function (err) {
+        console.error('savePlanRow error:', err);
+        showError('プランの保存に失敗しました: ' + err.message);
+      });
+  };
+
+  window.submitAddPlan = function () {
+    var errEl = document.getElementById('add-plan-error');
+    errEl.classList.remove('show');
+    var payload = {
+      id: document.getElementById('add-plan-id-field').value.trim(),
+      nameJa: document.getElementById('add-plan-name-ja-field').value.trim(),
+      nameEn: document.getElementById('add-plan-name-en-field').value.trim(),
+      priceJPY: Number(document.getElementById('add-plan-price').value),
+    };
+    fetch('/api/admin/plans', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (result) {
+        if (!result.ok || !result.data.ok) throw new Error((result.data && result.data.error) || 'request_failed');
+        ['add-plan-id-field', 'add-plan-name-ja-field', 'add-plan-name-en-field', 'add-plan-price'].forEach(function (id) {
+          document.getElementById(id).value = '';
+        });
+        fetchPlansTab();
+      })
+      .catch(function (err) {
+        console.error('submitAddPlan error:', err);
+        errEl.textContent = '追加に失敗しました: ' + err.message;
+        errEl.classList.add('show');
+      });
+  };
+
+  // ---- Detail / edit modal ----
+  function renderDetailModal(order) {
+    currentOrderId = order.id;
+
+    document.getElementById('detail-order-id').textContent = order.order_id;
+    document.getElementById('edit-status').value = order.status;
+    document.getElementById('edit-status-reason').value = order.status_reason || '';
+    document.getElementById('edit-notify-customer').checked = false;
+    document.getElementById('edit-plan-id').value = order.plan_id;
+    document.getElementById('edit-amount').value = order.amount;
+    document.getElementById('edit-plan-name-ja').value = order.plan_name_ja;
+    document.getElementById('edit-plan-name-en').value = order.plan_name_en;
+    document.getElementById('edit-buyer-name').value = order.buyer_name;
+    document.getElementById('edit-buyer-phone').value = order.buyer_phone;
+    document.getElementById('edit-buyer-email').value = order.buyer_email;
+    document.getElementById('edit-buyer-address').value = order.buyer_address;
+
+    var legacyEl = document.getElementById('detail-legacy-note');
+    if (order.notes) {
+      legacyEl.textContent = '以前のメモ: ' + order.notes;
+      legacyEl.style.display = '';
+    } else {
+      legacyEl.style.display = 'none';
+    }
+    document.getElementById('new-note-text').value = '';
+    loadNotes(order.id);
+    loadEmailLog(order.id);
+
+    document.getElementById('detail-payment-method').textContent = '方法: ' + order.payment_method;
+    document.getElementById('detail-created-at').textContent = '作成: ' + fmtDate(order.created_at);
+    document.getElementById('detail-updated-at').textContent = '更新: ' + fmtDate(order.updated_at);
+    document.getElementById('detail-error').classList.remove('show');
+
+    renderZohoStatus(order);
+
+    document.getElementById('detail-overlay').classList.add('show');
+  }
+
+  // `id` is usually present in the current Orders-tab page (currentOrders),
+  // but the Customers tab can open an order from any page/filter — in that
+  // case, fall back to fetching it directly.
+  window.openDetailModal = function (id) {
+    var order = currentOrders.find(function (o) { return o.id === id; });
+    if (order) {
+      renderDetailModal(order);
+      return;
+    }
+    fetch('/api/admin/orders/' + id)
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (!data.ok) throw new Error(data.error || 'request_failed');
+        renderDetailModal(data.order);
+      })
+      .catch(function (err) {
+        console.error('openDetailModal fetch error:', err);
+        showError('注文の取得に失敗しました: ' + err.message);
+      });
+  };
+
+  // ---- Email delivery status (functions/_shared/db.js email_log, populated
+  // by functions/api/resend-webhook.js) -- shared renderer for both the order
+  // detail modal and the contact-message modal. ----
+  var EMAIL_TYPE_LABELS = {
+    order_confirmation: '注文確認',
+    bank_order_notification: '銀行振込通知',
+    customer_status_update: 'ステータス更新通知',
+    refund_alert: '返金通知',
+    dispute_alert: '異議申し立て通知',
+    payment_failed_alert: '支払い失敗通知',
+    contact_notification: 'お問い合わせ通知',
+    owner_alert: '通知'
+  };
+  var EMAIL_STATUS_LABELS = {
+    sent: '送信済み',
+    delivered: '到達',
+    delayed: '遅延',
+    bounced: '不達 (バウンス)',
+    complained: '迷惑メール報告'
+  };
+
+  function renderEmailLogList(containerId, emailLog) {
+    var el = document.getElementById(containerId);
+    if (!emailLog || !emailLog.length) {
+      el.innerHTML = '<span class="empty">送信履歴なし</span>';
+      return;
+    }
+    el.innerHTML = emailLog.map(function (e) {
+      var badgeClass = EMAIL_STATUS_LABELS[e.status] ? e.status : 'none';
+      var typeLabel = EMAIL_TYPE_LABELS[e.email_type] || e.email_type;
+      var statusLabel = EMAIL_STATUS_LABELS[e.status] || e.status;
+      return '<div class="email-log-row">' +
+        '<span class="email-log-type">' + esc(typeLabel) + '</span>' +
+        '<span class="zoho-badge ' + badgeClass + '">' + esc(statusLabel) + '</span>' +
+        '<span class="email-log-time">' + fmtDate(e.sent_at) + '</span>' +
+      '</div>';
+    }).join('');
+  }
+
+  function loadEmailLog(orderNumericId) {
+    var el = document.getElementById('order-email-log-list');
+    el.innerHTML = '<span class="empty">読み込み中…</span>';
+    fetch('/api/admin/orders/' + orderNumericId + '/email-log')
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (!data.ok) throw new Error(data.error || 'request_failed');
+        renderEmailLogList('order-email-log-list', data.emailLog);
+      })
+      .catch(function (err) {
+        console.error('loadEmailLog error:', err);
+        el.innerHTML = '<span class="empty">取得に失敗しました</span>';
+      });
+  }
+
+  // ---- Zoho invoice status + manual retry ----
+  function renderZohoStatus(order) {
+    var badge = document.getElementById('zoho-badge');
+    var retryBtn = document.getElementById('zoho-retry-btn');
+    var errEl = document.getElementById('zoho-error-detail');
+    errEl.textContent = '';
+
+    if (order.zoho_status === 'created') {
+      badge.className = 'zoho-badge created';
+      badge.textContent = '✓ 作成済み (' + (order.zoho_invoice_id || '') + ')';
+      retryBtn.style.display = 'none';
+    } else if (order.zoho_status === 'failed') {
+      badge.className = 'zoho-badge failed';
+      badge.textContent = '✗ 失敗';
+      errEl.textContent = order.zoho_error || '';
+      retryBtn.style.display = '';
+    } else {
+      badge.className = 'zoho-badge none';
+      badge.textContent = order.payment_method === 'stripe' ? '未処理' : '対象外 (Stripe決済のみ)';
+      retryBtn.style.display = '';
+    }
+  }
+
+  window.retryZohoInvoice = function () {
+    if (!currentOrderId) return;
+    var btn = document.getElementById('zoho-retry-btn');
+    btn.disabled = true;
+    btn.textContent = '処理中…';
+
+    fetch('/api/admin/orders/' + currentOrderId + '/zoho-retry', { method: 'POST' })
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (result) {
+        btn.disabled = false;
+        btn.textContent = '再試行 / Retry';
+        var order = currentOrders.find(function (o) { return o.id === currentOrderId; });
+        if (result.ok && result.data.ok) {
+          if (order) { order.zoho_status = 'created'; order.zoho_invoice_id = result.data.invoiceId; order.zoho_error = ''; }
+          renderZohoStatus(order || { zoho_status: 'created', zoho_invoice_id: result.data.invoiceId });
+        } else {
+          var errMsg = (result.data && result.data.error) || 'request_failed';
+          if (order) { order.zoho_status = 'failed'; order.zoho_error = errMsg; }
+          renderZohoStatus(order || { zoho_status: 'failed', zoho_error: errMsg, payment_method: 'stripe' });
+        }
+      })
+      .catch(function (err) {
+        btn.disabled = false;
+        btn.textContent = '再試行 / Retry';
+        console.error('retryZohoInvoice error:', err);
+      });
+  };
+
+  // ---- Notes thread ----
+  function loadNotes(orderId) {
+    var threadEl = document.getElementById('notes-thread');
+    threadEl.innerHTML = '<div class="empty">読み込み中…</div>';
+    fetch('/api/admin/orders/' + orderId + '/notes')
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (!data.ok) throw new Error(data.error || 'request_failed');
+        currentNotes = data.notes || [];
+        renderNotes();
+      })
+      .catch(function (err) {
+        console.error('loadNotes error:', err);
+        threadEl.innerHTML = '<div class="empty">メモの取得に失敗しました</div>';
+      });
+  }
+
+  function renderNotes() {
+    var threadEl = document.getElementById('notes-thread');
+    if (!currentNotes.length) {
+      threadEl.innerHTML = '<div class="empty">メモはまだありません</div>';
+      return;
+    }
+    threadEl.innerHTML = currentNotes.map(function (n) {
+      return '<div class="note-item"><span class="note-time mono">' + esc(fmtDate(n.created_at)) + '</span>' + esc(n.note) + '</div>';
+    }).join('');
+    threadEl.scrollTop = threadEl.scrollHeight;
+  }
+
+  window.submitNewNote = function () {
+    if (!currentOrderId) return;
+    var textEl = document.getElementById('new-note-text');
+    var text = textEl.value.trim();
+    if (!text) return;
+
+    fetch('/api/admin/orders/' + currentOrderId + '/notes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ note: text })
+    })
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (result) {
+        if (!result.ok || !result.data.ok) {
+          throw new Error((result.data && result.data.error) || 'request_failed');
+        }
+        textEl.value = '';
+        currentNotes.push(result.data.note);
+        renderNotes();
+      })
+      .catch(function (err) {
+        console.error('submitNewNote error:', err);
+        var errEl = document.getElementById('detail-error');
+        errEl.textContent = 'メモの追加に失敗しました: ' + err.message;
+        errEl.classList.add('show');
+      });
+  };
+
+  window.closeDetailModal = function () {
+    document.getElementById('detail-overlay').classList.remove('show');
+    currentOrderId = null;
+  };
+
+  document.getElementById('detail-overlay').addEventListener('click', function (e) {
+    if (e.target === this) closeDetailModal();
+  });
+
+  window.saveOrder = function () {
+    if (!currentOrderId) return;
+    var errEl = document.getElementById('detail-error');
+    errEl.classList.remove('show');
+
+    var patch = {
+      status: document.getElementById('edit-status').value,
+      status_reason: document.getElementById('edit-status-reason').value.trim(),
+      notifyCustomer: document.getElementById('edit-notify-customer').checked,
+      plan_id: document.getElementById('edit-plan-id').value.trim(),
+      amount: Number(document.getElementById('edit-amount').value),
+      plan_name_ja: document.getElementById('edit-plan-name-ja').value.trim(),
+      plan_name_en: document.getElementById('edit-plan-name-en').value.trim(),
+      buyer_name: document.getElementById('edit-buyer-name').value.trim(),
+      buyer_phone: document.getElementById('edit-buyer-phone').value.trim(),
+      buyer_email: document.getElementById('edit-buyer-email').value.trim(),
+      buyer_address: document.getElementById('edit-buyer-address').value.trim(),
+    };
+
+    fetch('/api/admin/orders/' + currentOrderId, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(patch)
+    })
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (result) {
+        if (!result.ok || !result.data.ok) {
+          throw new Error((result.data && result.data.error) || 'request_failed');
+        }
+        closeDetailModal();
+        fetchOrders();
+      })
+      .catch(function (err) {
+        console.error('saveOrder error:', err);
+        errEl.textContent = '保存に失敗しました: ' + err.message;
+        errEl.classList.add('show');
+      });
+  };
+
+  window.deleteOrder = function () {
+    if (!currentOrderId) return;
+    if (!confirm('この注文を削除しますか？この操作は取り消せません。')) return;
+
+    fetch('/api/admin/orders/' + currentOrderId, { method: 'DELETE' })
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (result) {
+        if (!result.ok || !result.data.ok) {
+          throw new Error((result.data && result.data.error) || 'request_failed');
+        }
+        closeDetailModal();
+        fetchOrders();
+      })
+      .catch(function (err) {
+        console.error('deleteOrder error:', err);
+        var errEl = document.getElementById('detail-error');
+        errEl.textContent = '削除に失敗しました: ' + err.message;
+        errEl.classList.add('show');
+      });
+  };
+
+  // ---- Add order modal ----
+  window.openAddModal = function () {
+    ['add-plan-id', 'add-amount', 'add-plan-name-ja', 'add-plan-name-en',
+     'add-buyer-name', 'add-buyer-phone', 'add-buyer-email', 'add-buyer-address', 'add-notes']
+      .forEach(function (id) { document.getElementById(id).value = ''; });
+    document.getElementById('add-status').value = 'pending';
+    document.getElementById('add-error').classList.remove('show');
+    document.getElementById('add-overlay').classList.add('show');
+  };
+
+  window.closeAddModal = function () {
+    document.getElementById('add-overlay').classList.remove('show');
+  };
+
+  document.getElementById('add-overlay').addEventListener('click', function (e) {
+    if (e.target === this) closeAddModal();
+  });
+
+  window.submitAddOrder = function () {
+    var errEl = document.getElementById('add-error');
+    errEl.classList.remove('show');
+
+    var payload = {
+      planId: document.getElementById('add-plan-id').value.trim(),
+      planNameJa: document.getElementById('add-plan-name-ja').value.trim(),
+      planNameEn: document.getElementById('add-plan-name-en').value.trim(),
+      amount: Number(document.getElementById('add-amount').value),
+      status: document.getElementById('add-status').value,
+      paymentMethod: 'manual',
+      notes: document.getElementById('add-notes').value,
+      buyer: {
+        name: document.getElementById('add-buyer-name').value.trim(),
+        phone: document.getElementById('add-buyer-phone').value.trim(),
+        email: document.getElementById('add-buyer-email').value.trim(),
+        address: document.getElementById('add-buyer-address').value.trim(),
+      }
+    };
+
+    fetch('/api/admin/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (result) {
+        if (!result.ok || !result.data.ok) {
+          throw new Error((result.data && result.data.error) || 'request_failed');
+        }
+        closeAddModal();
+        state.page = 1;
+        fetchOrders();
+      })
+      .catch(function (err) {
+        console.error('submitAddOrder error:', err);
+        errEl.textContent = '追加に失敗しました: ' + err.message;
+        errEl.classList.add('show');
+      });
+  };
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+      closeDetailModal();
+      closeAddModal();
+      closeCustomerModal();
+    }
+  });
+
+  // ---- Auth gate ----
+  function showLogin() {
+    document.getElementById('dashboard-screen').classList.remove('show');
+    document.getElementById('login-screen').classList.add('show');
+    showPasswordStep();
+    stopPolling();
+  }
+
+  function showDashboard() {
+    document.getElementById('login-screen').classList.remove('show');
+    document.getElementById('dashboard-screen').classList.add('show');
+    fetchOrders();
+    fetchStats();
+    fetchSettings();
+    fetchPlansTab();
+    fetchMessages();
+    updateNotifButton();
+    applyTaxVisibility();
+    startPolling();
+  }
+
+  window.submitLogin = function () {
+    var errEl = document.getElementById('login-error');
+    errEl.classList.remove('show');
+    var btn = document.getElementById('login-submit');
+    var password = document.getElementById('login-password').value;
+    var turnstileToken = (typeof turnstile !== 'undefined') ? turnstile.getResponse('#login-turnstile') : '';
+
+    if (!turnstileToken) {
+      errEl.textContent = 'ロボットではないことの確認を行ってください。';
+      errEl.classList.add('show');
+      return;
+    }
+
+    btn.disabled = true;
+    fetch('/api/admin/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: password, turnstileToken: turnstileToken })
+    })
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (result) {
+        btn.disabled = false;
+        if (!result.ok || !result.data.ok) {
+          var err = result.data && result.data.error;
+          if (err === 'too_many_attempts') {
+            errEl.textContent = '試行回数が多すぎます。しばらくしてから再度お試しください。';
+          } else if (err === 'invalid_password') {
+            errEl.textContent = 'パスワードが違います。';
+          } else {
+            errEl.textContent = 'ログインに失敗しました: ' + (err || 'unknown');
+          }
+          errEl.classList.add('show');
+          if (typeof turnstile !== 'undefined') {
+            try { turnstile.reset('#login-turnstile'); } catch (e) { /* ignore */ }
+          }
+          return;
+        }
+        document.getElementById('login-password').value = '';
+        if (result.data.step === 'totp') {
+          showTotpStep();
+        } else {
+          showDashboard();
+        }
+      })
+      .catch(function (err) {
+        btn.disabled = false;
+        console.error('login error:', err);
+        errEl.textContent = 'ログインに失敗しました: ' + err.message;
+        errEl.classList.add('show');
+        if (typeof turnstile !== 'undefined') {
+          try { turnstile.reset('#login-turnstile'); } catch (e) { /* ignore */ }
+        }
+      });
+  };
+
+  function showTotpStep() {
+    document.getElementById('login-error').classList.remove('show');
+    document.getElementById('login-step-password').style.display = 'none';
+    document.getElementById('login-step-totp').style.display = 'block';
+    var totpInput = document.getElementById('login-totp');
+    totpInput.value = '';
+    totpInput.focus();
+  }
+
+  function showPasswordStep() {
+    document.getElementById('login-error').classList.remove('show');
+    document.getElementById('login-step-totp').style.display = 'none';
+    document.getElementById('login-step-password').style.display = 'block';
+  }
+
+  window.cancelTotp = function () {
+    showPasswordStep();
+    if (typeof turnstile !== 'undefined') {
+      try { turnstile.reset('#login-turnstile'); } catch (e) { /* ignore */ }
+    }
+  };
+
+  window.submitTotp = function () {
+    var errEl = document.getElementById('login-error');
+    errEl.classList.remove('show');
+    var btn = document.getElementById('totp-submit');
+    var code = document.getElementById('login-totp').value;
+
+    btn.disabled = true;
+    fetch('/api/admin/verify-totp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: code })
+    })
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (result) {
+        btn.disabled = false;
+        if (!result.ok || !result.data.ok) {
+          var err = result.data && result.data.error;
+          document.getElementById('login-totp').value = '';
+          if (err === 'too_many_attempts') {
+            errEl.textContent = '試行回数が多すぎます。しばらくしてから再度お試しください。';
+          } else if (err === 'invalid_code') {
+            errEl.textContent = 'コードが違います。';
+            document.getElementById('login-totp').focus();
+          } else if (err === 'expired') {
+            errEl.textContent = '時間切れです。もう一度パスワードから入力してください。';
+            showPasswordStep();
+          } else {
+            errEl.textContent = '確認に失敗しました: ' + (err || 'unknown');
+          }
+          errEl.classList.add('show');
+          return;
+        }
+        document.getElementById('login-totp').value = '';
+        showDashboard();
+      })
+      .catch(function (err) {
+        btn.disabled = false;
+        console.error('verify-totp error:', err);
+        errEl.textContent = '確認に失敗しました: ' + err.message;
+        errEl.classList.add('show');
+      });
+  };
+
+  window.submitLogout = function () {
+    fetch('/api/admin/logout', { method: 'POST' })
+      .catch(function (err) { console.error('logout error:', err); })
+      .then(function () { location.reload(); });
+  };
+
+  document.getElementById('login-password').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') submitLogin();
+  });
+
+  document.getElementById('login-totp').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') submitTotp();
+  });
+
+  fetch('/api/admin/whoami')
+    .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+    .then(function (result) {
+      if (result.ok && result.data.ok) {
+        showDashboard();
+      } else {
+        showLogin();
+      }
+    })
+    .catch(function (err) {
+      console.error('whoami error:', err);
+      showLogin();
+    });
+})();
+</script>
+</body>
+</html>

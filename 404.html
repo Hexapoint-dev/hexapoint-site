@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>404 ｜ ページが見つかりません - HexaPoint</title>
+  <meta name="description"
+    content="お探しのページが見つかりませんでした。URLをご確認いただくか、ホームページからお探しのコンテンツへお進みください。 | The page you're looking for couldn't be found. Head back home or check the URL.">
+  <meta name="robots" content="noindex, follow">
+  <meta name="theme-color" content="#e8631f">
+  <meta http-equiv="content-language" content="ja">
+
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon-180.png">
+  <link rel="manifest" href="/manifest.json">
+
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="HexaPoint">
+  <meta property="og:title" content="404｜ページが見つかりません - HexaPoint">
+  <meta property="og:description" content="お探しのページが見つかりませんでした。ホームページからお探しのコンテンツへお進みください。">
+  <meta property="og:image" content="https://www.hexapoint-jp.com/og-image.png">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <link rel="preload" href="/logo.webp" as="image" fetchpriority="high">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    rel="preload" as="style"
+    href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=Spectral:ital,wght@1,400&family=DM+Mono:wght@400&display=swap"
+    onload="this.onload=null;this.rel='stylesheet'">
+  <noscript>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=Spectral:ital,wght@1,400&family=DM+Mono:wght@400&display=swap"
+      rel="stylesheet">
+  </noscript>
+
+  <style>
+    :root {
+      --ink: #0e1633;
+      --paper: #fbf9f6;
+      --cream: #fff;
+      --mint: #fff1df;
+      --mint-2: #ffd9b0;
+      --emerald: #f5912a;
+      --emerald-deep: #e8631f;
+      --azure: #4f86e8;
+      --coral: #e63548;
+      --coral-soft: #ffe0e3;
+      --sun: #f5b62a;
+      --line: rgba(14, 22, 51, .12);
+      --shadow: 0 18px 50px -18px rgba(232, 99, 31, .38);
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; font-size: 16px; overflow-x: clip; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: "Zen Kaku Gothic New", sans-serif;
+      font-size: 1.0625rem;
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: clip;
+    }
+
+    a { color: inherit; }
+
+    [data-en]:not(option) { display: contents; }
+    [data-en]:not(option) { display: none; }
+    body.en-mode [data-jp]:not(option) { display: none; }
+    body.en-mode [data-en]:not(option) { display: contents; }
+
+    .wrap { max-width: 1140px; margin: 0 auto; padding: 0 28px; }
+    @media (max-width:680px) { .wrap { padding: 0 20px; } }
+
+    /* ===== header ===== */
+    header {
+      position: sticky; top: 0; z-index: 80;
+      background: rgba(251,250,244,.82);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--line);
+    }
+    .bar { display: flex; align-items: center; justify-content: space-between; height: 78px; }
+    .logo { display: flex; align-items: center; gap: 11px; text-decoration: none; color: var(--ink); }
+    .logo .mark {
+      width: 44px; height: 44px; border-radius: 12px; background: #fff; border: 1px solid var(--line);
+      display: grid; place-items: center; box-shadow: 0 6px 18px -8px rgba(14,22,51,.25);
+      transition: transform .4s; overflow: hidden; padding: 3px; flex: 0 0 auto;
+    }
+    .logo .mark img { width: 100%; height: 100%; object-fit: contain; }
+    .logo:hover .mark { transform: rotate(-8deg) scale(1.05); }
+    .logo .name { font-family: "DM Mono", monospace; font-size: 13px; letter-spacing: .2em; text-transform: uppercase; }
+    .logo .kana { font-family: "Zen Kaku Gothic New", sans-serif; font-size: 10.5px; letter-spacing: 0; text-transform: none; opacity: .55; margin-left: 1px; }
+    @media (max-width:480px) { .logo .kana { display: none; } }
+
+    .hamburger { display: none; background: 0 0; border: none; cursor: pointer; padding: 8px; margin-left: 6px; flex-direction: column; gap: 5px; z-index: 90; }
+    .hamburger span { display: block; width: 24px; height: 2.5px; background: var(--ink); border-radius: 3px; transition: .3s; }
+    body.nav-open .hamburger span:first-child { transform: translateY(7.5px) rotate(45deg); }
+    body.nav-open .hamburger span:nth-child(2) { opacity: 0; }
+    body.nav-open .hamburger span:nth-child(3) { transform: translateY(-7.5px) rotate(-45deg); }
+
+    nav { display: flex; align-items: center; gap: 4px; }
+    nav a { color: var(--ink); text-decoration: none; font-size: 14px; padding: 8px 14px; border-radius: 30px; opacity: .78; transition: .2s; white-space: nowrap; }
+    nav a:hover { opacity: 1; background: var(--mint); }
+    .langtog {
+      font-family: "DM Mono", monospace; font-size: 12px; border: 1.5px solid var(--ink); border-radius: 30px;
+      padding: 7px 15px; cursor: pointer; background: 0 0; color: var(--ink); margin-left: 10px; transition: .2s; flex: 0 0 auto;
+    }
+    .langtog:hover { background: var(--ink); color: var(--cream); }
+
+    @media (max-width:900px) {
+      .hamburger { display: flex; }
+      nav {
+        position: fixed; top: 0; right: 0; bottom: 0; left: auto; height: 100vh; width: 78%; max-width: 320px;
+        background: var(--cream); flex-direction: column !important; align-items: stretch; justify-content: flex-start;
+        padding: 90px 24px 30px; gap: 4px; transform: translateX(100%);
+        transition: transform .35s cubic-bezier(.2,.7,.2,1); box-shadow: -20px 0 60px -20px rgba(14,22,51,.35);
+        overflow-y: auto; z-index: 85;
+      }
+      body.nav-open nav { transform: translateX(0); }
+      nav a { display: block; width: 100%; font-size: 17px; padding: 14px 16px; border-radius: 12px; border-bottom: 1px solid var(--line); opacity: 1; }
+      nav a:last-of-type { border-bottom: none; }
+      .langtog { margin: 10px 0 0; text-align: center; }
+    }
+    body.nav-open::after {
+      content: ""; position: fixed; inset: 0; background: rgba(14,22,51,.35); z-index: 84;
+      animation: fadein .2s;
+    }
+    @keyframes fadein { from { opacity: 0; } }
+
+    /* ===== hero / 404 ===== */
+    main.err { position: relative; overflow: clip; flex: 1; display: flex; align-items: center; padding: 64px 0 88px; }
+    .blob { position: absolute; border-radius: 50%; filter: blur(60px); opacity: .5; z-index: 0; animation: float 14s ease-in-out infinite; }
+    .blob.b1 { width: 420px; height: 420px; background: var(--mint-2); top: -140px; right: -100px; }
+    .blob.b2 { width: 340px; height: 340px; background: var(--coral-soft); bottom: -140px; left: -80px; animation-delay: -5s; }
+    .blob.b3 { width: 260px; height: 260px; background: #d4ecff; top: 40%; left: 46%; animation-delay: -9s; }
+    @keyframes float { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(20px,-24px) scale(1.06); } }
+    @media (prefers-reduced-motion: reduce) { .blob { animation: none; } }
+
+    .err .wrap { position: relative; z-index: 2; }
+    .err-content { max-width: 760px; margin: 0 auto; text-align: center; }
+
+    .badge {
+      display: inline-flex; align-items: center; gap: 9px; background: var(--cream); border: 1px solid var(--line);
+      border-radius: 30px; padding: 7px 16px 7px 10px; font-size: 13px; box-shadow: 0 6px 20px -10px rgba(16,33,28,.25);
+    }
+    .badge .dot { flex: 0 0 auto; width: 9px; height: 9px; border-radius: 50%; background: var(--coral); box-shadow: 0 0 0 4px rgba(230,53,72,.22); animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100% { box-shadow: 0 0 0 4px rgba(230,53,72,.22); } 50% { box-shadow: 0 0 0 8px rgba(230,53,72,0); } }
+
+    .err-num {
+      font-family: "Shippori Mincho", serif; font-weight: 800; letter-spacing: 0;
+      font-size: clamp(84px, 20vw, 190px); line-height: 1; margin: 22px 0 4px;
+      display: flex; align-items: center; justify-content: center; gap: .01em; color: var(--ink);
+    }
+    .hexzero {
+      width: .68em; height: .68em; display: inline-block; margin: 0 .03em; flex: 0 0 auto;
+      filter: drop-shadow(0 10px 24px rgba(232,99,31,.28));
+    }
+    .hexzero .track { fill: none; stroke: var(--line); stroke-width: 6.5; }
+    .hexzero .spin { fill: none; stroke: var(--emerald); stroke-width: 6.5; stroke-linecap: round; stroke-dasharray: 54 174; animation: hexspin 3.4s linear infinite; }
+    .hexzero .core { fill: var(--paper); stroke: none; }
+    @keyframes hexspin { to { stroke-dashoffset: -228; } }
+    @media (prefers-reduced-motion: reduce) { .hexzero .spin { animation: none; stroke-dasharray: 228 0; } }
+
+    .err .sub { font-family: Spectral, serif; font-style: italic; font-size: clamp(19px, 2.6vw, 25px); color: var(--emerald-deep); margin: 10px auto 0; max-width: 560px; }
+    .err .lede { max-width: 520px; margin: 20px auto 0; opacity: .82; }
+
+    .cta-row { display: flex; gap: 14px; margin-top: 34px; flex-wrap: wrap; justify-content: center; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 9px; text-decoration: none; font-size: 15px; font-weight: 500;
+      padding: 15px 28px; border-radius: 40px; transition: transform .2s, box-shadow .2s, background .2s; cursor: pointer; border: none;
+    }
+    .btn-primary { background: var(--emerald); color: var(--cream); box-shadow: var(--shadow); }
+    .btn-primary:hover { transform: translateY(-3px); background: var(--emerald-deep); box-shadow: 0 24px 50px -16px rgba(232,99,31,.5); }
+    .btn-ghost { background: var(--cream); border: 1.5px solid var(--line); color: var(--ink); }
+    .btn-ghost:hover { transform: translateY(-3px); border-color: var(--emerald); }
+
+    .quicklinks { margin-top: 46px; padding-top: 30px; border-top: 1px solid var(--line); }
+    .quicklinks .ql-label { display: block; font-family: "DM Mono", monospace; font-size: 11.5px; letter-spacing: .18em; text-transform: uppercase; color: var(--coral); margin-bottom: 14px; }
+    .quicklinks .ql-row { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+    .quicklinks a {
+      text-decoration: none; color: var(--ink); font-size: 13.5px; border: 1px solid var(--line); background: var(--cream);
+      padding: 9px 18px; border-radius: 30px; transition: .2s;
+    }
+    .quicklinks a:hover { border-color: var(--emerald); background: var(--mint); }
+
+    .reveal { opacity: 0; transform: translateY(24px); transition: opacity .7s cubic-bezier(.2,.7,.2,1), transform .7s cubic-bezier(.2,.7,.2,1); }
+    .reveal.in { opacity: 1; transform: none; }
+    .reveal[data-d="1"] { transition-delay: .08s; }
+    .reveal[data-d="2"] { transition-delay: .16s; }
+    .reveal[data-d="3"] { transition-delay: .24s; }
+    .reveal[data-d="4"] { transition-delay: .32s; }
+    @media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; transition: none; } }
+
+    /* ===== footer ===== */
+    footer { border-top: 1px solid var(--line); background: var(--cream); padding: 56px 0 26px; font-size: 14px; }
+    .foot-grid { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 40px; }
+    @media (max-width:760px) { .foot-grid { grid-template-columns: 1fr; gap: 30px; } }
+    .foot-logo img { width: 40px; height: 40px; object-fit: contain; }
+    .foot-brand p { margin-top: 12px; opacity: .72; max-width: 320px; }
+    footer h3 { font-family: "DM Mono", monospace; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; opacity: .55; margin: 0 0 14px; }
+    footer .col a { display: block; text-decoration: none; color: var(--ink); opacity: .78; padding: 5px 0; transition: .2s; }
+    footer .col a:hover { opacity: 1; color: var(--emerald-deep); }
+    .foot-btm { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; justify-content: space-between; margin-top: 40px; padding-top: 22px; border-top: 1px solid var(--line); opacity: .6; font-size: 12.5px; }
+
+    @media (max-width:900px) { nav.desktop-only { display: none; } }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <div class="wrap bar">
+      <a href="/" class="logo">
+        <span class="mark"><img src="/logo.webp" fetchpriority="high" width="512" height="512" alt="HexaPoint logo"></span>
+        <span class="name">HexaPoint<span class="kana">（ヘキサポイント）</span></span>
+      </a>
+      <button class="hamburger" id="hamburger" aria-label="Menu"><span></span><span></span><span></span></button>
+      <nav>
+        <a href="/" data-jp>ホーム</a><a href="/" data-en>Home</a>
+        <a href="/#services" data-jp>サービス</a><a href="/#services" data-en>Services</a>
+        <a href="/translation.html" data-jp>翻訳</a><a href="/translation.html" data-en>Translation</a>
+        <a href="/#work" data-jp>実績</a><a href="/#work" data-en>Work</a>
+        <a href="/#pricing" data-jp>料金</a><a href="/#pricing" data-en>Pricing</a>
+        <a href="/#faq" data-jp>Q&A</a><a href="/#faq" data-en>FAQ</a>
+        <a href="/#contact" data-jp>連絡</a><a href="/#contact" data-en>Contact</a>
+        <button class="langtog" id="langtog">EN / 日本語</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="err">
+    <div class="blob b1"></div>
+    <div class="blob b2"></div>
+    <div class="blob b3"></div>
+    <div class="wrap">
+      <div class="err-content">
+        <span class="badge reveal">
+          <span class="dot"></span>
+          <span data-jp>エラー 404・ページが見つかりません</span>
+          <span data-en>Error 404 · Page not found</span>
+        </span>
+
+        <h1 class="err-num reveal" data-d="1" aria-label="404">
+          <span>4</span>
+          <svg class="hexzero" viewBox="0 0 100 100" role="img" aria-label="0">
+            <polygon class="track" points="69,17.1 88,50 69,82.9 31,82.9 12,50 31,17.1" />
+            <polygon class="spin" points="69,17.1 88,50 69,82.9 31,82.9 12,50 31,17.1" />
+          </svg>
+          <span>4</span>
+        </h1>
+
+        <p class="sub reveal" data-d="2">
+          <span data-jp>お探しのページは、地図の外側にあるようです。</span>
+          <span data-en>Looks like this page wandered off the map.</span>
+        </p>
+        <p class="lede reveal" data-d="2">
+          <span data-jp>URLが変更・削除されたか、入力に誤りがある可能性があります。下のボタンからホームページへお戻りいただくか、お気軽にお問い合わせください。</span>
+          <span data-en>The link may be outdated, or the address might have a typo. Head back home with the buttons below, or reach out if something seems broken.</span>
+        </p>
+
+        <div class="cta-row reveal" data-d="3">
+          <a class="btn btn-primary" href="/">
+            <span data-jp>ホームに戻る →</span><span data-en>Back to Home →</span>
+          </a>
+          <a class="btn btn-ghost" href="/#contact">
+            <span data-jp>お問い合わせ</span><span data-en>Contact us</span>
+          </a>
+        </div>
+
+        <div class="quicklinks reveal" data-d="4">
+          <span class="ql-label"><span data-jp>よく見られているページ</span><span data-en>Popular pages</span></span>
+          <div class="ql-row">
+            <a href="/#services"><span data-jp>サービス</span><span data-en>Services</span></a>
+            <a href="/#work"><span data-jp>実績</span><span data-en>Work</span></a>
+            <a href="/#pricing"><span data-jp>料金</span><span data-en>Pricing</span></a>
+            <a href="/translation.html"><span data-jp>翻訳</span><span data-en>Translation</span></a>
+            <a href="/#faq">Q&amp;A</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <div class="foot-grid">
+        <div class="foot-brand">
+          <a href="/" class="foot-logo"><img src="/logo.webp" loading="lazy" decoding="async" width="512" height="512" alt="HexaPoint"></a>
+          <p><span data-jp>個人と中小ビジネスのためのウェブ制作スタジオ。デザインから運用まで。</span><span data-en>A web studio for individuals and small businesses — from design to ongoing care.</span></p>
+        </div>
+        <div class="col">
+          <h3><span data-jp>サイト内リンク</span><span data-en>Quick links</span></h3>
+          <a href="/"><span data-jp>ホーム</span><span data-en>Home</span></a>
+          <a href="/#services"><span data-jp>サービス</span><span data-en>Services</span></a>
+          <a href="/#work"><span data-jp>実績</span><span data-en>Work</span></a>
+          <a href="/#pricing"><span data-jp>料金</span><span data-en>Pricing</span></a>
+          <a href="/translation.html"><span data-jp>翻訳サービス</span><span data-en>Translation</span></a>
+        </div>
+        <div class="col">
+          <h3><span data-jp>連絡先</span><span data-en>Contact</span></h3>
+          <a href="mailto:info@hexapoint-jp.com">info@hexapoint-jp.com</a>
+          <a href="/#contact"><span data-jp>お問い合わせ</span><span data-en>Contact form</span></a>
+          <a href="/terms.pdf" target="_blank" rel="noopener"><span data-jp>利用規約（PDF）</span><span data-en>Terms (PDF)</span></a>
+          <a href="/freelance-license.pdf" target="_blank" rel="noopener"><span data-jp>フリーランス許可証（PDF）</span><span data-en>Freelance License (PDF)</span></a>
+        </div>
+      </div>
+      <div class="foot-btm">
+        <span>© 2026 HexaPoint</span>
+        <span><span data-jp>Web・Copy・SEO — フルリモート・日本全国対応</span><span data-en>Web · Copy · SEO — Fully remote, serving all of Japan</span></span>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    var io = new IntersectionObserver(function (es) {
+      es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+    }, { threshold: .15 });
+    document.querySelectorAll('.reveal').forEach(function (el) { io.observe(el); });
+
+    var tog = document.getElementById('langtog');
+    tog.addEventListener('click', function () {
+      var en = document.body.classList.toggle('en-mode');
+      document.documentElement.lang = en ? 'en' : 'ja';
+      tog.textContent = en ? '日本語 / EN' : 'EN / 日本語';
+    });
+
+    var ham = document.getElementById('hamburger');
+    var navEl = document.querySelector('header nav');
+    ham.addEventListener('click', function () { document.body.classList.toggle('nav-open'); });
+    navEl.querySelectorAll('a').forEach(function (a) {
+      a.addEventListener('click', function () { document.body.classList.remove('nav-open'); });
+    });
+    document.addEventListener('click', function (e) {
+      if (document.body.classList.contains('nav-open') && !navEl.contains(e.target) && e.target !== ham && !ham.contains(e.target)) {
+        document.body.classList.remove('nav-open');
+      }
+    });
+  </script>
+</body>
+
+</html>

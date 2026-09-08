@@ -1,0 +1,369 @@
+// Shared helper: creates a paid invoice in Zoho Invoice (free plan) after a
+// Stripe payment is confirmed. Called from confirmStripeSession() in stripe.js
+// — Stripe/bank-transfer orders are never blocked by this: every call is
+// wrapped so a Zoho outage or misconfiguration only logs an error, exactly
+// like sendOrderConfirmation()'s Resend calls.
+//
+// Zoho Invoice API v3 docs: https://www.zoho.com/invoice/api/v3/
+//
+// Auth model: a "Self Client" (server-to-server, no end-user login) created
+// once in the Zoho API Console gives a long-lived refresh_token. Every
+// request here exchanges that refresh_token for a short-lived access_token
+// (~1h), cached in ORDERS_KV so we don't hit the token endpoint on every
+// invoice. See SETUP-zoho.md for the one-time setup steps.
+//
+// Required env vars (Cloudflare Pages -> Settings -> Environment variables):
+//   ZOHO_CLIENT_ID, ZOHO_CLIENT_SECRET, ZOHO_REFRESH_TOKEN, ZOHO_ORGANIZATION_ID
+// Optional:
+//   ZOHO_DC                 data center suffix, default "com" (use "eu"/"in"/"com.au"/"jp"/"ca"
+//                            to match whichever Zoho signup region the account was created in)
+//   ZOHO_AUTO_EMAIL_INVOICE "true" to also have Zoho email the invoice to the buyer
+//                            (default: off, since Resend already sends our own confirmation email)
+
+function zohoDc(env) {
+  return (env.ZOHO_DC || "com").trim();
+}
+
+function zohoAccountsBase(env) {
+  return `https://accounts.zoho.${zohoDc(env)}`;
+}
+
+function zohoApiBase(env) {
+  return `https://www.zohoapis.${zohoDc(env)}/invoice/v3`;
+}
+
+export function zohoConfigured(env) {
+  return !!(env.ZOHO_CLIENT_ID && env.ZOHO_CLIENT_SECRET && env.ZOHO_REFRESH_TOKEN && env.ZOHO_ORGANIZATION_ID);
+}
+
+// Access tokens last ~3600s; cache for 3300s (55min) to stay safely inside
+// that window even if there's clock drift or the request is slow.
+async function getZohoAccessToken(env) {
+  const cacheKey = "zoho:access_token";
+  if (env.ORDERS_KV) {
+    const cached = await env.ORDERS_KV.get(cacheKey);
+    if (cached) return cached;
+  }
+
+  const params = new URLSearchParams({
+    refresh_token: env.ZOHO_REFRESH_TOKEN,
+    client_id: env.ZOHO_CLIENT_ID,
+    client_secret: env.ZOHO_CLIENT_SECRET,
+    grant_type: "refresh_token",
+  });
+
+  const res = await fetch(`${zohoAccountsBase(env)}/oauth/v2/token?${params.toString()}`, { method: "POST" });
+  const data = await res.json().catch(() => null);
+
+  if (!res.ok || !data || !data.access_token) {
+    throw new Error(`zoho_token_refresh_failed: ${res.status} ${JSON.stringify(data)}`);
+  }
+
+  if (env.ORDERS_KV) {
+    await env.ORDERS_KV.put(cacheKey, data.access_token, { expirationTtl: 3300 });
+  }
+  return data.access_token;
+}
+
+async function zohoFetch(env, path, { method = "GET", body } = {}) {
+  const accessToken = await getZohoAccessToken(env);
+  const url = `${zohoApiBase(env)}${path}${path.includes("?") ? "&" : "?"}organization_id=${encodeURIComponent(env.ZOHO_ORGANIZATION_ID)}`;
+
+  const res = await fetch(url, {
+    method,
+    headers: {
+      Authorization: `Zoho-oauthtoken ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+
+  const data = await res.json().catch(() => null);
+  if (!res.ok || !data || (typeof data.code === "number" && data.code !== 0)) {
+    throw new Error(`zoho_api_error: ${res.status} ${JSON.stringify(data)}`);
+  }
+  return data;
+}
+
+function esc(s) {
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+// Custom subject + HTML body for the "send invoice" email — overrides Zoho's
+// own generic default template so the customer gets something that actually
+// looks like it came from HexaPoint. Same color tokens / fonts as the Resend
+// emails in email.js, so every email the customer receives feels consistent.
+// Zoho still attaches the invoice PDF itself; this is just the wrapper.
+function buildInvoiceEmailContent({ buyer, plan, orderID, amount }) {
+  // Exact palette from index.html's :root custom properties, so this email
+  // reads as the same brand as the site, not just "similar colors."
+  const INK = "#0e1633";
+  const PAPER = "#fbf9f6";
+  const MINT = "#fff1df";
+  const MINT_2 = "#ffd9b0";
+  const EMERALD = "#f5912a";
+  const EMERALD_DEEP = "#e8631f";
+  const LINE = "#e3e0da";
+  // Web fonts (Shippori Mincho / Spectral / Zen Kaku Gothic New, used on the
+  // site itself) are unreliable in email clients — Gmail and Outlook strip
+  // @font-face/@import in HTML mail — so these fall back to the closest
+  // built-in system fonts on each OS, keeping the same serif/sans pairing
+  // the site uses for headlines vs. body text.
+  const SERIF = "'Hiragino Mincho ProN','Yu Mincho','Noto Serif JP',Georgia,serif";
+  const SANS = "'Hiragino Kaku Gothic ProN','Yu Gothic','Helvetica Neue',Arial,sans-serif";
+  const LOGO_URL = "https://www.hexapoint-jp.com/favicon-512.png";
+
+  const row = (labelJp, labelEn, value) => `
+    <tr>
+      <td style="padding:14px 0;border-bottom:1px solid ${LINE};">
+        <div style="font-family:${SANS};font-size:11px;letter-spacing:.06em;color:${INK};opacity:.5;margin-bottom:4px;">
+          ${labelJp} / ${labelEn}
+        </div>
+        <div style="font-family:${SANS};font-size:15px;font-weight:700;color:${INK};line-height:1.5;word-break:break-word;">
+          ${esc(value)}
+        </div>
+      </td>
+    </tr>`;
+
+  const subject = `【HexaPoint】ご請求書送付のお知らせ / Your Invoice — ${plan.nameJa}`;
+
+  const html = `<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>${esc(subject)}</title>
+  <!--[if mso]>
+  <style>* { font-family: Arial, sans-serif !important; }</style>
+  <![endif]-->
+  <style>
+    @media only screen and (max-width:480px) {
+      .hp-card { padding-left:16px !important; padding-right:16px !important; }
+    }
+  </style>
+</head>
+<body style="margin:0;padding:0;background:${PAPER};">
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;">
+    ${esc(buyer.name)} 様、HexaPoint のご請求書を添付しております。ご確認くださいませ。
+  </div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${PAPER};">
+    <tr><td align="center" style="padding:28px 12px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+        style="max-width:520px;width:100%;background:#ffffff;border-radius:20px;overflow:hidden;border:1px solid ${LINE};box-shadow:0 24px 60px -30px rgba(14,22,51,.25);">
+
+        <tr><td style="height:8px;background:linear-gradient(90deg,${EMERALD},${EMERALD_DEEP});"></td></tr>
+
+        <tr>
+          <td class="hp-card" style="padding:28px 24px 4px 24px;">
+            <table role="presentation" cellpadding="0" cellspacing="0">
+              <tr>
+                <td style="padding-right:10px;">
+                  <img src="${LOGO_URL}" width="32" height="32" alt="HexaPoint"
+                       style="display:block;width:32px;height:32px;border-radius:8px;">
+                </td>
+                <td style="font-family:${SANS};font-size:13px;letter-spacing:.12em;color:${EMERALD_DEEP};font-weight:700;">
+                  HEXAPOINT
+                </td>
+              </tr>
+            </table>
+            <div style="font-family:${SERIF};font-size:24px;line-height:1.45;color:${INK};margin-top:18px;">
+              お支払いありがとうございます
+            </div>
+            <div style="font-family:${SANS};font-size:14px;color:${INK};opacity:.55;margin-top:5px;">
+              Thank you for your payment
+            </div>
+          </td>
+        </tr>
+
+        <tr>
+          <td class="hp-card" style="padding:16px 24px 0 24px;">
+            <div style="font-family:${SANS};font-size:14.5px;line-height:1.9;color:${INK};opacity:.85;">
+              ${esc(buyer.name)} 様<br>
+              この度は HexaPoint のサービスをご利用いただき、誠にありがとうございます。<br>
+              ご請求書（PDF）を本メールに添付しておりますので、ご確認くださいませ。
+            </div>
+            <div style="font-family:${SANS};font-size:13px;line-height:1.8;color:${INK};opacity:.55;margin-top:10px;">
+              Dear ${esc(buyer.name)}, thank you for choosing HexaPoint. Your official invoice (PDF) is attached to this email.
+            </div>
+          </td>
+        </tr>
+
+        <tr>
+          <td class="hp-card" style="padding:22px 24px 0 24px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+              style="background:${MINT};border:1px solid ${MINT_2};border-radius:16px;">
+              <tr>
+                <td align="center" style="padding:20px 16px;">
+                  <div style="font-family:${SANS};font-size:11px;letter-spacing:.08em;color:${EMERALD_DEEP};font-weight:700;">
+                    お支払い金額 / AMOUNT PAID
+                  </div>
+                  <div style="font-family:${SERIF};font-size:32px;color:${INK};margin-top:6px;">
+                    ¥${Number(amount).toLocaleString("ja-JP")}
+                  </div>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <tr>
+          <td class="hp-card" style="padding:6px 24px 0 24px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+              ${row("プラン", "Plan", `${plan.nameJa} / ${plan.nameEn}`)}
+              ${row("注文ID", "Order ID", orderID)}
+            </table>
+          </td>
+        </tr>
+
+        <tr>
+          <td class="hp-card" style="padding:24px 24px 8px 24px;">
+            <div style="font-family:${SANS};font-size:13px;line-height:1.9;color:${INK};opacity:.6;">
+              ご不明な点がございましたら、いつでもお気軽にご連絡ください。<br>
+              If you have any questions about this invoice, please don't hesitate to reach out.
+            </div>
+          </td>
+        </tr>
+
+        <tr>
+          <td class="hp-card" align="center" style="padding:16px 24px 32px 24px;">
+            <a href="mailto:info@hexapoint-jp.com"
+               style="display:inline-block;font-family:${SANS};font-size:14.5px;font-weight:700;color:#ffffff;
+                      background:${EMERALD_DEEP};text-decoration:none;padding:14px 28px;border-radius:999px;
+                      box-shadow:0 18px 40px -18px rgba(232,99,31,.55);">
+              HexaPoint に連絡する / Contact HexaPoint →
+            </a>
+          </td>
+        </tr>
+
+        <tr><td style="height:1px;background:${LINE};"></td></tr>
+
+        <tr>
+          <td class="hp-card" style="padding:18px 24px 28px 24px;">
+            <div style="font-family:${SANS};font-size:11px;color:${INK};opacity:.4;line-height:1.7;">
+              このメールは www.hexapoint-jp.com でのお支払い完了に伴い自動送信されました。<br>
+              This message was sent automatically after your payment on www.hexapoint-jp.com.
+            </div>
+          </td>
+        </tr>
+
+      </table>
+      <div style="font-family:${SANS};font-size:11px;color:${INK};opacity:.35;margin-top:16px;">
+        © ${new Date().getFullYear()} HexaPoint
+      </div>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+
+  return { subject, html };
+}
+
+// Finds a Zoho contact by the buyer's email, or creates one. Reused across
+// repeat customers so they accumulate under one contact instead of a fresh
+// duplicate contact per order.
+async function findOrCreateZohoContact(env, buyer) {
+  const search = await zohoFetch(env, `/contacts?email=${encodeURIComponent(buyer.email)}`);
+  const existing = (search.contacts || [])[0];
+  if (existing) return existing.contact_id;
+
+  const created = await zohoFetch(env, "/contacts", {
+    method: "POST",
+    body: {
+      contact_name: buyer.name,
+      billing_address: { address: buyer.address },
+      contact_persons: [
+        {
+          first_name: buyer.name,
+          email: buyer.email,
+          phone: buyer.phone,
+          is_primary_contact: true,
+        },
+      ],
+    },
+  });
+  return created.contact.contact_id;
+}
+
+// Creates the invoice, then immediately records a customer payment against
+// it (payment_mode "creditcard", since it was collected via Stripe) so it
+// shows as PAID in Zoho rather than sitting open/unpaid.
+async function createPaidZohoInvoice(env, { contactId, plan, amount, orderID, buyer }) {
+  const today = new Date().toISOString().slice(0, 10);
+  // Stripe Checkout Session IDs (cs_test_.../cs_live_...) are 60+ raw
+  // characters — meaningless to a customer and unprofessional-looking on an
+  // invoice PDF. The full orderID is already the D1 orders.order_id column
+  // (linked 1:1 with this Zoho invoice via zoho_invoice_id), so it doesn't
+  // need to appear on the customer-facing document at all — this short,
+  // readable stand-in is just enough to cross-reference in /admin.html's
+  // order search (which matches partial order_id) if ever needed by phone/email.
+  const referenceNumber = `HXPT-${orderID.slice(-8).toUpperCase()}`;
+
+  const invoiceRes = await zohoFetch(env, "/invoices", {
+    method: "POST",
+    body: {
+      customer_id: contactId,
+      reference_number: referenceNumber,
+      date: today,
+      line_items: [
+        {
+          name: `${plan.nameJa} / ${plan.nameEn}`,
+          rate: amount,
+          quantity: 1,
+        },
+      ],
+    },
+  });
+  const invoice = invoiceRes.invoice;
+
+  await zohoFetch(env, "/customerpayments", {
+    method: "POST",
+    body: {
+      customer_id: contactId,
+      payment_mode: "creditcard",
+      amount,
+      date: today,
+      reference_number: referenceNumber,
+      invoices: [{ invoice_id: invoice.invoice_id, amount_applied: amount }],
+    },
+  });
+
+  // Record the payment first (above) so the invoice already shows "Paid" by
+  // the time the buyer opens the emailed link — sending it before recording
+  // the payment would show them a not-yet-paid invoice for a moment.
+  if (String(env.ZOHO_AUTO_EMAIL_INVOICE).toLowerCase() === "true") {
+    // POST /invoices/{id}/email is Zoho's actual "send this invoice by email"
+    // endpoint — /status/sent (used here previously) only flips the status
+    // label in the Zoho UI and never emails anything. subject/body below
+    // override Zoho's own generic template with HexaPoint's branded design.
+    const { subject, html } = buildInvoiceEmailContent({ buyer, plan, orderID, amount });
+    await zohoFetch(env, `/invoices/${invoice.invoice_id}/email`, {
+      method: "POST",
+      body: { to_mail_ids: [buyer.email], subject, body: html },
+    }).catch((err) => console.error("Zoho invoice email failed (non-fatal):", err));
+  }
+
+  return invoice;
+}
+
+// Entry point called from confirmStripeSession(). Never throws — a Zoho
+// failure must not block the Stripe payment flow or the order-confirmation
+// email, the same guarantee sendOrderConfirmation()/insertOrder() give.
+export async function createZohoInvoiceForOrder(env, { buyer, plan, orderID, amount }) {
+  if (!zohoConfigured(env)) {
+    console.error("Zoho Invoice not configured, skipping invoice creation");
+    return { ok: false, error: "not_configured" };
+  }
+
+  try {
+    const contactId = await findOrCreateZohoContact(env, buyer);
+    const invoice = await createPaidZohoInvoice(env, { contactId, plan, amount, orderID, buyer });
+    return { ok: true, invoiceId: invoice.invoice_id, invoiceNumber: invoice.invoice_number };
+  } catch (err) {
+    console.error("Zoho invoice creation failed for order", orderID, err);
+    return { ok: false, error: String(err) };
+  }
+}

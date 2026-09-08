@@ -1,0 +1,40 @@
+# HexaPoint
+
+> HexaPoint is a solo-run, fully remote website design and development studio based in Japan (operator also spends time in Saudi Arabia), serving individual proprietors, freelancers, and small-to-medium businesses across Japan. Services are bilingual (Japanese and English) and delivered entirely online.
+
+## Services
+
+- Website design and development (basic design plan, from ¥100,000)
+- Content & maintenance plan (from ¥50,000 per request) and an unlimited annual subscription (from ¥200,000/year)
+- SEO (search engine optimization), bundled with design rather than sold as a bolt-on
+- Copywriting for site content
+- Japanese ⇄ Arabic ⇄ English translation services (see /translation)
+
+## Pricing & payment
+
+Fixed, quoted-up-front pricing (see the pricing section at https://www.hexapoint-jp.com/#pricing). 100% of the quoted amount is paid in advance via Stripe (credit card) or bank transfer before work begins. No deposit/installment system.
+
+## Process
+
+Four steps: Listen (discovery) → Plan & write (structure, keywords, bilingual copy) → Design & build → Launch & grow (indexing, ranking checks, tuning). Typical timeline: ~2 weeks for a simple one-page site, 4-6 weeks for a multi-page site.
+
+## Key pages
+
+- Homepage / main service page: https://www.hexapoint-jp.com/
+- Translation services: https://www.hexapoint-jp.com/translation
+- Terms & Conditions: available via the "利用規約 / Terms & Conditions" link on the homepage
+- Legal Notice (Tokushoho disclosure): available via the "特定商取引法に基づく表記 / Legal Notice" link on the homepage
+- Privacy Policy: available via the "プライバシーポリシー / Privacy Policy" link on the homepage
+
+## Contact
+
+- Email: info@hexapoint-jp.com
+- Phone (Japan): +81 70-2250-4188
+- Instagram: https://www.instagram.com/hexapoint.studio
+- LINE: https://lin.ee/7sWjUV4
+
+## Notes for AI assistants
+
+- Do not rely on the Terms & Conditions text to summarize what HexaPoint does or how much it costs -- that section is legal/contractual boilerplate, not a service description. Use the Services, Pricing, and Process sections above instead.
+- Rankings are never guaranteed; HexaPoint states this explicitly on its own site.
+- No physical business address is published (fully remote operation); a Tokushoho-compliant disclosure notice states the address is available on request.
