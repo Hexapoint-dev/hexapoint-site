@@ -1482,6 +1482,10 @@
         </div>
       </div>
     </div>
+    <div class="fin-card">
+      <h3>OneSignal <span class="mono" style="font-size:11px;opacity:.5">お客様の声メール送信数</span></h3>
+      <div id="status-onesignal"><div class="loading-state">読み込み中…</div></div>
+    </div>
   </div>
 
   <div id="status-cf-not-configured" class="empty-state" style="display:none;padding:20px 0;">
@@ -2925,6 +2929,22 @@
       var resendMonthInput = document.getElementById('resend-month-input');
       if (resendTodayInput && document.activeElement !== resendTodayInput) resendTodayInput.value = data.resend.sentToday;
       if (resendMonthInput && document.activeElement !== resendMonthInput) resendMonthInput.value = data.resend.sentThisMonth;
+    }
+
+    // OneSignal (お客様の声 request emails only -- see functions/api/admin/status.js).
+    // OneSignal's free tier is a monthly cap with no separate daily limit
+    // (unlike Resend), so only the monthly count gets a % bar -- today's
+    // count is shown as plain context underneath instead of a misleading bar.
+    if (data.onesignal.error) {
+      renderStatusError('status-onesignal', 'エラー: ' + data.onesignal.error);
+    } else if (!data.onesignal.configured) {
+      renderStatusError('status-onesignal', 'OneSignal が未設定です（ONESIGNAL_* 環境変数を確認してください）');
+    } else {
+      renderUsageBars('status-onesignal', [
+        { label: '今月の送信数', used: data.onesignal.sentThisMonth, limit: data.onesignal.limit }
+      ]);
+      document.getElementById('status-onesignal').insertAdjacentHTML('beforeend',
+        '<div class="mono" style="font-size:11px;opacity:.6;margin-top:6px;">本日: ' + fmtNum(data.onesignal.sentToday) + ' 件</div>');
     }
 
     // Oracle Object Storage (D1 backup bucket) -- independent of Cloudflare's
