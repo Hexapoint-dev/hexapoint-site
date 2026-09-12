@@ -137,16 +137,20 @@ async function handleEvent(env, event) {
   if (result.inserted) await touchLineConversation(env, conversation.id, label, true);
 }
 
+// Refetches the LINE profile on every message rather than only on first
+// contact -- deliberately, not an oversight: a one-off transient failure of
+// the earlier "only fetch once" approach left a conversation permanently
+// stuck with no name/photo (nothing ever retried it), and it also missed a
+// customer changing their display name/picture later. One extra profile API
+// call per incoming message is a non-issue at this chat's volume.
 async function ensureConversation(env, userId) {
-  const existing = await getLineConversationByUserId(env, userId);
-  if (existing) return existing;
-
-  // First time we've seen this user -- fetch their profile once so the
-  // conversation list shows a real name/photo instead of just a raw user ID.
   const profile = await getLineProfile(env, userId);
+  const existing = await getLineConversationByUserId(env, userId);
+  if (existing && !profile) return existing; // keep whatever we already had rather than blanking it out on a failed refetch
+
   return upsertLineConversation(env, {
     lineUserId: userId,
-    displayName: profile ? profile.displayName : "",
-    pictureUrl: profile ? profile.pictureUrl : "",
+    displayName: profile ? profile.displayName : (existing ? existing.display_name : ""),
+    pictureUrl: profile ? profile.pictureUrl : (existing ? existing.picture_url : ""),
   });
 }
