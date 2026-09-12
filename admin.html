@@ -174,6 +174,12 @@
   .badge-msg-read { background: var(--line); color: var(--ink); }
   .badge-msg-replied { background: #4f86e8; color: #fff; }
   .badge-msg-archived { background: #9aa0b4; color: #fff; }
+  .badge-testi-sent { background: var(--line); color: var(--ink); }
+  .badge-testi-submitted { background: #4f86e8; color: #fff; }
+  .badge-testi-approved { background: var(--emerald); color: #fff; }
+  .badge-testi-rejected { background: var(--coral-soft); color: var(--coral); }
+  .testi-star { color: #fbbc04; letter-spacing: 1px; }
+  .testi-pub-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--emerald); margin-left: 6px; }
 
   .row-actions button {
     border: none;
@@ -906,6 +912,7 @@
     <!-- 受信・日常業務 / Inbox & daily work -->
     <button type="button" class="active" id="tab-btn-orders" onclick="switchTab('orders')">注文 <span class="mono" style="font-size:10px;opacity:.7">Orders</span></button>
     <button type="button" id="tab-btn-messages" onclick="switchTab('messages')">お問い合わせ <span class="mono" style="font-size:10px;opacity:.7">Messages</span><span class="tab-badge" id="messages-unread-badge" style="display:none;"></span></button>
+    <button type="button" id="tab-btn-testimonials" onclick="switchTab('testimonials')">お客様の声 <span class="mono" style="font-size:10px;opacity:.7">Testimonials</span><span class="tab-badge" id="testimonials-review-badge" style="display:none;"></span></button>
     <button type="button" id="tab-btn-calendar" onclick="switchTab('calendar')">予約カレンダー <span class="mono" style="font-size:10px;opacity:.7">Calendar</span></button>
     <span class="tab-divider"></span>
     <!-- 顧客管理 / Customers -->
@@ -1066,6 +1073,47 @@
   </div>
 
 </div><!-- /#view-messages -->
+
+<div id="view-testimonials" class="tab-view">
+
+  <div class="toolbar">
+    <select id="testi-filter-status" onchange="onTestiFilterChange()">
+      <option value="">すべて / All</option>
+      <option value="sent">返答待ち / Awaiting client</option>
+      <option value="submitted">確認待ち / Awaiting review</option>
+      <option value="approved">承認済み / Approved</option>
+      <option value="rejected">非承認 / Rejected</option>
+    </select>
+    <input type="search" id="testi-filter-search" placeholder="お名前・メール・コメントで検索…" oninput="onTestiSearchInput()">
+    <button type="button" class="btn btn-ghost" onclick="fetchTestimonials()">更新 / Refresh</button>
+    <button type="button" class="btn" style="margin-left:auto;" onclick="openSendTestimonialModal()">+ お客様の声をリクエスト / Request</button>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>リクエスト日時</th>
+          <th>お客様</th>
+          <th>プロジェクト</th>
+          <th>評価</th>
+          <th>状態</th>
+          <th>掲載</th>
+        </tr>
+      </thead>
+      <tbody id="testimonials-tbody">
+        <tr><td colspan="6" class="loading-state">読み込み中…</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="pagination">
+    <button type="button" class="btn btn-ghost" id="testi-prev-page" onclick="changeTestiPage(-1)">← 前へ</button>
+    <span id="testi-page-indicator" class="mono"></span>
+    <button type="button" class="btn btn-ghost" id="testi-next-page" onclick="changeTestiPage(1)">次へ →</button>
+  </div>
+
+</div><!-- /#view-testimonials -->
 
 <div id="view-calendar" class="tab-view">
 
@@ -1565,6 +1613,7 @@
 
     <div class="modal-actions">
       <button type="button" class="btn btn-danger" onclick="deleteOrder()">削除</button>
+      <button type="button" class="btn btn-ghost" onclick="requestTestimonialForCurrentOrder()">お客様の声をリクエスト</button>
       <button type="button" class="btn" onclick="saveOrder()">保存</button>
     </div>
   </div>
@@ -1680,6 +1729,101 @@
   </div>
 </div>
 
+<!-- ===== Send testimonial request modal ===== -->
+<div class="overlay" id="send-testi-overlay">
+  <div class="modal">
+    <button type="button" class="close" onclick="closeSendTestimonialModal()">✕</button>
+    <h2>お客様の声をリクエスト</h2>
+    <div class="sub">OneSignal経由でお客様にメールが送信され、専用リンクからご感想をお送りいただけます。</div>
+    <div class="modal-error" id="send-testi-error"></div>
+
+    <div class="field">
+      <label>お客様を選択（注文履歴から） / Pick from an order</label>
+      <select id="send-testi-order-pick" onchange="onTestiOrderPick()">
+        <option value="">— 手動で入力する / Enter manually —</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>お客様名 <span class="mono">*</span></label>
+      <input type="text" id="send-testi-name">
+    </div>
+    <div class="field">
+      <label>メールアドレス <span class="mono">*</span></label>
+      <input type="email" id="send-testi-email">
+    </div>
+    <div class="field">
+      <label>プロジェクト内容（メールに表示されます）</label>
+      <input type="text" id="send-testi-project" placeholder="例: コーポレートサイト制作 / Corporate website build">
+    </div>
+
+    <div class="modal-actions">
+      <button type="button" class="btn" onclick="submitSendTestimonial()">リクエストを送信する</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Testimonial review/detail modal ===== -->
+<div class="overlay" id="testi-overlay">
+  <div class="modal">
+    <button type="button" class="close" onclick="closeTestimonialModal()">✕</button>
+    <h2>お客様の声 詳細</h2>
+    <div class="sub mono" id="testi-modal-date"></div>
+    <div class="modal-error" id="testi-modal-error"></div>
+
+    <div class="zoho-status-row" style="align-items:flex-start;">
+      <span>メール送信状況:</span>
+      <div class="email-log-list" id="testi-email-log-list"><span class="empty">—</span></div>
+    </div>
+
+    <div class="field-row">
+      <div class="field"><label>お客様名</label><div class="mono" id="testi-modal-client" style="padding:10px 0;"></div></div>
+      <div class="field"><label>メール</label><div class="mono" id="testi-modal-email" style="padding:10px 0;"></div></div>
+    </div>
+    <div class="field">
+      <label>状態</label>
+      <div id="testi-modal-status" style="padding:6px 0;"></div>
+    </div>
+
+    <div id="testi-modal-no-submission" class="empty-state" style="display:none;padding:16px 0;">
+      まだお客様からのご回答はありません。「再送信」でリンクを再送できます。
+    </div>
+
+    <div id="testi-modal-submission-fields">
+      <div class="field">
+        <label>プロジェクト内容</label>
+        <input type="text" id="testi-edit-project">
+      </div>
+      <div class="field">
+        <label>評価 (1〜5)</label>
+        <input type="number" id="testi-edit-rating" min="1" max="5">
+      </div>
+      <div class="field">
+        <label>表示名（サイトに表示される名前）</label>
+        <input type="text" id="testi-edit-display-name">
+      </div>
+      <div class="field">
+        <label>コメント</label>
+        <textarea id="testi-edit-comment" style="min-height:120px;"></textarea>
+      </div>
+      <div class="field">
+        <label>管理メモ（非公開）</label>
+        <textarea id="testi-edit-admin-note"></textarea>
+      </div>
+    </div>
+
+    <div class="modal-actions" style="flex-wrap:wrap;">
+      <button type="button" class="btn btn-ghost" id="testi-btn-resend" onclick="testiAction('resend')" style="display:none;">リンクを再送信</button>
+      <button type="button" class="btn btn-ghost" onclick="testiSaveFields()">変更を保存</button>
+      <button type="button" class="btn" id="testi-btn-approve" onclick="testiAction('approve')" style="display:none;">承認する</button>
+      <button type="button" class="btn btn-ghost" id="testi-btn-reject" onclick="testiAction('reject')" style="display:none;">非承認にする</button>
+      <button type="button" class="btn" id="testi-btn-publish" onclick="testiAction('publish')" style="display:none;">サイトに掲載する</button>
+      <button type="button" class="btn btn-ghost" id="testi-btn-unpublish" onclick="testiAction('unpublish')" style="display:none;">掲載を取り下げる</button>
+      <button type="button" class="btn btn-danger" onclick="deleteCurrentTestimonial()">削除</button>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="calendar-event-overlay">
   <div class="modal">
     <button type="button" class="close" onclick="closeEventModal()">✕</button>
@@ -1730,6 +1874,7 @@
   var state = { status: '', search: '', dateFrom: '', dateTo: '', planId: '', paymentMethod: '', sort: 'created_at', dir: 'desc', page: 1, limit: 25 };
   var currentOrders = [];
   var currentOrderId = null;
+  var currentOrderData = null;
   var currentNotes = [];
   var selectedIds = {};
   var searchDebounce = null;
@@ -2242,7 +2387,7 @@
   }
 
   // ---- Tabs ----
-  var TAB_NAMES = ['orders', 'messages', 'calendar', 'customers', 'renewals', 'finance', 'plans', 'analytics', 'status', 'history'];
+  var TAB_NAMES = ['orders', 'messages', 'testimonials', 'calendar', 'customers', 'renewals', 'finance', 'plans', 'analytics', 'status', 'history'];
   window.switchTab = function (name) {
     TAB_NAMES.forEach(function (t) {
       document.getElementById('view-' + t).classList.toggle('active', t === name);
@@ -2256,6 +2401,7 @@
     if (name === 'analytics') fetchAnalytics();
     if (name === 'status') fetchStatus();
     if (name === 'messages') fetchMessages();
+    if (name === 'testimonials') fetchTestimonials();
     if (name === 'calendar') { fetchCalendar(); initCalGridIfNeeded(); }
   };
 
@@ -3072,6 +3218,327 @@
       })
       .catch(function (err) {
         console.error('deleteCurrentMessage error:', err);
+        showError('削除に失敗しました: ' + err.message);
+      });
+  };
+
+  // ---- お客様の声 (Testimonials) tab ----
+  var testiState = { status: '', search: '', page: 1, limit: 25 };
+  var currentTestimonialId = null;
+  var currentTestimonialData = null;
+  var testiSearchDebounce = null;
+
+  function updateTestimonialsReviewBadge(count) {
+    var badge = document.getElementById('testimonials-review-badge');
+    if (count > 0) {
+      badge.textContent = count > 99 ? '99+' : String(count);
+      badge.style.display = '';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+
+  var TESTI_STATUS_LABELS = {
+    sent: '返答待ち / Awaiting client',
+    submitted: '確認待ち / Awaiting review',
+    approved: '承認済み / Approved',
+    rejected: '非承認 / Rejected'
+  };
+  function testiBadgeHtml(status) {
+    return '<span class="badge badge-testi-' + esc(status) + '">' + esc(TESTI_STATUS_LABELS[status] || status) + '</span>';
+  }
+
+  function renderTestimonialsTable(rows) {
+    var tbody = document.getElementById('testimonials-tbody');
+    if (!rows.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="empty-state">お客様の声はまだありません</td></tr>';
+      return;
+    }
+    tbody.innerHTML = rows.map(function (t) {
+      var stars = t.rating ? '<span class="testi-star">' + '★'.repeat(t.rating) + '</span>' : '—';
+      return '<tr onclick="openTestimonialModal(' + t.id + ')">' +
+        '<td class="mono" data-label="リクエスト日時">' + esc(fmtDate(t.sent_at)) + '</td>' +
+        '<td data-label="お客様">' + esc(t.client_name) + '</td>' +
+        '<td data-label="プロジェクト">' + esc(t.project_label || '—') + '</td>' +
+        '<td data-label="評価">' + stars + '</td>' +
+        '<td data-label="状態">' + testiBadgeHtml(t.status) + '</td>' +
+        '<td data-label="掲載">' + (t.published ? '<span class="testi-pub-dot" title="掲載中"></span> 掲載中' : '—') + '</td>' +
+      '</tr>';
+    }).join('');
+  }
+
+  function renderTestiPagination(total, page, limit) {
+    var totalPages = Math.max(1, Math.ceil(total / limit));
+    document.getElementById('testi-page-indicator').textContent = page + ' / ' + totalPages + '（全 ' + total + ' 件）';
+    document.getElementById('testi-prev-page').disabled = page <= 1;
+    document.getElementById('testi-next-page').disabled = page >= totalPages;
+  }
+
+  function buildTestiQuery() {
+    var params = new URLSearchParams();
+    if (testiState.status) params.set('status', testiState.status);
+    if (testiState.search) params.set('search', testiState.search);
+    params.set('page', testiState.page);
+    params.set('limit', testiState.limit);
+    return params.toString();
+  }
+
+  window.fetchTestimonials = function fetchTestimonials() {
+    var tbody = document.getElementById('testimonials-tbody');
+    if (tbody) tbody.innerHTML = '<tr><td colspan="6" class="loading-state">読み込み中…</td></tr>';
+    fetch('/api/admin/testimonials?' + buildTestiQuery())
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (result) {
+        if (!result.ok || !result.data.ok) throw new Error((result.data && result.data.error) || 'request_failed');
+        renderTestimonialsTable(result.data.testimonials);
+        renderTestiPagination(result.data.total, result.data.page, result.data.limit);
+        updateTestimonialsReviewBadge(result.data.awaitingReviewCount);
+      })
+      .catch(function (err) {
+        console.error('fetchTestimonials error:', err);
+        showError('お客様の声の取得に失敗しました: ' + err.message);
+        document.getElementById('testimonials-tbody').innerHTML = '<tr><td colspan="6" class="empty-state">読み込みエラー</td></tr>';
+      });
+  };
+
+  window.onTestiFilterChange = function () {
+    testiState.status = document.getElementById('testi-filter-status').value;
+    testiState.page = 1;
+    fetchTestimonials();
+  };
+
+  window.onTestiSearchInput = function () {
+    clearTimeout(testiSearchDebounce);
+    testiSearchDebounce = setTimeout(function () {
+      testiState.search = document.getElementById('testi-filter-search').value.trim();
+      testiState.page = 1;
+      fetchTestimonials();
+    }, 350);
+  };
+
+  window.changeTestiPage = function (delta) {
+    testiState.page = Math.max(1, testiState.page + delta);
+    fetchTestimonials();
+  };
+
+  // ---- Send request modal ----
+  window.openSendTestimonialModal = function () {
+    var pick = document.getElementById('send-testi-order-pick');
+    pick.innerHTML = '<option value="">— 手動で入力する / Enter manually —</option>' +
+      currentOrders.filter(function (o) { return o.status === 'paid'; }).map(function (o) {
+        return '<option value="' + o.id + '">' + esc(o.buyer_name) + ' — ' + esc(o.plan_name_ja) + ' (' + esc(o.order_id) + ')</option>';
+      }).join('');
+    document.getElementById('send-testi-name').value = '';
+    document.getElementById('send-testi-email').value = '';
+    document.getElementById('send-testi-project').value = '';
+    document.getElementById('send-testi-error').classList.remove('show');
+    document.getElementById('send-testi-overlay').classList.add('show');
+  };
+
+  window.closeSendTestimonialModal = function () {
+    document.getElementById('send-testi-overlay').classList.remove('show');
+  };
+
+  document.getElementById('send-testi-overlay').addEventListener('click', function (e) {
+    if (e.target === this) closeSendTestimonialModal();
+  });
+
+  window.onTestiOrderPick = function () {
+    var id = document.getElementById('send-testi-order-pick').value;
+    if (!id) return;
+    var order = currentOrders.find(function (o) { return String(o.id) === String(id); });
+    if (!order) return;
+    document.getElementById('send-testi-name').value = order.buyer_name;
+    document.getElementById('send-testi-email').value = order.buyer_email;
+    document.getElementById('send-testi-project').value = order.plan_name_ja;
+  };
+
+  // Opened from the order detail modal's "お客様の声をリクエスト" button --
+  // prefills the same modal as the Testimonials tab's own "+ Request" button.
+  window.requestTestimonialForCurrentOrder = function () {
+    if (!currentOrderData) return;
+    closeDetailModal();
+    openSendTestimonialModal();
+    var pick = document.getElementById('send-testi-order-pick');
+    pick.value = String(currentOrderData.id);
+    onTestiOrderPick();
+  };
+
+  window.submitSendTestimonial = function () {
+    var errEl = document.getElementById('send-testi-error');
+    errEl.classList.remove('show');
+
+    var name = document.getElementById('send-testi-name').value.trim();
+    var email = document.getElementById('send-testi-email').value.trim();
+    var project = document.getElementById('send-testi-project').value.trim();
+    if (!name || !email) {
+      errEl.textContent = 'お客様名とメールアドレスは必須です。';
+      errEl.classList.add('show');
+      return;
+    }
+
+    var pick = document.getElementById('send-testi-order-pick').value;
+    var order = currentOrders.find(function (o) { return String(o.id) === String(pick); });
+
+    fetch('/api/admin/testimonials', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        clientName: name,
+        clientEmail: email,
+        projectLabel: project,
+        orderId: order ? order.order_id : null
+      })
+    })
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (!data.ok) throw new Error(data.error || 'request_failed');
+        closeSendTestimonialModal();
+        fetchTestimonials();
+        if (!data.emailSent) {
+          showError('リクエストは保存されましたが、メール送信に失敗しました（OneSignalの設定をご確認ください）: ' + (data.emailError || ''));
+        }
+      })
+      .catch(function (err) {
+        console.error('submitSendTestimonial error:', err);
+        errEl.textContent = '送信に失敗しました: ' + err.message;
+        errEl.classList.add('show');
+      });
+  };
+
+  // ---- Review/detail modal ----
+  function renderTestimonialModal(t, emailLog) {
+    currentTestimonialId = t.id;
+    currentTestimonialData = t;
+
+    document.getElementById('testi-modal-date').textContent = 'リクエスト日時: ' + fmtDate(t.sent_at);
+    document.getElementById('testi-modal-client').textContent = t.client_name;
+    document.getElementById('testi-modal-email').textContent = t.client_email;
+    document.getElementById('testi-modal-status').innerHTML = testiBadgeHtml(t.status) +
+      (t.published ? ' <span class="testi-pub-dot"></span> サイトに掲載中' : '');
+    document.getElementById('testi-modal-error').classList.remove('show');
+    renderEmailLogList('testi-email-log-list', emailLog);
+
+    var hasSubmission = t.status !== 'sent';
+    document.getElementById('testi-modal-no-submission').style.display = hasSubmission ? 'none' : '';
+    document.getElementById('testi-modal-submission-fields').style.display = hasSubmission ? '' : 'none';
+
+    document.getElementById('testi-edit-project').value = t.project_label || '';
+    document.getElementById('testi-edit-rating').value = t.rating || '';
+    document.getElementById('testi-edit-display-name').value = t.display_name || '';
+    document.getElementById('testi-edit-comment').value = t.comment || '';
+    document.getElementById('testi-edit-admin-note').value = t.admin_note || '';
+
+    document.getElementById('testi-btn-resend').style.display = (t.status === 'sent') ? '' : 'none';
+    document.getElementById('testi-btn-approve').style.display = (t.status === 'submitted') ? '' : 'none';
+    document.getElementById('testi-btn-reject').style.display = (t.status === 'submitted' || t.status === 'approved') ? '' : 'none';
+    document.getElementById('testi-btn-publish').style.display = (t.status === 'approved' && !t.published) ? '' : 'none';
+    document.getElementById('testi-btn-unpublish').style.display = (t.published) ? '' : 'none';
+
+    document.getElementById('testi-overlay').classList.add('show');
+  }
+
+  window.openTestimonialModal = function (id) {
+    fetch('/api/admin/testimonials/' + id)
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (!data.ok) throw new Error(data.error || 'request_failed');
+        renderTestimonialModal(data.testimonial, data.emailLog);
+      })
+      .catch(function (err) {
+        console.error('openTestimonialModal error:', err);
+        showError('お客様の声の取得に失敗しました: ' + err.message);
+      });
+  };
+
+  window.closeTestimonialModal = function () {
+    document.getElementById('testi-overlay').classList.remove('show');
+    currentTestimonialId = null;
+    currentTestimonialData = null;
+  };
+
+  document.getElementById('testi-overlay').addEventListener('click', function (e) {
+    if (e.target === this) closeTestimonialModal();
+  });
+
+  function testiPatch(body) {
+    return fetch('/api/admin/testimonials/' + currentTestimonialId, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    }).then(function (res) { return res.json(); });
+  }
+
+  window.testiAction = function (action) {
+    if (!currentTestimonialId) return;
+    if (action === 'reject' && !confirm('このお客様の声を非承認にしますか？')) return;
+
+    var body = { action: action };
+    if (action === 'approve') {
+      body.comment = document.getElementById('testi-edit-comment').value.trim();
+      body.displayName = document.getElementById('testi-edit-display-name').value.trim();
+      body.projectLabel = document.getElementById('testi-edit-project').value.trim();
+      body.rating = document.getElementById('testi-edit-rating').value;
+      body.adminNote = document.getElementById('testi-edit-admin-note').value.trim();
+    }
+    if (action === 'reject') {
+      body.adminNote = document.getElementById('testi-edit-admin-note').value.trim();
+    }
+
+    testiPatch(body)
+      .then(function (data) {
+        if (!data.ok) throw new Error(data.error || 'request_failed');
+        if (action === 'resend') {
+          closeTestimonialModal();
+          fetchTestimonials();
+          if (!data.emailSent) showError('リンクは再発行されましたが、メール送信に失敗しました: ' + (data.emailError || ''));
+          return;
+        }
+        renderTestimonialModal(data.testimonial, []);
+        fetchTestimonials();
+      })
+      .catch(function (err) {
+        console.error('testiAction error:', err);
+        var errEl = document.getElementById('testi-modal-error');
+        errEl.textContent = '操作に失敗しました: ' + err.message;
+        errEl.classList.add('show');
+      });
+  };
+
+  window.testiSaveFields = function () {
+    if (!currentTestimonialId) return;
+    testiPatch({
+      projectLabel: document.getElementById('testi-edit-project').value.trim(),
+      rating: document.getElementById('testi-edit-rating').value,
+      displayName: document.getElementById('testi-edit-display-name').value.trim(),
+      comment: document.getElementById('testi-edit-comment').value.trim(),
+      adminNote: document.getElementById('testi-edit-admin-note').value.trim()
+    })
+      .then(function (data) {
+        if (!data.ok) throw new Error(data.error || 'request_failed');
+        fetchTestimonials();
+        var errEl = document.getElementById('testi-modal-error');
+        errEl.textContent = '保存しました。';
+        errEl.classList.add('show');
+      })
+      .catch(function (err) {
+        console.error('testiSaveFields error:', err);
+        showError('保存に失敗しました: ' + err.message);
+      });
+  };
+
+  window.deleteCurrentTestimonial = function () {
+    if (!currentTestimonialId) return;
+    if (!confirm('このお客様の声を削除しますか？この操作は取り消せません。')) return;
+    fetch('/api/admin/testimonials/' + currentTestimonialId, { method: 'DELETE' })
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (!data.ok) throw new Error(data.error || 'request_failed');
+        closeTestimonialModal();
+        fetchTestimonials();
+      })
+      .catch(function (err) {
+        console.error('deleteCurrentTestimonial error:', err);
         showError('削除に失敗しました: ' + err.message);
       });
   };
@@ -4133,6 +4600,7 @@
   // ---- Detail / edit modal ----
   function renderDetailModal(order) {
     currentOrderId = order.id;
+    currentOrderData = order;
 
     document.getElementById('detail-order-id').textContent = order.order_id;
     document.getElementById('edit-status').value = order.status;
@@ -4200,6 +4668,8 @@
     dispute_alert: '異議申し立て通知',
     payment_failed_alert: '支払い失敗通知',
     contact_notification: 'お問い合わせ通知',
+    testimonial_request: 'お客様の声リクエスト',
+    testimonial_submitted_alert: 'お客様の声 新着通知',
     owner_alert: '通知'
   };
   var EMAIL_STATUS_LABELS = {

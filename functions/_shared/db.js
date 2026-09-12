@@ -611,3 +611,184 @@ export async function getEmailLogForRelated(env, relatedType, relatedId) {
   ).bind(relatedType, String(relatedId)).all();
   return result.results || [];
 }
+
+// URL-safe random token (used for the testimonial public link, below --
+// crypto.randomUUID() is avoided here since its dashes/predictable-length
+// format is a bit more guessable-looking for something handed to a client).
+export function generateToken(bytes = 24) {
+  const arr = crypto.getRandomValues(new Uint8Array(bytes));
+  return btoa(String.fromCharCode(...arr)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+// ---- Testimonials (migrations/0009_testimonials.sql) ----
+// The request/review/publish flow is documented in that migration's header
+// comment. `token` is the public, single-use identifier handed to the client
+// (in the email link) -- never the numeric `id`, so a client can't enumerate
+// other clients' requests by guessing small integers.
+
+export async function createTestimonialRequest(env, { token, orderId, clientName, clientEmail, projectLabel }) {
+  const result = await env.DB.prepare(
+    `INSERT INTO testimonials (token, order_id, client_name, client_email, project_label, display_name)
+     VALUES (?, ?, ?, ?, ?, ?)`
+  ).bind(token, orderId || null, clientName, clientEmail, projectLabel || "", clientName).run();
+  const id = result?.meta?.last_row_id;
+  return getTestimonialById(env, id);
+}
+
+export async function getTestimonialById(env, id) {
+  if (!id) return null;
+  const row = await env.DB.prepare("SELECT * FROM testimonials WHERE id = ?").bind(id).first();
+  return row || null;
+}
+
+export async function getTestimonialByToken(env, token) {
+  if (!token) return null;
+  const row = await env.DB.prepare("SELECT * FROM testimonials WHERE token = ?").bind(token).first();
+  return row || null;
+}
+
+const TESTIMONIAL_STATUSES = new Set(["sent", "submitted", "approved", "rejected"]);
+
+function buildTestimonialFilters({ status, search, published }) {
+  const where = [];
+  const params = [];
+  if (status && TESTIMONIAL_STATUSES.has(status)) {
+    where.push("status = ?");
+    params.push(status);
+  }
+  if (published === "1" || published === 1 || published === true) {
+    where.push("published = 1");
+  } else if (published === "0" || published === 0 || published === false) {
+    where.push("published = 0");
+  }
+  if (search) {
+    where.push("(client_name LIKE ? OR client_email LIKE ? OR project_label LIKE ? OR comment LIKE ?)");
+    const like = `%${search}%`;
+    params.push(like, like, like, like);
+  }
+  return { whereSql: where.length ? `WHERE ${where.join(" AND ")}` : "", params };
+}
+
+export async function listTestimonials(env, { status, search, published, page, limit } = {}) {
+  const pageNum = Math.max(1, parseInt(page, 10) || 1);
+  const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 25));
+  const offset = (pageNum - 1) * limitNum;
+
+  const { whereSql, params } = buildTestimonialFilters({ status, search, published });
+
+  const listSql = `SELECT * FROM testimonials ${whereSql} ORDER BY created_at DESC LIMIT ? OFFSET ?`;
+  const countSql = `SELECT COUNT(*) AS total FROM testimonials ${whereSql}`;
+  // Counts ignore the current filters -- used for the tab's status badges,
+  // which should always reflect the true totals, same convention as
+  // listContactMessages()'s unreadCount.
+  const awaitingClientSql = `SELECT COUNT(*) AS total FROM testimonials WHERE status = 'sent'`;
+  const awaitingReviewSql = `SELECT COUNT(*) AS total FROM testimonials WHERE status = 'submitted'`;
+
+  const [listResult, countResult, awaitingClientResult, awaitingReviewResult] = await Promise.all([
+    env.DB.prepare(listSql).bind(...params, limitNum, offset).all(),
+    env.DB.prepare(countSql).bind(...params).first(),
+    env.DB.prepare(awaitingClientSql).first(),
+    env.DB.prepare(awaitingReviewSql).first(),
+  ]);
+
+  return {
+    testimonials: listResult.results || [],
+    total: countResult ? countResult.total : 0,
+    awaitingClientCount: awaitingClientResult ? awaitingClientResult.total : 0,
+    awaitingReviewCount: awaitingReviewResult ? awaitingReviewResult.total : 0,
+    page: pageNum,
+    limit: limitNum,
+  };
+}
+
+// Called from the public testimonial.html form (functions/api/testimonial.js).
+// Only succeeds on a row still in 'sent' status -- this is what makes the
+// token single-use: once submitted, a retry/resubmit with the same token is
+// rejected by the caller checking status first, not by this function (it
+// always overwrites if called, so the caller MUST check status === 'sent'
+// before calling this).
+export async function submitTestimonial(env, token, { rating, comment, displayName }) {
+  await env.DB.prepare(
+    `UPDATE testimonials
+     SET rating = ?, comment = ?, display_name = ?, status = 'submitted',
+         submitted_at = datetime('now'), updated_at = datetime('now')
+     WHERE token = ?`
+  ).bind(rating, comment, displayName, token).run();
+  return getTestimonialByToken(env, token);
+}
+
+const TESTIMONIAL_ADMIN_COLUMNS = new Set([
+  "client_name",
+  "display_name",
+  "project_label",
+  "rating",
+  "comment",
+  "admin_note",
+  "display_order",
+]);
+
+// Generic field edits (admin cleaning up a client's wording, fixing a typo in
+// the display name, reordering, etc.) -- separate from the status-transition
+// helpers below, which also stamp the relevant *_at column.
+export async function updateTestimonialFields(env, id, patch) {
+  const existing = await getTestimonialById(env, id);
+  if (!existing) return null;
+
+  const setClauses = ["updated_at = datetime('now')"];
+  const params = [];
+  for (const key of Object.keys(patch || {})) {
+    if (!TESTIMONIAL_ADMIN_COLUMNS.has(key)) continue;
+    setClauses.push(`${key} = ?`);
+    params.push(patch[key]);
+  }
+  if (setClauses.length === 1) return existing;
+
+  params.push(id);
+  await env.DB.prepare(`UPDATE testimonials SET ${setClauses.join(", ")} WHERE id = ?`).bind(...params).run();
+  return getTestimonialById(env, id);
+}
+
+export async function setTestimonialReviewStatus(env, id, status, adminNote) {
+  if (status !== "approved" && status !== "rejected") return null;
+  await env.DB.prepare(
+    `UPDATE testimonials SET status = ?, admin_note = ?, reviewed_at = datetime('now'), updated_at = datetime('now') WHERE id = ?`
+  ).bind(status, adminNote || "", id).run();
+  return getTestimonialById(env, id);
+}
+
+export async function setTestimonialPublished(env, id, published) {
+  await env.DB.prepare(
+    `UPDATE testimonials
+     SET published = ?, published_at = CASE WHEN ? = 1 THEN datetime('now') ELSE published_at END, updated_at = datetime('now')
+     WHERE id = ?`
+  ).bind(published ? 1 : 0, published ? 1 : 0, id).run();
+  return getTestimonialById(env, id);
+}
+
+// A fresh token + 'sent' status, for the admin's "resend" action on a request
+// the client hasn't answered yet. Rotating the token invalidates any copy of
+// the old email link still sitting in the client's inbox.
+export async function rotateTestimonialToken(env, id, newToken) {
+  await env.DB.prepare(
+    `UPDATE testimonials SET token = ?, status = 'sent', sent_at = datetime('now'), updated_at = datetime('now') WHERE id = ?`
+  ).bind(newToken, id).run();
+  return getTestimonialById(env, id);
+}
+
+export async function deleteTestimonial(env, id) {
+  const result = await env.DB.prepare("DELETE FROM testimonials WHERE id = ?").bind(id).run();
+  return { ok: true, deleted: result?.meta?.changes || 0 };
+}
+
+// Public feed behind functions/api/testimonials.js -- only approved +
+// published rows, newest-published-first within each display_order bucket.
+// Never selects client_email/token: those must never reach the browser.
+export async function listPublishedTestimonials(env, limit = 20) {
+  const limitNum = Math.min(50, Math.max(1, parseInt(limit, 10) || 20));
+  const result = await env.DB.prepare(
+    `SELECT id, display_name, project_label, rating, comment, published_at
+     FROM testimonials WHERE status = 'approved' AND published = 1
+     ORDER BY display_order ASC, published_at DESC LIMIT ?`
+  ).bind(limitNum).all();
+  return result.results || [];
+}

@@ -341,7 +341,8 @@ D1 データベースをこの Pages プロジェクトに紐付けてくださ�
 会計/更新/履歴タブに必須）・`migrations/0004_status_reason.sql`・
 `migrations/0005_admin_settings.sql`・`migrations/0006_plans.sql`・
 `migrations/0007_contact_messages.sql`（お問い合わせタブに必須）・
-`migrations/0008_email_log.sql`（メール配信ステータス追跡。14章参照）を
+`migrations/0008_email_log.sql`（メール配信ステータス追跡。14章参照）・
+`migrations/0009_testimonials.sql`（お客様の声タブに必須。詳細は SETUP-onesignal.md 参照）を
 一度ずつ適用する必要があります
 （`wrangler d1 execute <DB名> --file=migrations/0001_orders.sql --remote`、
 以降の番号も同様に1つずつ実行）。詳しい手順はチャットで案内します。

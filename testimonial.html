@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>ご感想をお聞かせください ｜ HexaPoint</title>
+  <meta name="description" content="HexaPointでのプロジェクトについて、ご感想をお聞かせください。 | Share your feedback about your HexaPoint project.">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#e8631f">
+  <meta http-equiv="content-language" content="ja">
+
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon-180.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@700;800&family=DM+Mono:wght@400&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --ink: #0e1633;
+      --paper: #fbf9f6;
+      --cream: #fff;
+      --mint: #fff1df;
+      --mint-2: #ffd9b0;
+      --emerald: #f5912a;
+      --emerald-deep: #e8631f;
+      --coral: #e63548;
+      --line: rgba(14, 22, 51, .12);
+      --shadow: 0 18px 50px -18px rgba(232, 99, 31, .38);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; font-size: 16px; }
+    body {
+      margin: 0; min-height: 100vh; background: var(--paper); color: var(--ink);
+      font-family: -apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic UI","Yu Gothic",Meiryo,sans-serif;
+      font-size: 1.0625rem; line-height: 1.7; -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; }
+    [data-en]:not(option) { display: none; }
+    body.en-mode [data-jp]:not(option) { display: none; }
+    body.en-mode [data-en]:not(option) { display: contents; }
+
+    .topbar { display: flex; align-items: center; justify-content: space-between; padding: 22px 20px; max-width: 640px; margin: 0 auto; }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); }
+    .logo .mark { width: 38px; height: 38px; border-radius: 10px; background: #fff; border: 1px solid var(--line); display: grid; place-items: center; overflow: hidden; padding: 3px; }
+    .logo .mark img { width: 100%; height: 100%; object-fit: contain; }
+    .logo .name { font-family: "DM Mono", monospace; font-size: 12.5px; letter-spacing: .18em; text-transform: uppercase; }
+    .langtog {
+      font-family: "DM Mono", monospace; font-size: 11.5px; border: 1.5px solid var(--ink); border-radius: 30px;
+      padding: 6px 13px; cursor: pointer; background: 0 0; color: var(--ink);
+    }
+    .langtog:hover { background: var(--ink); color: #fff; }
+
+    main { max-width: 640px; margin: 0 auto; padding: 10px 20px 70px; }
+    .card {
+      background: #fff; border: 1px solid var(--line); border-radius: 22px; padding: 40px 34px;
+      box-shadow: 0 30px 70px -30px rgba(14,22,51,.18); position: relative; overflow: hidden;
+    }
+    .card::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 6px; background: linear-gradient(90deg,var(--emerald),var(--emerald-deep)); }
+    @media (max-width: 480px) { .card { padding: 30px 22px; } }
+
+    .eyebrow { font-family: "DM Mono", monospace; font-size: 12px; letter-spacing: .14em; color: var(--emerald-deep); font-weight: 700; text-transform: uppercase; }
+    h1 { font-family: "Shippori Mincho", serif; font-weight: 800; font-size: clamp(24px,4.4vw,30px); margin: 10px 0 6px; line-height: 1.4; }
+    .sub { opacity: .75; font-size: 15px; margin-bottom: 26px; }
+    .sub b { color: var(--emerald-deep); }
+
+    .stars-pick { display: flex; gap: 8px; justify-content: center; margin: 6px 0 4px; }
+    .stars-pick button {
+      background: none; border: none; cursor: pointer; font-size: 38px; line-height: 1; padding: 2px 4px;
+      color: var(--line); transition: transform .15s, color .15s;
+    }
+    .stars-pick button.active, .stars-pick button:hover { color: var(--emerald); transform: scale(1.12); }
+    .stars-label { text-align: center; font-size: 13px; opacity: .6; min-height: 18px; margin-bottom: 22px; }
+
+    .field { margin-bottom: 20px; }
+    .field label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 7px; opacity: .85; }
+    .field .hint { font-size: 12px; opacity: .5; margin-top: 6px; }
+    textarea, input[type="text"] {
+      width: 100%; border: 1.5px solid var(--line); border-radius: 12px; padding: 13px 15px; font-size: 15px;
+      font-family: inherit; background: var(--paper); color: var(--ink); resize: vertical;
+    }
+    textarea { min-height: 130px; line-height: 1.8; }
+    textarea:focus, input[type="text"]:focus { outline: none; border-color: var(--emerald); }
+    .char-count { text-align: right; font-size: 11.5px; opacity: .45; margin-top: 5px; font-family: "DM Mono", monospace; }
+
+    .consent-row { display: flex; align-items: flex-start; gap: 10px; font-size: 13.5px; opacity: .85; }
+    .consent-row input { width: auto; margin-top: 3px; flex: 0 0 auto; }
+
+    .turnstile-wrap { margin: 22px 0; display: flex; justify-content: center; }
+
+    .submit-btn {
+      display: block; width: 100%; border: none; border-radius: 40px; padding: 16px; font-size: 15.5px; font-weight: 700;
+      background: var(--emerald); color: #fff; cursor: pointer; transition: transform .2s, background .2s, box-shadow .2s;
+      box-shadow: var(--shadow); font-family: inherit;
+    }
+    .submit-btn:hover:not(:disabled) { background: var(--emerald-deep); transform: translateY(-2px); }
+    .submit-btn:disabled { opacity: .55; cursor: not-allowed; transform: none; }
+
+    .error-banner {
+      display: none; background: #ffe0e3; border: 1px solid rgba(230,53,72,.35); color: #9c1f30; border-radius: 12px;
+      padding: 12px 16px; font-size: 13.5px; margin-bottom: 18px;
+    }
+    .error-banner.show { display: block; }
+
+    .state-box { text-align: center; padding: 30px 6px; }
+    .state-box .big-icon { font-size: 52px; margin-bottom: 14px; line-height: 1; }
+    .state-box h1 { margin-bottom: 10px; }
+    .state-box p { opacity: .8; font-size: 15px; max-width: 420px; margin: 0 auto; }
+    .state-box .home-link {
+      display: inline-block; margin-top: 26px; text-decoration: none; color: var(--emerald-deep); font-weight: 700;
+      font-size: 14px; border-bottom: 2px solid var(--emerald);
+    }
+
+    .skeleton { opacity: .5; }
+    .skeleton .card { min-height: 280px; display: flex; align-items: center; justify-content: center; }
+    .spinner { width: 28px; height: 28px; border: 3px solid var(--line); border-top-color: var(--emerald); border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    footer { text-align: center; padding: 20px; font-size: 12px; opacity: .4; }
+  </style>
+</head>
+
+<body>
+
+  <div class="topbar">
+    <a class="logo" href="/">
+      <span class="mark"><img src="/logo.webp" width="38" height="38" alt="HexaPoint"></span>
+      <span class="name">HexaPoint</span>
+    </a>
+    <button class="langtog" id="langtog" type="button">EN / 日本語</button>
+  </div>
+
+  <main>
+
+    <div id="loading-view" class="card" style="min-height:260px;display:flex;align-items:center;justify-content:center;">
+      <div class="spinner"></div>
+    </div>
+
+    <div id="invalid-view" class="card state-box" style="display:none;">
+      <div class="big-icon">🔒</div>
+      <h1><span data-jp>このリンクは無効です</span><span data-en>This link is invalid</span></h1>
+      <p>
+        <span data-jp>リンクの有効期限が切れているか、URLが正しくない可能性があります。お心当たりがない場合は、お手数ですが HexaPoint までご連絡ください。</span>
+        <span data-en>This link may have expired, or the URL is incorrect. If you weren't expecting this, please contact HexaPoint.</span>
+      </p>
+      <a class="home-link" href="/"><span data-jp>ホームへ戻る</span><span data-en>Back to home</span></a>
+    </div>
+
+    <div id="already-view" class="card state-box" style="display:none;">
+      <div class="big-icon">✅</div>
+      <h1><span data-jp>ご回答ありがとうございました</span><span data-en>You've already responded</span></h1>
+      <p>
+        <span data-jp>このリンクに対するご感想は既に受け付けております。貴重なお時間をいただき、誠にありがとうございました。</span>
+        <span data-en>We've already received your feedback for this request. Thank you again for taking the time.</span>
+      </p>
+      <a class="home-link" href="/"><span data-jp>ホームへ戻る</span><span data-en>Back to home</span></a>
+    </div>
+
+    <div id="success-view" class="card state-box" style="display:none;">
+      <div class="big-icon">🎉</div>
+      <h1><span data-jp>ありがとうございました！</span><span data-en>Thank you!</span></h1>
+      <p>
+        <span data-jp>ご感想をお送りいただきありがとうございます。確認のうえ、ウェブサイトに掲載させていただく場合があります。</span>
+        <span data-en>Your feedback has been received. We'll review it and may feature it on our website.</span>
+      </p>
+      <a class="home-link" href="/"><span data-jp>HexaPointのサイトへ</span><span data-en>Visit HexaPoint</span></a>
+    </div>
+
+    <div id="form-view" class="card" style="display:none;">
+      <div class="eyebrow">HEXAPOINT</div>
+      <h1 id="greeting"><span data-jp>ご感想をお聞かせください</span><span data-en>We'd love your feedback</span></h1>
+      <div class="sub" id="project-sub"></div>
+
+      <div class="error-banner" id="form-error"></div>
+
+      <form id="tform">
+        <div class="field">
+          <label><span data-jp>満足度の評価</span><span data-en>Your rating</span></label>
+          <div class="stars-pick" id="stars-pick">
+            <button type="button" data-v="1">★</button>
+            <button type="button" data-v="2">★</button>
+            <button type="button" data-v="3">★</button>
+            <button type="button" data-v="4">★</button>
+            <button type="button" data-v="5">★</button>
+          </div>
+          <div class="stars-label" id="stars-label"></div>
+        </div>
+
+        <div class="field">
+          <label><span data-jp>ご感想・コメント</span><span data-en>Your comment</span></label>
+          <textarea id="comment" maxlength="2000" placeholder="ご依頼内容、対応、完成したものについてのご感想をお聞かせください… / Tell us about the process, communication, and the final result…"></textarea>
+          <div class="char-count"><span id="char-count">0</span> / 2000</div>
+        </div>
+
+        <div class="field">
+          <label><span data-jp>表示名</span><span data-en>Display name</span></label>
+          <input type="text" id="display-name" maxlength="200">
+          <div class="hint"><span data-jp>ウェブサイトに掲載する際の表示名です。例: 「田中様」「T.Yamada」など。</span><span data-en>How your name appears if featured — e.g. "T. Yamada" or a business name.</span></div>
+        </div>
+
+        <div class="field">
+          <label class="consent-row">
+            <input type="checkbox" id="consent" checked>
+            <span>
+              <span data-jp>上記の表示名とコメントをHexaPointのウェブサイトに掲載することに同意します（掲載前に必ず確認・編集いたします）。</span>
+              <span data-en>I agree that my name and comment above may be featured on the HexaPoint website (always reviewed/edited before publishing).</span>
+            </span>
+          </label>
+        </div>
+
+        <div class="turnstile-wrap">
+          <div id="tm-turnstile" class="cf-turnstile" data-sitekey="0x4AAAAAAD8H_SMh5X5eLg1u" data-theme="light"></div>
+        </div>
+
+        <button type="submit" class="submit-btn" id="submit-btn">
+          <span data-jp>ご感想を送信する</span><span data-en>Submit feedback</span>
+        </button>
+      </form>
+    </div>
+
+  </main>
+
+  <footer>HexaPoint © <span id="yr"></span></footer>
+
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+
+  <script>
+    document.getElementById('yr').textContent = new Date().getFullYear();
+
+    var tog = document.getElementById('langtog');
+    tog.addEventListener('click', function () {
+      var en = document.body.classList.toggle('en-mode');
+      document.documentElement.lang = en ? 'en' : 'ja';
+      tog.textContent = en ? '日本語 / EN' : 'EN / 日本語';
+    });
+
+    function showView(id) {
+      ['loading-view', 'invalid-view', 'already-view', 'success-view', 'form-view'].forEach(function (v) {
+        document.getElementById(v).style.display = (v === id) ? '' : 'none';
+      });
+    }
+
+    var token = new URLSearchParams(location.search).get('token') || '';
+    var selectedRating = 0;
+    var STAR_LABELS_JA = ['', '残念でした', 'もう少し改善が必要', '普通', '満足', '非常に満足！'];
+    var STAR_LABELS_EN = ['', 'Not great', 'Room to improve', 'Okay', 'Satisfied', 'Extremely satisfied!'];
+
+    function init() {
+      if (!token) { showView('invalid-view'); return; }
+      fetch('/api/testimonial?token=' + encodeURIComponent(token))
+        .then(function (res) { return res.json().then(function (data) { return { status: res.status, data: data }; }); })
+        .then(function (result) {
+          if (!result.data.ok) {
+            showView(result.data.error === 'already_submitted' ? 'already-view' : 'invalid-view');
+            return;
+          }
+          document.getElementById('project-sub').innerHTML =
+            '<span data-jp>「<b>' + esc(result.data.projectLabel || 'ご依頼いただいたプロジェクト') + '</b>」についてのご感想をお願いします。</span>' +
+            '<span data-en>Tell us about your <b>' + esc(result.data.projectLabel || 'recent project') + '</b>.</span>';
+          document.getElementById('display-name').value = result.data.clientName || '';
+          showView('form-view');
+        })
+        .catch(function () { showView('invalid-view'); });
+    }
+
+    function esc(s) {
+      return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    document.getElementById('stars-pick').addEventListener('click', function (e) {
+      var btn = e.target.closest('button');
+      if (!btn) return;
+      selectedRating = parseInt(btn.dataset.v, 10);
+      Array.prototype.forEach.call(document.querySelectorAll('#stars-pick button'), function (b) {
+        b.classList.toggle('active', parseInt(b.dataset.v, 10) <= selectedRating);
+      });
+      var en = document.body.classList.contains('en-mode');
+      document.getElementById('stars-label').textContent = en ? STAR_LABELS_EN[selectedRating] : STAR_LABELS_JA[selectedRating];
+    });
+
+    var commentEl = document.getElementById('comment');
+    commentEl.addEventListener('input', function () {
+      document.getElementById('char-count').textContent = commentEl.value.length;
+    });
+
+    function showFormError(msg) {
+      var el = document.getElementById('form-error');
+      el.textContent = msg;
+      el.classList.add('show');
+    }
+
+    var ERROR_MESSAGES = {
+      invalid_rating: '評価を選択してください。 / Please select a rating.',
+      comment_too_short: 'コメントは10文字以上でご入力ください。 / Please write at least 10 characters.',
+      already_submitted: 'このリンクへのご感想は既に受け付けております。 / Feedback for this link was already submitted.',
+      turnstile_missing: 'ボット確認を完了してください。 / Please complete the verification checkbox.',
+      turnstile_failed: 'ボット確認に失敗しました。もう一度お試しください。 / Verification failed, please try again.',
+    };
+
+    document.getElementById('tform').addEventListener('submit', function (e) {
+      e.preventDefault();
+      document.getElementById('form-error').classList.remove('show');
+
+      if (!selectedRating) { showFormError(ERROR_MESSAGES.invalid_rating); return; }
+      var comment = commentEl.value.trim();
+      if (comment.length < 10) { showFormError(ERROR_MESSAGES.comment_too_short); return; }
+      if (!document.getElementById('consent').checked) {
+        showFormError('掲載への同意が必要です。 / Please check the consent box to continue.');
+        return;
+      }
+      var turnstileToken = (typeof turnstile !== 'undefined') ? turnstile.getResponse('#tm-turnstile') : '';
+      if (!turnstileToken) { showFormError(ERROR_MESSAGES.turnstile_missing); return; }
+
+      var btn = document.getElementById('submit-btn');
+      btn.disabled = true;
+
+      fetch('/api/testimonial', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          token: token,
+          rating: selectedRating,
+          comment: comment,
+          displayName: document.getElementById('display-name').value.trim(),
+          turnstileToken: turnstileToken
+        })
+      })
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+          if (!data.ok) {
+            showFormError(ERROR_MESSAGES[data.error] || ('送信に失敗しました (' + data.error + ') / Submission failed'));
+            btn.disabled = false;
+            if (typeof turnstile !== 'undefined') { try { turnstile.reset('#tm-turnstile'); } catch (e2) {} }
+            return;
+          }
+          showView('success-view');
+        })
+        .catch(function (err) {
+          showFormError('通信エラーが発生しました。もう一度お試しください。 / Network error, please try again.');
+          btn.disabled = false;
+        });
+    });
+
+    init();
+  </script>
+
+</body>
+</html>
