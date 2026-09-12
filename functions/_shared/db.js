@@ -725,6 +725,7 @@ const TESTIMONIAL_ADMIN_COLUMNS = new Set([
   "comment",
   "admin_note",
   "display_order",
+  "logo_url",
 ]);
 
 // Generic field edits (admin cleaning up a client's wording, fixing a typo in
@@ -786,7 +787,7 @@ export async function deleteTestimonial(env, id) {
 export async function listPublishedTestimonials(env, limit = 20) {
   const limitNum = Math.min(50, Math.max(1, parseInt(limit, 10) || 20));
   const result = await env.DB.prepare(
-    `SELECT id, display_name, project_label, rating, comment, published_at
+    `SELECT id, display_name, project_label, rating, comment, logo_url, published_at
      FROM testimonials WHERE status = 'approved' AND published = 1
      ORDER BY display_order ASC, published_at DESC LIMIT ?`
   ).bind(limitNum).all();

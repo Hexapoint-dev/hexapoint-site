@@ -64,6 +64,11 @@ export async function onRequestPatch({ request, env, params }) {
       if (body.displayName != null) fieldPatch.display_name = String(body.displayName).trim().slice(0, 200);
       if (body.projectLabel != null) fieldPatch.project_label = String(body.projectLabel).trim().slice(0, 200);
       if (body.rating != null) fieldPatch.rating = clampRating(body.rating);
+      if (body.logoUrl != null) {
+        const logo = validateLogoUrl(body.logoUrl);
+        if (!logo.ok) return jsonResponse({ ok: false, error: logo.error }, 400);
+        fieldPatch.logo_url = logo.value;
+      }
       if (Object.keys(fieldPatch).length) await updateTestimonialFields(env, params.id, fieldPatch);
 
       const testimonial = await setTestimonialReviewStatus(env, params.id, "approved", body.adminNote);
@@ -125,6 +130,11 @@ export async function onRequestPatch({ request, env, params }) {
     if (body.comment != null) fieldPatch.comment = String(body.comment).trim().slice(0, 2000);
     if (body.adminNote != null) fieldPatch.admin_note = String(body.adminNote).trim().slice(0, 1000);
     if (body.displayOrder != null) fieldPatch.display_order = parseInt(body.displayOrder, 10) || 0;
+    if (body.logoUrl != null) {
+      const logo = validateLogoUrl(body.logoUrl);
+      if (!logo.ok) return jsonResponse({ ok: false, error: logo.error }, 400);
+      fieldPatch.logo_url = logo.value;
+    }
 
     const testimonial = await updateTestimonialFields(env, params.id, fieldPatch);
     return jsonResponse({ ok: true, testimonial });
@@ -168,6 +178,26 @@ async function invalidatePublicTestimonialsCache(env) {
   } catch (err) {
     console.error("invalidatePublicTestimonialsCache failed (non-fatal):", err);
   }
+}
+
+// Logos are stored as a base64 data: URI directly in the `testimonials` row
+// (see migrations/0010_testimonial_logo.sql for why -- no R2/Images binding
+// exists for this project). Capped well under D1's per-value limit so one
+// oversized upload can't bloat the row or the public feed response.
+const MAX_LOGO_BYTES = 350 * 1024;
+
+function validateLogoUrl(value) {
+  const s = String(value || "").trim();
+  if (!s) return { ok: true, value: "" }; // empty string clears the logo
+  if (!/^data:image\/(png|jpe?g|webp|svg\+xml);base64,/.test(s)) {
+    return { ok: false, error: "invalid_logo_format" };
+  }
+  const base64Part = s.slice(s.indexOf(",") + 1);
+  const approxBytes = Math.floor((base64Part.length * 3) / 4);
+  if (approxBytes > MAX_LOGO_BYTES) {
+    return { ok: false, error: "logo_too_large" };
+  }
+  return { ok: true, value: s };
 }
 
 function clampRating(value) {

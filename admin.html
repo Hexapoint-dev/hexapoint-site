@@ -1803,6 +1803,15 @@
         <input type="text" id="testi-edit-display-name">
       </div>
       <div class="field">
+        <label>お客様のロゴ（任意 / サイトのアバターの代わりに表示）</label>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <img id="testi-logo-preview" style="display:none;width:48px;height:48px;border-radius:50%;object-fit:cover;border:1px solid var(--line);">
+          <input type="file" id="testi-edit-logo-file" accept="image/png,image/jpeg,image/webp,image/svg+xml" onchange="onTestiLogoFileChange(event)">
+          <button type="button" class="btn btn-ghost" id="testi-btn-clear-logo" onclick="clearTestiLogo()" style="display:none;">削除</button>
+        </div>
+        <div style="font-size:11px;opacity:.6;margin-top:6px;">PNG / JPEG / WebP / SVG、350KB以下</div>
+      </div>
+      <div class="field">
         <label>コメント</label>
         <textarea id="testi-edit-comment" style="min-height:120px;"></textarea>
       </div>
@@ -3227,6 +3236,10 @@
   var testiState = { status: '', search: '', page: 1, limit: 25 };
   var currentTestimonialId = null;
   var currentTestimonialData = null;
+  // undefined = admin hasn't touched the logo this modal session (don't send
+  // logoUrl in the PATCH at all); "" = explicit clear; data: URI = new upload.
+  var pendingLogoDataUrl;
+  var MAX_LOGO_BYTES = 350 * 1024;
   var testiSearchDebounce = null;
 
   function updateTestimonialsReviewBadge(count) {
@@ -3431,6 +3444,18 @@
     document.getElementById('testi-edit-comment').value = t.comment || '';
     document.getElementById('testi-edit-admin-note').value = t.admin_note || '';
 
+    pendingLogoDataUrl = undefined; // no pending change until the admin picks/clears a file
+    document.getElementById('testi-edit-logo-file').value = '';
+    var logoPreview = document.getElementById('testi-logo-preview');
+    if (t.logo_url) {
+      logoPreview.src = t.logo_url;
+      logoPreview.style.display = '';
+      document.getElementById('testi-btn-clear-logo').style.display = '';
+    } else {
+      logoPreview.style.display = 'none';
+      document.getElementById('testi-btn-clear-logo').style.display = 'none';
+    }
+
     document.getElementById('testi-btn-copy-link').style.display = (t.status === 'sent') ? '' : 'none';
     document.getElementById('testi-btn-resend').style.display = (t.status === 'sent') ? '' : 'none';
     document.getElementById('testi-btn-approve').style.display = (t.status === 'submitted') ? '' : 'none';
@@ -3472,6 +3497,43 @@
     }).then(function (res) { return res.json(); });
   }
 
+  window.onTestiLogoFileChange = function (event) {
+    var file = event.target.files && event.target.files[0];
+    if (!file) return;
+    var errEl = document.getElementById('testi-modal-error');
+    var reader = new FileReader();
+    reader.onload = function () {
+      var dataUrl = reader.result;
+      // Rough check on the encoded string length -- matches the server's own
+      // MAX_LOGO_BYTES cap (functions/api/admin/testimonials/[id].js) so a
+      // too-large file is rejected here instead of round-tripping to the API.
+      var approxBytes = Math.floor((dataUrl.length - dataUrl.indexOf(',') - 1) * 3 / 4);
+      if (approxBytes > MAX_LOGO_BYTES) {
+        errEl.textContent = 'ファイルが大きすぎます（350KB以下にしてください）。';
+        errEl.classList.add('show');
+        event.target.value = '';
+        return;
+      }
+      pendingLogoDataUrl = dataUrl;
+      var logoPreview = document.getElementById('testi-logo-preview');
+      logoPreview.src = dataUrl;
+      logoPreview.style.display = '';
+      document.getElementById('testi-btn-clear-logo').style.display = '';
+    };
+    reader.onerror = function () {
+      errEl.textContent = 'ファイルの読み込みに失敗しました。';
+      errEl.classList.add('show');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  window.clearTestiLogo = function () {
+    pendingLogoDataUrl = '';
+    document.getElementById('testi-edit-logo-file').value = '';
+    document.getElementById('testi-logo-preview').style.display = 'none';
+    document.getElementById('testi-btn-clear-logo').style.display = 'none';
+  };
+
   // Manual fallback for when OneSignal can't send (e.g. account under review) --
   // lets the admin grab the same single-use link the email would have
   // contained and pass it along another way (WhatsApp, a personal email, etc).
@@ -3505,6 +3567,7 @@
       body.projectLabel = document.getElementById('testi-edit-project').value.trim();
       body.rating = document.getElementById('testi-edit-rating').value;
       body.adminNote = document.getElementById('testi-edit-admin-note').value.trim();
+      if (pendingLogoDataUrl !== undefined) body.logoUrl = pendingLogoDataUrl;
     }
     if (action === 'reject') {
       body.adminNote = document.getElementById('testi-edit-admin-note').value.trim();
@@ -3533,13 +3596,15 @@
 
   window.testiSaveFields = function () {
     if (!currentTestimonialId) return;
-    testiPatch({
+    var body = {
       projectLabel: document.getElementById('testi-edit-project').value.trim(),
       rating: document.getElementById('testi-edit-rating').value,
       displayName: document.getElementById('testi-edit-display-name').value.trim(),
       comment: document.getElementById('testi-edit-comment').value.trim(),
       adminNote: document.getElementById('testi-edit-admin-note').value.trim()
-    })
+    };
+    if (pendingLogoDataUrl !== undefined) body.logoUrl = pendingLogoDataUrl;
+    testiPatch(body)
       .then(function (data) {
         if (!data.ok) throw new Error(data.error || 'request_failed');
         fetchTestimonials();
