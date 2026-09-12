@@ -793,3 +793,103 @@ export async function listPublishedTestimonials(env, limit = 20) {
   ).bind(limitNum).all();
   return result.results || [];
 }
+
+// ---- LINE Official Account chat (migrations/0011_line_chat.sql) ----
+// Written from two places: functions/api/line-webhook.js (incoming) and
+// functions/api/admin/line-conversations/[id].js (outgoing admin replies).
+
+export async function getLineConversationByUserId(env, lineUserId) {
+  const row = await env.DB.prepare("SELECT * FROM line_conversations WHERE line_user_id = ?").bind(lineUserId).first();
+  return row || null;
+}
+
+export async function getLineConversationById(env, id) {
+  if (!id) return null;
+  const row = await env.DB.prepare("SELECT * FROM line_conversations WHERE id = ?").bind(id).first();
+  return row || null;
+}
+
+// Creates the conversation on first contact (profile fetched by the caller,
+// since that needs a LINE API call this helper shouldn't own), or just
+// returns the existing one -- display_name/picture_url are refreshed here
+// too, since a returning friend's profile may have changed since we last saw them.
+export async function upsertLineConversation(env, { lineUserId, displayName, pictureUrl }) {
+  await env.DB.prepare(
+    `INSERT INTO line_conversations (line_user_id, display_name, picture_url)
+     VALUES (?, ?, ?)
+     ON CONFLICT(line_user_id) DO UPDATE SET
+       display_name = excluded.display_name,
+       picture_url = excluded.picture_url,
+       updated_at = datetime('now')`
+  ).bind(lineUserId, displayName || "", pictureUrl || "").run();
+  return getLineConversationByUserId(env, lineUserId);
+}
+
+export async function listLineConversations(env, { page, limit } = {}) {
+  const pageNum = Math.max(1, parseInt(page, 10) || 1);
+  const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 30));
+  const offset = (pageNum - 1) * limitNum;
+
+  const [listResult, countResult, unreadResult] = await Promise.all([
+    env.DB.prepare(
+      `SELECT * FROM line_conversations WHERE blocked = 0
+       ORDER BY (last_message_at IS NULL) ASC, last_message_at DESC LIMIT ? OFFSET ?`
+    ).bind(limitNum, offset).all(),
+    env.DB.prepare("SELECT COUNT(*) AS total FROM line_conversations WHERE blocked = 0").first(),
+    env.DB.prepare("SELECT COUNT(*) AS total FROM line_conversations WHERE unread_count > 0").first(),
+  ]);
+
+  return {
+    conversations: listResult.results || [],
+    total: countResult ? countResult.total : 0,
+    unreadConversations: unreadResult ? unreadResult.total : 0,
+    page: pageNum,
+    limit: limitNum,
+  };
+}
+
+export async function markLineConversationRead(env, id) {
+  await env.DB.prepare("UPDATE line_conversations SET unread_count = 0 WHERE id = ?").bind(id).run();
+}
+
+// `incoming` bumps unread_count and stamps the preview from the customer's
+// side; an admin reply (incoming=false) updates the preview but never
+// touches unread_count -- the admin was clearly just looking at this thread.
+export async function touchLineConversation(env, id, preview, incoming) {
+  if (incoming) {
+    await env.DB.prepare(
+      `UPDATE line_conversations
+       SET last_message_at = datetime('now'), last_message_preview = ?, unread_count = unread_count + 1, updated_at = datetime('now')
+       WHERE id = ?`
+    ).bind(preview, id).run();
+  } else {
+    await env.DB.prepare(
+      `UPDATE line_conversations SET last_message_at = datetime('now'), last_message_preview = ?, updated_at = datetime('now') WHERE id = ?`
+    ).bind(preview, id).run();
+  }
+}
+
+// `lineMessageId` is only ever set for incoming messages -- see the schema
+// comment in migrations/0011_line_chat.sql for why that's what makes LINE's
+// webhook retries idempotent (ON CONFLICT DO NOTHING silently drops a retry
+// of the same event instead of duplicating the message).
+export async function insertLineMessage(env, { conversationId, lineMessageId, direction, messageType, body, imageData }) {
+  const result = await env.DB.prepare(
+    `INSERT INTO line_messages (conversation_id, line_message_id, direction, message_type, body, image_data)
+     VALUES (?, ?, ?, ?, ?, ?)
+     ON CONFLICT(line_message_id) DO NOTHING`
+  ).bind(conversationId, lineMessageId || null, direction, messageType || "text", body || "", imageData || null).run();
+  return { ok: true, inserted: result?.meta?.changes > 0 };
+}
+
+export async function listLineMessages(env, conversationId, limit = 100) {
+  const limitNum = Math.min(200, Math.max(1, parseInt(limit, 10) || 100));
+  // Fetch the most recent N, then reverse to chronological order for display
+  // (chat UIs read top-to-bottom, oldest first, newest at the bottom).
+  const result = await env.DB.prepare(
+    `SELECT * FROM (
+       SELECT * FROM line_messages WHERE conversation_id = ? ORDER BY created_at DESC, id DESC LIMIT ?
+     ) ORDER BY created_at ASC, id ASC`
+  ).bind(conversationId, limitNum).all();
+  return result.results || [];
+}

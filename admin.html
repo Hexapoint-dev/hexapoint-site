@@ -180,6 +180,15 @@
   .badge-testi-rejected { background: var(--coral-soft); color: var(--coral); }
   .testi-star { color: #fbbc04; letter-spacing: 1px; }
   .testi-pub-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--emerald); margin-left: 6px; }
+  .line-avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; background: var(--line); display: block; }
+  .line-bubble-row { display: flex; }
+  .line-bubble-row.out { justify-content: flex-end; }
+  .line-bubble { max-width: 70%; padding: 10px 14px; border-radius: 16px; font-size: 13.5px; line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
+  .line-bubble-row.in .line-bubble { background: #fff; border: 1px solid var(--line); border-bottom-left-radius: 4px; }
+  .line-bubble-row.out .line-bubble { background: var(--emerald); color: #fff; border-bottom-right-radius: 4px; }
+  .line-bubble img { max-width: 220px; border-radius: 10px; display: block; }
+  .line-bubble-time { font-size: 10px; opacity: .45; margin-top: 4px; text-align: right; }
+  .line-bubble-row.in .line-bubble-time { text-align: left; }
 
   .row-actions button {
     border: none;
@@ -913,6 +922,7 @@
     <button type="button" class="active" id="tab-btn-orders" onclick="switchTab('orders')">注文 <span class="mono" style="font-size:10px;opacity:.7">Orders</span></button>
     <button type="button" id="tab-btn-messages" onclick="switchTab('messages')">お問い合わせ <span class="mono" style="font-size:10px;opacity:.7">Messages</span><span class="tab-badge" id="messages-unread-badge" style="display:none;"></span></button>
     <button type="button" id="tab-btn-testimonials" onclick="switchTab('testimonials')">お客様の声 <span class="mono" style="font-size:10px;opacity:.7">Testimonials</span><span class="tab-badge" id="testimonials-review-badge" style="display:none;"></span></button>
+    <button type="button" id="tab-btn-line" onclick="switchTab('line')">LINE <span class="mono" style="font-size:10px;opacity:.7">Chat</span><span class="tab-badge" id="line-unread-badge" style="display:none;"></span></button>
     <button type="button" id="tab-btn-calendar" onclick="switchTab('calendar')">予約カレンダー <span class="mono" style="font-size:10px;opacity:.7">Calendar</span></button>
     <span class="tab-divider"></span>
     <!-- 顧客管理 / Customers -->
@@ -1114,6 +1124,36 @@
   </div>
 
 </div><!-- /#view-testimonials -->
+
+<div id="view-line" class="tab-view">
+
+  <div id="line-not-configured" class="empty-state" style="display:none;padding:20px 0;">
+    LINE連携が未設定です。<code>LINE_CHANNEL_SECRET</code>・<code>LINE_CHANNEL_ACCESS_TOKEN</code>
+    を環境変数に設定してください（SETUP-line.md 参照）。
+  </div>
+
+  <div class="toolbar">
+    <button type="button" class="btn btn-ghost" onclick="fetchLineConversations()">更新 / Refresh</button>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th></th>
+          <th>お客様</th>
+          <th>最新メッセージ</th>
+          <th>日時</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="line-conversations-tbody">
+        <tr><td colspan="5" class="loading-state">読み込み中…</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</div><!-- /#view-line -->
 
 <div id="view-calendar" class="tab-view">
 
@@ -1838,6 +1878,26 @@
   </div>
 </div>
 
+<!-- ===== LINE chat modal ===== -->
+<div class="overlay" id="line-chat-overlay">
+  <div class="modal" style="display:flex;flex-direction:column;overflow:hidden;">
+    <button type="button" class="close" onclick="closeLineChatModal()">✕</button>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;flex:0 0 auto;">
+      <img id="line-chat-avatar" class="line-avatar" style="width:44px;height:44px;" src="" alt="">
+      <div>
+        <h2 style="margin:0;font-size:17px;" id="line-chat-name"></h2>
+        <div class="mono" style="font-size:10.5px;opacity:.5;" id="line-chat-userid"></div>
+      </div>
+    </div>
+    <div id="line-chat-messages" style="flex:1;min-height:0;overflow-y:auto;background:var(--paper);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px;"></div>
+    <div class="modal-error" id="line-chat-error" style="flex:0 0 auto;"></div>
+    <div style="display:flex;gap:8px;margin-top:12px;flex:0 0 auto;">
+      <textarea id="line-chat-input" placeholder="メッセージを入力…" style="flex:1;min-height:44px;max-height:120px;resize:vertical;"></textarea>
+      <button type="button" class="btn" id="line-chat-send-btn" onclick="sendLineReply()" style="align-self:flex-end;">送信</button>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="calendar-event-overlay">
   <div class="modal">
     <button type="button" class="close" onclick="closeEventModal()">✕</button>
@@ -1901,6 +1961,16 @@
     if (!s) return '';
     try {
       return new Intl.DateTimeFormat('ja-JP', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Tokyo' })
+        .format(new Date(s.replace(' ', 'T') + 'Z'));
+    } catch (e) {
+      return s;
+    }
+  }
+
+  function fmtTime(s) {
+    if (!s) return '';
+    try {
+      return new Intl.DateTimeFormat('ja-JP', { timeStyle: 'short', timeZone: 'Asia/Tokyo' })
         .format(new Date(s.replace(' ', 'T') + 'Z'));
     } catch (e) {
       return s;
@@ -2401,7 +2471,7 @@
   }
 
   // ---- Tabs ----
-  var TAB_NAMES = ['orders', 'messages', 'testimonials', 'calendar', 'customers', 'renewals', 'finance', 'plans', 'analytics', 'status', 'history'];
+  var TAB_NAMES = ['orders', 'messages', 'testimonials', 'line', 'calendar', 'customers', 'renewals', 'finance', 'plans', 'analytics', 'status', 'history'];
   window.switchTab = function (name) {
     TAB_NAMES.forEach(function (t) {
       document.getElementById('view-' + t).classList.toggle('active', t === name);
@@ -2416,6 +2486,7 @@
     if (name === 'status') fetchStatus();
     if (name === 'messages') fetchMessages();
     if (name === 'testimonials') fetchTestimonials();
+    if (name === 'line') fetchLineConversations();
     if (name === 'calendar') { fetchCalendar(); initCalGridIfNeeded(); }
   };
 
@@ -3653,6 +3724,178 @@
         showError('削除に失敗しました: ' + err.message);
       });
   };
+
+  // ---- LINE (Official Account chat) tab ----
+  var currentLineConversationId = null;
+  var currentLineConversation = null;
+  var lineChatPollTimer = null;
+
+  function updateLineUnreadBadge(count) {
+    var badge = document.getElementById('line-unread-badge');
+    if (count > 0) {
+      badge.textContent = count > 99 ? '99+' : String(count);
+      badge.style.display = '';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+
+  function renderLineConversationsTable(rows) {
+    var tbody = document.getElementById('line-conversations-tbody');
+    if (!rows.length) {
+      tbody.innerHTML = '<tr><td colspan="5" class="empty-state">メッセージはまだありません</td></tr>';
+      return;
+    }
+    tbody.innerHTML = rows.map(function (c) {
+      var avatar = c.picture_url
+        ? '<img class="line-avatar" src="' + esc(c.picture_url) + '" alt="">'
+        : '<span class="line-avatar" style="display:grid;place-items:center;background:var(--emerald);color:#fff;font-weight:700;">' + esc((c.display_name || '?').charAt(0)) + '</span>';
+      return '<tr onclick="openLineChatModal(' + c.id + ')"' + (c.unread_count > 0 ? ' style="font-weight:700;"' : '') + '>' +
+        '<td>' + avatar + '</td>' +
+        '<td data-label="お客様">' + esc(c.display_name || '(名前未取得)') + '</td>' +
+        '<td data-label="最新メッセージ">' + esc(truncate(c.last_message_preview, 50)) + '</td>' +
+        '<td class="mono" data-label="日時">' + esc(fmtDate(c.last_message_at)) + '</td>' +
+        '<td>' + (c.unread_count > 0 ? '<span class="tab-badge" style="position:static;">' + c.unread_count + '</span>' : '') + '</td>' +
+      '</tr>';
+    }).join('');
+  }
+
+  window.fetchLineConversations = function fetchLineConversations() {
+    var tbody = document.getElementById('line-conversations-tbody');
+    if (tbody) tbody.innerHTML = '<tr><td colspan="5" class="loading-state">読み込み中…</td></tr>';
+    fetch('/api/admin/line-conversations')
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (!data.ok) throw new Error(data.error || 'request_failed');
+        document.getElementById('line-not-configured').style.display = data.configured ? 'none' : '';
+        renderLineConversationsTable(data.conversations);
+        updateLineUnreadBadge(data.unreadConversations);
+      })
+      .catch(function (err) {
+        console.error('fetchLineConversations error:', err);
+        showError('LINE会話の取得に失敗しました: ' + err.message);
+        document.getElementById('line-conversations-tbody').innerHTML = '<tr><td colspan="5" class="empty-state">読み込みエラー</td></tr>';
+      });
+  };
+
+  function lineMessageBubbleHtml(m) {
+    var dir = m.direction === 'out' ? 'out' : 'in';
+    var inner = m.message_type === 'image' && m.image_data
+      ? '<img src="' + esc(m.image_data) + '" alt="">'
+      : esc(m.body);
+    return '<div class="line-bubble-row ' + dir + '"><div>' +
+      '<div class="line-bubble">' + inner + '</div>' +
+      '<div class="line-bubble-time">' + fmtTime(m.created_at) + '</div>' +
+      '</div></div>';
+  }
+
+  function renderLineMessages(messages) {
+    var box = document.getElementById('line-chat-messages');
+    box.innerHTML = messages.length
+      ? messages.map(lineMessageBubbleHtml).join('')
+      : '<div class="empty-state" style="padding:20px 0;">まだメッセージがありません</div>';
+    box.scrollTop = box.scrollHeight;
+  }
+
+  function stopLineChatPolling() {
+    if (lineChatPollTimer) { clearInterval(lineChatPollTimer); lineChatPollTimer = null; }
+  }
+
+  // Polls the open thread every 8s so new incoming messages show up without
+  // a manual refresh -- there's no WebSocket/push infra on Cloudflare Pages
+  // Functions here, so short polling while a chat is actually open is the
+  // simplest way to approximate "live". Stops the moment the modal closes.
+  function startLineChatPolling(id) {
+    stopLineChatPolling();
+    lineChatPollTimer = setInterval(function () {
+      fetch('/api/admin/line-conversations/' + id)
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+          if (!data.ok) return;
+          renderLineMessages(data.messages);
+        })
+        .catch(function () { /* silent -- next poll will retry */ });
+    }, 8000);
+  }
+
+  window.openLineChatModal = function (id) {
+    fetch('/api/admin/line-conversations/' + id)
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (!data.ok) throw new Error(data.error || 'request_failed');
+        currentLineConversationId = id;
+        currentLineConversation = data.conversation;
+        document.getElementById('line-chat-name').textContent = data.conversation.display_name || '(名前未取得)';
+        document.getElementById('line-chat-userid').textContent = data.conversation.line_user_id;
+        var avatar = document.getElementById('line-chat-avatar');
+        avatar.src = data.conversation.picture_url || '';
+        avatar.style.visibility = data.conversation.picture_url ? 'visible' : 'hidden';
+        document.getElementById('line-chat-input').value = '';
+        document.getElementById('line-chat-error').classList.remove('show');
+        renderLineMessages(data.messages);
+        document.getElementById('line-chat-overlay').classList.add('show');
+        startLineChatPolling(id);
+        fetchLineConversations(); // refresh the list so the unread badge/bold state clears
+      })
+      .catch(function (err) {
+        console.error('openLineChatModal error:', err);
+        showError('会話の取得に失敗しました: ' + err.message);
+      });
+  };
+
+  window.closeLineChatModal = function () {
+    document.getElementById('line-chat-overlay').classList.remove('show');
+    stopLineChatPolling();
+    currentLineConversationId = null;
+    currentLineConversation = null;
+  };
+
+  document.getElementById('line-chat-overlay').addEventListener('click', function (e) {
+    if (e.target === this) closeLineChatModal();
+  });
+
+  window.sendLineReply = function () {
+    if (!currentLineConversationId) return;
+    var input = document.getElementById('line-chat-input');
+    var text = input.value.trim();
+    if (!text) return;
+
+    var btn = document.getElementById('line-chat-send-btn');
+    btn.disabled = true;
+    var errEl = document.getElementById('line-chat-error');
+    errEl.classList.remove('show');
+
+    fetch('/api/admin/line-conversations/' + currentLineConversationId, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: text })
+    })
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        btn.disabled = false;
+        if (!data.ok) {
+          errEl.textContent = '送信に失敗しました: ' + data.error + (data.detail ? ' — ' + data.detail : '');
+          errEl.classList.add('show');
+          return;
+        }
+        input.value = '';
+        renderLineMessages(data.messages);
+        fetchLineConversations();
+      })
+      .catch(function (err) {
+        btn.disabled = false;
+        console.error('sendLineReply error:', err);
+        errEl.textContent = '送信に失敗しました: ' + err.message;
+        errEl.classList.add('show');
+      });
+  };
+
+  document.getElementById('line-chat-input').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendLineReply();
+    }
+  });
 
   // ---- 予約カレンダー (Calendar / Cal.com schedule) tab ----
   var DAY_ORDER = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
