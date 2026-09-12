@@ -4,6 +4,11 @@
 //     Zoho's API has no "remaining quota" field, but we're the only thing
 //     creating these invoices, so our own record is authoritative)
 //   - Resend (emails sent today/this month, self-tracked -- see _shared/usage.js)
+//   - OneSignal (お客様の声 request emails sent today/this month, counted from our
+//     own email_log table -- same reasoning as Zoho below: OneSignal's API has
+//     no "remaining quota" endpoint, but every send we make goes through
+//     logEmailSend() first, so our own record is authoritative for this one
+//     email type)
 //   - Cloudflare D1 / KV / Pages builds (via the Cloudflare API -- see
 //     _shared/cloudflare.js for the required separate API token)
 //   - Oracle Object Storage (D1 backup bucket usage, via a read+list PAR --
@@ -21,6 +26,7 @@ import { jsonResponse } from "../../_shared/db.js";
 import { requireAdmin } from "../../_shared/admin-auth.js";
 import { zohoConfigured } from "../../_shared/zoho.js";
 import { getResendUsage } from "../../_shared/usage.js";
+import { onesignalConfigured } from "../../_shared/onesignal.js";
 import { cloudflareConfigured, getD1Usage, getD1StorageSize, getKvUsage, getPagesBuildsThisMonth } from "../../_shared/cloudflare.js";
 import { oracleConfigured, getOracleUsage } from "../../_shared/oracle.js";
 
@@ -49,10 +55,44 @@ async function getZohoUsage(env) {
 // written -- verify against https://resend.com/pricing if this looks stale.
 const RESEND_FREE_LIMITS = { dailyLimit: 100, monthlyLimit: 3000 };
 
+// OneSignal's free-tier email allowance varies by account/plan (and isn't
+// exposed by any API endpoint), same situation as Zoho above -- set
+// ONESIGNAL_FREE_PLAN_EMAIL_LIMIT to whatever your actual plan allows (check
+// OneSignal's dashboard/pricing page, since this code can't look that up).
+// Counts only email_type = 'testimonial_request' -- the one email type this
+// site sends through OneSignal (everything else stays on Resend).
+const DEFAULT_ONESIGNAL_MONTHLY_LIMIT = 10000;
+
+async function getOneSignalUsage(env) {
+  const configured = onesignalConfigured(env);
+  const limit = Number(env.ONESIGNAL_FREE_PLAN_EMAIL_LIMIT) || DEFAULT_ONESIGNAL_MONTHLY_LIMIT;
+  if (!env.DB) return { configured, sentToday: 0, sentThisMonth: 0, limit, error: "db_not_configured" };
+
+  const dayStart = `${new Date().toISOString().slice(0, 10)} 00:00:00`;
+  const monthStart = `${new Date().toISOString().slice(0, 7)}-01 00:00:00`;
+
+  const [todayRow, monthRow] = await Promise.all([
+    env.DB.prepare(
+      `SELECT COUNT(*) AS cnt FROM email_log WHERE email_type = 'testimonial_request' AND sent_at >= ?`
+    ).bind(dayStart).first(),
+    env.DB.prepare(
+      `SELECT COUNT(*) AS cnt FROM email_log WHERE email_type = 'testimonial_request' AND sent_at >= ?`
+    ).bind(monthStart).first(),
+  ]);
+
+  return {
+    configured,
+    sentToday: (todayRow && todayRow.cnt) || 0,
+    sentThisMonth: (monthRow && monthRow.cnt) || 0,
+    limit,
+  };
+}
+
 async function loadStatus(env) {
-  const [zoho, resendUsage] = await Promise.all([
+  const [zoho, resendUsage, onesignal] = await Promise.all([
     getZohoUsage(env).catch((err) => ({ error: String(err) })),
     getResendUsage(env).catch((err) => ({ error: String(err) })),
+    getOneSignalUsage(env).catch((err) => ({ error: String(err) })),
   ]);
 
   const resend = { ...resendUsage, limits: RESEND_FREE_LIMITS };
@@ -76,7 +116,7 @@ async function loadStatus(env) {
     oracle.usage = await getOracleUsage(env).catch((err) => ({ error: String(err) }));
   }
 
-  return { zoho, resend, cloudflare, oracle };
+  return { zoho, resend, onesignal, cloudflare, oracle };
 }
 
 export async function onRequestGet({ request, env }) {
