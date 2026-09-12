@@ -1813,6 +1813,7 @@
     </div>
 
     <div class="modal-actions" style="flex-wrap:wrap;">
+      <button type="button" class="btn btn-ghost" id="testi-btn-copy-link" onclick="copyTestimonialLink()" style="display:none;">リンクをコピー</button>
       <button type="button" class="btn btn-ghost" id="testi-btn-resend" onclick="testiAction('resend')" style="display:none;">リンクを再送信</button>
       <button type="button" class="btn btn-ghost" onclick="testiSaveFields()">変更を保存</button>
       <button type="button" class="btn" id="testi-btn-approve" onclick="testiAction('approve')" style="display:none;">承認する</button>
@@ -3430,6 +3431,7 @@
     document.getElementById('testi-edit-comment').value = t.comment || '';
     document.getElementById('testi-edit-admin-note').value = t.admin_note || '';
 
+    document.getElementById('testi-btn-copy-link').style.display = (t.status === 'sent') ? '' : 'none';
     document.getElementById('testi-btn-resend').style.display = (t.status === 'sent') ? '' : 'none';
     document.getElementById('testi-btn-approve').style.display = (t.status === 'submitted') ? '' : 'none';
     document.getElementById('testi-btn-reject').style.display = (t.status === 'submitted' || t.status === 'approved') ? '' : 'none';
@@ -3469,6 +3471,28 @@
       body: JSON.stringify(body)
     }).then(function (res) { return res.json(); });
   }
+
+  // Manual fallback for when OneSignal can't send (e.g. account under review) --
+  // lets the admin grab the same single-use link the email would have
+  // contained and pass it along another way (WhatsApp, a personal email, etc).
+  window.copyTestimonialLink = function () {
+    if (!currentTestimonialData) return;
+    var link = location.origin + '/testimonial.html?token=' + encodeURIComponent(currentTestimonialData.token);
+    var errEl = document.getElementById('testi-modal-error');
+    var showCopied = function () {
+      errEl.textContent = 'リンクをコピーしました: ' + link;
+      errEl.classList.add('show');
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(link).then(showCopied).catch(function () {
+        errEl.textContent = 'コピーに失敗しました。リンク: ' + link;
+        errEl.classList.add('show');
+      });
+    } else {
+      errEl.textContent = 'このリンクをコピーしてください: ' + link;
+      errEl.classList.add('show');
+    }
+  };
 
   window.testiAction = function (action) {
     if (!currentTestimonialId) return;
