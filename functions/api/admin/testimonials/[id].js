@@ -80,12 +80,14 @@ export async function onRequestPatch({ request, env, params }) {
     if (action === "publish") {
       if (existing.status !== "approved") return jsonResponse({ ok: false, error: "not_approved" }, 400);
       const testimonial = await setTestimonialPublished(env, params.id, true);
+      await invalidatePublicTestimonialsCache(env);
       await logAdminAction(env, "testimonial_published", existing.order_id, `#${params.id} ${existing.client_name}`);
       return jsonResponse({ ok: true, testimonial });
     }
 
     if (action === "unpublish") {
       const testimonial = await setTestimonialPublished(env, params.id, false);
+      await invalidatePublicTestimonialsCache(env);
       await logAdminAction(env, "testimonial_unpublished", existing.order_id, `#${params.id} ${existing.client_name}`);
       return jsonResponse({ ok: true, testimonial });
     }
@@ -144,6 +146,21 @@ export async function onRequestDelete({ request, env, params }) {
   } catch (err) {
     console.error("admin delete testimonial error:", err);
     return jsonResponse({ ok: false, error: "server_error" }, 500);
+  }
+}
+
+// The public feed (functions/api/testimonials.js) caches its default (no
+// ?limit) response in KV for 5 minutes for homepage performance -- without
+// this, an admin publishing/unpublishing here would see the homepage lag
+// behind by up to that long, which reads as "it's broken" rather than "it's
+// cached". index.html never passes ?limit, so the default key is the only
+// one that matters in practice.
+async function invalidatePublicTestimonialsCache(env) {
+  if (!env.ORDERS_KV) return;
+  try {
+    await env.ORDERS_KV.delete("testimonials:public:v1:default");
+  } catch (err) {
+    console.error("invalidatePublicTestimonialsCache failed (non-fatal):", err);
   }
 }
 
