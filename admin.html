@@ -183,7 +183,8 @@
   .line-avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; background: var(--line); display: block; }
   .line-bubble-row { display: flex; }
   .line-bubble-row.out { justify-content: flex-end; }
-  .line-bubble { max-width: 70%; padding: 10px 14px; border-radius: 16px; font-size: 13.5px; line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
+  .line-bubble-wrap { max-width: 70%; }
+  .line-bubble { padding: 10px 14px; border-radius: 16px; font-size: 13.5px; line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
   .line-bubble-row.in .line-bubble { background: #fff; border: 1px solid var(--line); border-bottom-left-radius: 4px; }
   .line-bubble-row.out .line-bubble { background: var(--emerald); color: #fff; border-bottom-right-radius: 4px; }
   .line-bubble img { max-width: 220px; border-radius: 10px; display: block; }
@@ -3783,7 +3784,7 @@
     var inner = m.message_type === 'image' && m.image_data
       ? '<img src="' + esc(m.image_data) + '" alt="">'
       : esc(m.body);
-    return '<div class="line-bubble-row ' + dir + '"><div>' +
+    return '<div class="line-bubble-row ' + dir + '"><div class="line-bubble-wrap">' +
       '<div class="line-bubble">' + inner + '</div>' +
       '<div class="line-bubble-time">' + fmtTime(m.created_at) + '</div>' +
       '</div></div>';
