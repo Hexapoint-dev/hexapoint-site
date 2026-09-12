@@ -27,7 +27,7 @@ import {
   getEmailLogForRelated,
 } from "../../../_shared/db.js";
 import { requireAdmin } from "../../../_shared/admin-auth.js";
-import { sendTestimonialRequestEmail } from "../../../_shared/onesignal.js";
+import { sendTestimonialRequestEmail, formatOneSignalErrorDetail } from "../../../_shared/onesignal.js";
 
 export async function onRequestGet({ request, env, params }) {
   try {
@@ -108,7 +108,13 @@ export async function onRequestPatch({ request, env, params }) {
       });
 
       await logAdminAction(env, "testimonial_request_resent", existing.order_id, `#${params.id} ${existing.client_name}`);
-      return jsonResponse({ ok: true, testimonial, emailSent: sendResult.ok, emailError: sendResult.ok ? undefined : sendResult.error });
+      return jsonResponse({
+        ok: true,
+        testimonial,
+        emailSent: sendResult.ok,
+        emailError: sendResult.ok ? undefined : sendResult.error,
+        emailErrorDetail: sendResult.ok ? undefined : formatOneSignalErrorDetail(sendResult.detail),
+      });
     }
 
     // Plain field edit, no status change.

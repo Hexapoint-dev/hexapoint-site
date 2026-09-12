@@ -23,6 +23,24 @@ export function onesignalConfigured(env) {
   return Boolean(env.ONESIGNAL_APP_ID && env.ONESIGNAL_REST_API_KEY && env.ONESIGNAL_FROM_EMAIL);
 }
 
+// OneSignal's error body is usually { errors: [...] } or { errors: { field: [...] } }.
+// Pulled out into one short string so the admin panel can show *why* a send
+// failed (unverified from-address, app not yet approved for sending, etc.)
+// instead of just an opaque "onesignal_400".
+export function formatOneSignalErrorDetail(detail) {
+  if (!detail) return "";
+  const errors = detail.errors;
+  if (!errors) return JSON.stringify(detail).slice(0, 500);
+  if (Array.isArray(errors)) return errors.join("; ").slice(0, 500);
+  if (typeof errors === "object") {
+    return Object.entries(errors)
+      .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(", ") : v}`)
+      .join("; ")
+      .slice(0, 500);
+  }
+  return String(errors).slice(0, 500);
+}
+
 // `link` is the full https://.../testimonial.html?token=... URL the client
 // clicks through to. `projectLabel` is whatever the admin typed when sending
 // the request (plan name, or a free-text description for a manually-entered

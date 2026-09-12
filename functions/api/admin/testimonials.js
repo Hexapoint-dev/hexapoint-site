@@ -6,7 +6,7 @@
 
 import { jsonResponse, createTestimonialRequest, listTestimonials, generateToken, logAdminAction } from "../../_shared/db.js";
 import { requireAdmin } from "../../_shared/admin-auth.js";
-import { sendTestimonialRequestEmail } from "../../_shared/onesignal.js";
+import { sendTestimonialRequestEmail, formatOneSignalErrorDetail } from "../../_shared/onesignal.js";
 
 export async function onRequestGet({ request, env }) {
   try {
@@ -64,7 +64,13 @@ export async function onRequestPost({ request, env }) {
 
     await logAdminAction(env, "testimonial_request_sent", orderId, `${clientName} <${clientEmail}>`);
 
-    return jsonResponse({ ok: true, testimonial, emailSent: sendResult.ok, emailError: sendResult.ok ? undefined : sendResult.error });
+    return jsonResponse({
+      ok: true,
+      testimonial,
+      emailSent: sendResult.ok,
+      emailError: sendResult.ok ? undefined : sendResult.error,
+      emailErrorDetail: sendResult.ok ? undefined : formatOneSignalErrorDetail(sendResult.detail),
+    });
   } catch (err) {
     console.error("admin create testimonial error:", err);
     return jsonResponse({ ok: false, error: "server_error" }, 500);
