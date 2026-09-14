@@ -1562,6 +1562,21 @@
     provider's own dashboard for the authoritative number.</span>
   </div>
 
+  <div class="fin-card" style="margin-bottom:14px;">
+    <h3>メンテナンスモード <span class="mono" style="font-size:11px;opacity:.5">Maintenance Mode</span></h3>
+    <p style="font-size:12.5px;opacity:.7;margin:0 0 12px;line-height:1.6;">
+      有効にすると、この管理画面以外のすべてのページで訪問者に「メンテナンス中」の案内が
+      表示されます（管理画面とそのAPIはこの間もアクセス可能です）。大きな変更を行う際に
+      一時的にご利用ください。<br>
+      <span style="opacity:.8">When enabled, every public page shows an "under maintenance" notice to visitors instead of the live site (the admin panel and its API stay reachable). Use this briefly while making a risky change.</span>
+    </p>
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+      <span id="maintenance-badge" class="zoho-badge none">読み込み中…</span>
+      <button type="button" class="btn btn-ghost" id="maintenance-toggle-btn" onclick="toggleMaintenanceMode()" disabled>切り替え / Toggle</button>
+      <span id="maintenance-status" class="mono" style="font-size:12px;opacity:.7"></span>
+    </div>
+  </div>
+
   <div class="fin-grid">
     <div class="fin-card">
       <h3>Zoho Invoice <span class="mono" style="font-size:11px;opacity:.5">今年作成した請求書</span></h3>
@@ -1625,6 +1640,18 @@
       <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
         <button type="button" class="btn btn-ghost" id="purge-cache-btn" onclick="purgeCloudflareCache()">すべてのキャッシュを削除 / Purge everything</button>
         <span id="purge-cache-status" class="mono" style="font-size:12px;opacity:.7"></span>
+      </div>
+    </div>
+    <div class="fin-card">
+      <h3>IndexNow <span class="mono" style="font-size:11px;opacity:.5">検索エンジンへの再送信</span></h3>
+      <p style="font-size:12.5px;opacity:.7;margin:0 0 12px;line-height:1.6;">
+        トップページの内容を大きく更新した際に使用します。Bing・Yandex等（ChatGPT検索を含む）に
+        即座に再クロールを通知します。<br>
+        <span style="opacity:.8">Use after a significant homepage content update — notifies Bing, Yandex, etc. (including ChatGPT Search) to recrawl immediately.</span>
+      </p>
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <button type="button" class="btn btn-ghost" id="indexnow-btn" onclick="resubmitIndexNow()">トップページを再送信 / Resubmit homepage</button>
+        <span id="indexnow-status" class="mono" style="font-size:12px;opacity:.7"></span>
       </div>
     </div>
   </div>
@@ -2568,7 +2595,7 @@
     if (name === 'customers') fetchCustomers();
     if (name === 'plans') fetchPlansTab();
     if (name === 'analytics') fetchAnalytics();
-    if (name === 'status') fetchStatus();
+    if (name === 'status') { fetchStatus(); fetchMaintenanceStatus(); }
     if (name === 'messages') fetchMessages();
     if (name === 'testimonials') fetchTestimonials();
     if (name === 'line') fetchLineConversations();
@@ -5329,6 +5356,97 @@
         statusEl.style.color = '#c0392b';
         statusEl.textContent = '✗ 通信エラー';
         console.error('purgeCloudflareCache error:', err);
+      });
+  };
+
+  // ---- IndexNow: manual resubmit (System Status tab) ----
+  window.resubmitIndexNow = function () {
+    var btn = document.getElementById('indexnow-btn');
+    var statusEl = document.getElementById('indexnow-status');
+    btn.disabled = true;
+    btn.textContent = '送信中…';
+    statusEl.textContent = '';
+
+    fetch('/api/admin/indexnow-resubmit', { method: 'POST' })
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (result) {
+        btn.disabled = false;
+        btn.textContent = 'トップページを再送信 / Resubmit homepage';
+        if (result.ok && result.data.ok) {
+          statusEl.style.color = '';
+          statusEl.textContent = '✓ 送信しました (' + result.data.meaning + ')';
+        } else {
+          var errMsg = (result.data && (result.data.detail || result.data.error)) || 'request_failed';
+          statusEl.style.color = '#c0392b';
+          statusEl.textContent = '✗ 失敗: ' + errMsg;
+        }
+      })
+      .catch(function (err) {
+        btn.disabled = false;
+        btn.textContent = 'トップページを再送信 / Resubmit homepage';
+        statusEl.style.color = '#c0392b';
+        statusEl.textContent = '✗ 通信エラー';
+        console.error('resubmitIndexNow error:', err);
+      });
+  };
+
+  // ---- Maintenance mode toggle (System Status tab) ----
+  function renderMaintenanceBadge(enabled) {
+    var badge = document.getElementById('maintenance-badge');
+    var btn = document.getElementById('maintenance-toggle-btn');
+    badge.className = 'zoho-badge ' + (enabled ? 'failed' : 'none');
+    badge.textContent = enabled ? '⚠ 有効 (サイト非表示中)' : '通常運転中';
+    btn.disabled = false;
+    btn.textContent = enabled ? '解除する / Turn off' : '有効にする / Turn on';
+  }
+
+  window.fetchMaintenanceStatus = function () {
+    fetch('/api/admin/maintenance')
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (data.ok) renderMaintenanceBadge(data.enabled);
+      })
+      .catch(function (err) { console.error('fetchMaintenanceStatus error:', err); });
+  };
+
+  window.toggleMaintenanceMode = function () {
+    var badge = document.getElementById('maintenance-badge');
+    var currentlyEnabled = badge.classList.contains('failed');
+    var next = !currentlyEnabled;
+
+    var msg = next
+      ? 'メンテナンスモードを有効にしますか？管理画面以外の全ページが訪問者に見えなくなります。'
+      : 'メンテナンスモードを解除しますか？サイトが再び訪問者に公開されます。';
+    if (!confirm(msg)) return;
+
+    var btn = document.getElementById('maintenance-toggle-btn');
+    var statusEl = document.getElementById('maintenance-status');
+    btn.disabled = true;
+    statusEl.textContent = '';
+
+    fetch('/api/admin/maintenance', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enabled: next }),
+    })
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (result) {
+        if (result.ok && result.data.ok) {
+          renderMaintenanceBadge(result.data.enabled);
+          statusEl.style.color = '';
+          statusEl.textContent = '✓ 切り替えました';
+        } else {
+          btn.disabled = false;
+          var errMsg = (result.data && result.data.error) || 'request_failed';
+          statusEl.style.color = '#c0392b';
+          statusEl.textContent = '✗ 失敗: ' + errMsg;
+        }
+      })
+      .catch(function (err) {
+        btn.disabled = false;
+        statusEl.style.color = '#c0392b';
+        statusEl.textContent = '✗ 通信エラー';
+        console.error('toggleMaintenanceMode error:', err);
       });
   };
 
