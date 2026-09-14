@@ -1616,6 +1616,17 @@
         <span id="pages-retry-status" class="mono" style="font-size:12px;opacity:.7"></span>
       </div>
     </div>
+    <div class="fin-card">
+      <h3>Cloudflare キャッシュ <span class="mono" style="font-size:11px;opacity:.5">エッジキャッシュの削除</span></h3>
+      <p style="font-size:12.5px;opacity:.7;margin:0 0 12px;line-height:1.6;">
+        デプロイ後も古い表示が残る場合に使用します。サイト全体のキャッシュを即座に削除します（元に戻せません）。<br>
+        <span style="opacity:.8">Use this if visitors still see an old version after a deploy — clears the entire site's edge cache instantly (cannot be undone).</span>
+      </p>
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <button type="button" class="btn btn-ghost" id="purge-cache-btn" onclick="purgeCloudflareCache()">すべてのキャッシュを削除 / Purge everything</button>
+        <span id="purge-cache-status" class="mono" style="font-size:12px;opacity:.7"></span>
+      </div>
+    </div>
   </div>
 
   <div class="fin-card" style="margin-top:14px;">
@@ -5285,6 +5296,39 @@
         statusEl.style.color = '#c0392b';
         statusEl.textContent = '✗ 通信エラー';
         console.error('retryPagesDeploy error:', err);
+      });
+  };
+
+  // ---- Cloudflare edge cache: manual purge everything (System Status tab) ----
+  window.purgeCloudflareCache = function () {
+    if (!confirm('サイト全体のキャッシュを削除しますか？（元に戻せません）')) return;
+
+    var btn = document.getElementById('purge-cache-btn');
+    var statusEl = document.getElementById('purge-cache-status');
+    btn.disabled = true;
+    btn.textContent = '処理中…';
+    statusEl.textContent = '';
+
+    fetch('/api/admin/purge-cache', { method: 'POST' })
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (result) {
+        btn.disabled = false;
+        btn.textContent = 'すべてのキャッシュを削除 / Purge everything';
+        if (result.ok && result.data.ok) {
+          statusEl.style.color = '';
+          statusEl.textContent = '✓ キャッシュを削除しました';
+        } else {
+          var errMsg = (result.data && result.data.error) || 'request_failed';
+          statusEl.style.color = '#c0392b';
+          statusEl.textContent = '✗ 失敗: ' + errMsg;
+        }
+      })
+      .catch(function (err) {
+        btn.disabled = false;
+        btn.textContent = 'すべてのキャッシュを削除 / Purge everything';
+        statusEl.style.color = '#c0392b';
+        statusEl.textContent = '✗ 通信エラー';
+        console.error('purgeCloudflareCache error:', err);
       });
   };
 

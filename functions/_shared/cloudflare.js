@@ -208,6 +208,30 @@ async function retryPagesDeployment(env, deploymentId) {
   return { id: (data.result && data.result.id) || deploymentId };
 }
 
+// Purges the entire edge cache for the custom-domain zone -- the same
+// action as the "Purge Everything" button under Caching > Configuration in
+// the Cloudflare dashboard. Unlike every call above (which are all
+// *account*-scoped, using CLOUDFLARE_ACCOUNT_ID), this is a *zone*-scoped
+// API call, so it needs a separate CLOUDFLARE_ZONE_ID and a token
+// permission that lives under "Zone" rather than "Account" -- see
+// SETUP-cloudflare.md.
+async function purgeCache(env) {
+  if (!env.CLOUDFLARE_ZONE_ID) throw new Error("zone_not_configured");
+  const res = await fetch(
+    `https://api.cloudflare.com/client/v4/zones/${env.CLOUDFLARE_ZONE_ID}/purge_cache`,
+    {
+      method: "POST",
+      headers: { Authorization: `Bearer ${env.CLOUDFLARE_API_TOKEN}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ purge_everything: true }),
+    }
+  );
+  const data = await res.json().catch(() => null);
+  if (!res.ok || !data || !data.success) {
+    throw new Error(`cf_purge_cache_failed: ${res.status} ${JSON.stringify((data && data.errors) || data)}`);
+  }
+  return { id: data.result && data.result.id };
+}
+
 export {
   cloudflareConfigured,
   getD1Usage,
@@ -216,4 +240,5 @@ export {
   getPagesBuildsThisMonth,
   getLatestPagesDeployment,
   retryPagesDeployment,
+  purgeCache,
 };

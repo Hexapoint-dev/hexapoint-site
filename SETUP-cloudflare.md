@@ -612,7 +612,8 @@ Production 環境に追加 → 保存後は次回デプロイから反映され�
 | **Resend** | 本日/今月の送信数 | 自己集計（送信成功のたびに `ORDERS_KV` のカウンタを加算） |
 | **Cloudflare D1** | 本日の読み取り/書き込み行数 ＋ ストレージ使用量（GB） | Cloudflare GraphQL Analytics API ＋ D1 REST API |
 | **Cloudflare KV** | 本日の read/write/delete/list 回数 | Cloudflare GraphQL Analytics API |
-| **Cloudflare Pages** | 今月のビルド数 | Cloudflare REST API（Deployments一覧） |
+| **Cloudflare Pages** | 今月のビルド数 ＋ 最新デプロイの手動リトライボタン | Cloudflare REST API（Deployments一覧 / Retry） |
+| **Cloudflare キャッシュ** | サイト全体のエッジキャッシュを削除するボタン（Purge Everything） | Cloudflare REST API（`zones/:id/purge_cache`） |
 | **Oracle Object Storage** | D1バックアップ用バケットの使用容量・保存数・最新バックアップ日時 | Oracle の読み取り専用 PAR（設定方法は「13. Oracle Object Storage」参照） |
 
 ⚠️ **Cloudflare の項目（D1の行数・ストレージ・KV）は技術的な注意点があります**: Cloudflare の
@@ -635,12 +636,20 @@ D1のストレージ表示だけがエラーでも、読み取り/書き込み�
 3. Token name: 任意（例: `hexapoint-usage-readonly`）。
 4. **Permissions** に以下の3行を追加：
    - `Account` / `Account Analytics` / `Read`
-   - `Account` / `Cloudflare Pages` / `Read`
+   - `Account` / `Cloudflare Pages` / `Edit`（`Read` ではなく `Edit` — 「最新のデプロイを
+     リトライ」ボタン（`functions/api/admin/pages-deploy-retry.js`）が Pages API の
+     デプロイ再実行エンドポイントを呼ぶため、`Read` だけでは 403 になります。
+     ビルド数の表示だけで十分な場合は `Read` のままでも構いません）
    - `Account` / `D1` / `Read`（D1のストレージ使用量＝GB表示に必要。既存トークンを
      編集してこの権限を後から追加してもOK — Cloudflareダッシュボードの
      API Tokens一覧 → 対象トークンの「Edit」から可能）
+   - `Zone` / `Cache Purge` / `Purge`（「すべてのキャッシュを削除」ボタン用。これだけ
+     `Account` ではなく **`Zone`** の権限グループなので、ドロップダウンの左側を
+     `Account` から `Zone` に切り替えてから選択してください）
 5. **Account Resources**: **Include** → 対象アカウントを選択。
-6. **Continue to summary** → **Create Token** → 表示されたトークンをコピー
+6. **Zone Resources**: **Include** → 対象ゾーン（`hexapoint-jp.com` など、独自ドメイン
+   接続済みの場合）を選択。1つのトークンに Account 権限と Zone 権限を両方含められます。
+7. **Continue to summary** → **Create Token** → 表示されたトークンをコピー
    （このページを閉じると二度と表示されません）。
 
 ### 手順B — 必要なIDを控える
@@ -653,6 +662,11 @@ D1のストレージ表示だけがエラーでも、読み取り/書き込み�
    Namespace の行に ID が表示されています。
 4. **Pages Project Name**: Pages プロジェクトの設定ページ、または
    `xxxxx.pages.dev` の `xxxxx` の部分（例: `hexapoint`）。
+5. **Zone ID**（キャッシュ削除ボタンに必要）: Cloudflare ダッシュボードで対象ドメイン
+   （例: `hexapoint-jp.com`）の概要ページを開く → 右側のサイドバーの「API」欄に
+   「Zone ID」として表示されています。独自ドメインを未接続の場合はこの項目は
+   スキップして構いません（`hexapoint.pages.dev` の `.pages.dev` サブドメインには
+   ゾーンがなく、キャッシュ削除ボタンは対象外です）。
 
 ### 手順C — Cloudflare に環境変数を設定
 
@@ -663,10 +677,12 @@ D1のストレージ表示だけがエラーでも、読み取り/書き込み�
 | `CLOUDFLARE_D1_DATABASE_ID` | 手順B-2 | 通常の変数でも可 |
 | `CLOUDFLARE_KV_NAMESPACE_ID` | 手順B-3 | 通常の変数でも可 |
 | `CLOUDFLARE_PAGES_PROJECT_NAME` | 手順B-4 | 通常の変数でも可 |
+| `CLOUDFLARE_ZONE_ID` | 手順B-5（キャッシュ削除ボタン用。省略可） | 通常の変数でも可 |
 | `ZOHO_FREE_PLAN_INVOICE_LIMIT` | （任意）Zoho の実際の年間請求書上限。未設定時は `1000` を仮の目安として使用 | 通常の変数でも可 |
 
-D1・KV・Pages のいずれか1つだけ先に設定しても、その項目だけが動きます
-（未設定の項目は「未設定です」と表示されるだけで、他の項目には影響しません）。
+D1・KV・Pages・キャッシュ削除のいずれか1つだけ先に設定しても、その項目だけが動きます
+（未設定の項目は「未設定です」と表示される、またはボタンを押した際にエラーになる
+だけで、他の項目には影響しません）。
 
 ### 動作確認
 
@@ -677,6 +693,20 @@ D1・KV・Pages のいずれか1つだけ先に設定しても、その項目だ
 
 > データは 15 分ごとにキャッシュされます（`ORDERS_KV` 使用）。
 > タブ右上の「更新 / Refresh」ボタンでキャッシュを無視して即時再取得できます。
+
+「Cloudflare Pages」カードの「最新のデプロイをリトライ / Retry deployment」ボタンは、
+確認ダイアログの後に最新デプロイをリトライします（Cloudflareダッシュボードの
+「Retry deployment」ボタンと同じ動作）。「✗ 失敗: cf_pages_retry_failed: 403 ...」と
+表示された場合は、トークンの `Cloudflare Pages` 権限が `Read` のままになっているので、
+上記手順Aの通り `Edit` に変更してください。
+
+「Cloudflare キャッシュ」カードの「すべてのキャッシュを削除 / Purge everything」ボタンは、
+確認ダイアログの後にサイト全体のエッジキャッシュを即座に削除します（Cloudflareダッシュ
+ボードの Caching → Configuration → 「Purge Everything」と同じ動作、元に戻せません）。
+「✗ 失敗: cloudflare_zone_not_configured」と表示された場合は `CLOUDFLARE_ZONE_ID` が
+未設定です（手順B-5）。「✗ 失敗: cf_purge_cache_failed: 403 ...」と表示された場合は、
+トークンに `Zone` / `Cache Purge` / `Purge` の権限が含まれていない、または対象ゾーンが
+**Zone Resources** に含まれていないので、上記手順Aの通り追加してください。
 
 ---
 
