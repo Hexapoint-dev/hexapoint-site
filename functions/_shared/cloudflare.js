@@ -165,4 +165,55 @@ async function getPagesBuildsThisMonth(env) {
   return { count, limits: PAGES_FREE_LIMITS, month };
 }
 
-export { cloudflareConfigured, getD1Usage, getD1StorageSize, getKvUsage, getPagesBuildsThisMonth };
+// Fetches the single most recent Pages deployment -- used by the admin
+// panel's "Retry deployment" button to find which deployment id to retry.
+// Separate from getPagesBuildsThisMonth() above, which only counts
+// deployments for the usage bar and doesn't need per-deployment detail.
+async function getLatestPagesDeployment(env) {
+  if (!env.CLOUDFLARE_PAGES_PROJECT_NAME) return null;
+  const res = await fetch(
+    `https://api.cloudflare.com/client/v4/accounts/${env.CLOUDFLARE_ACCOUNT_ID}/pages/projects/${env.CLOUDFLARE_PAGES_PROJECT_NAME}/deployments?page=1`,
+    { headers: { Authorization: `Bearer ${env.CLOUDFLARE_API_TOKEN}` } }
+  );
+  const data = await res.json().catch(() => null);
+  if (!res.ok || !data || !data.success) {
+    throw new Error(`cf_pages_deployments_failed: ${res.status} ${JSON.stringify(data)}`);
+  }
+  const deployment = (data.result || [])[0];
+  if (!deployment) return null;
+  return {
+    id: deployment.id,
+    status: deployment.latest_stage && deployment.latest_stage.status,
+    createdOn: deployment.created_on,
+    url: deployment.url,
+    environment: deployment.environment,
+  };
+}
+
+// Retries a Pages deployment -- rebuilds it from the same source commit,
+// exactly what the "Retry deployment" button does in the Cloudflare
+// dashboard. Requires the API token to carry "Cloudflare Pages:Edit"; the
+// read-only token used for the usage numbers above is not enough on its own
+// -- add Edit permission to CLOUDFLARE_API_TOKEN (see SETUP-cloudflare.md).
+async function retryPagesDeployment(env, deploymentId) {
+  if (!env.CLOUDFLARE_PAGES_PROJECT_NAME) throw new Error("pages_project_not_configured");
+  const res = await fetch(
+    `https://api.cloudflare.com/client/v4/accounts/${env.CLOUDFLARE_ACCOUNT_ID}/pages/projects/${env.CLOUDFLARE_PAGES_PROJECT_NAME}/deployments/${deploymentId}/retry`,
+    { method: "POST", headers: { Authorization: `Bearer ${env.CLOUDFLARE_API_TOKEN}` } }
+  );
+  const data = await res.json().catch(() => null);
+  if (!res.ok || !data || !data.success) {
+    throw new Error(`cf_pages_retry_failed: ${res.status} ${JSON.stringify((data && data.errors) || data)}`);
+  }
+  return { id: (data.result && data.result.id) || deploymentId };
+}
+
+export {
+  cloudflareConfigured,
+  getD1Usage,
+  getD1StorageSize,
+  getKvUsage,
+  getPagesBuildsThisMonth,
+  getLatestPagesDeployment,
+  retryPagesDeployment,
+};
