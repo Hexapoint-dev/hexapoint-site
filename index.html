@@ -883,6 +883,54 @@
               price that makes sense.</span></b><span><span data-jp>無駄を省いた構成で、できるだけ費用を抑えて運用を始められます。</span><span data-en>A lean,
               no-waste setup that keeps your spend as low as possible.</span></span></span>
       </div>
+      <style>
+        .plan-modal-overlay .modal { max-width: 440px; display: flex; flex-direction: column; height: min(660px, 86vh); height: min(660px, 86dvh); max-height: 86vh; max-height: 86dvh; overflow: hidden; background: var(--cream); }
+        .plan-modal-overlay .modal.feat { background: var(--ink); color: var(--paper); }
+        .plan-modal-overlay .modal-close { background: rgba(14, 22, 51, .08); color: var(--ink); }
+        .plan-modal-overlay .modal-close:hover { background: rgba(14, 22, 51, .16); }
+        .plan-modal-overlay .modal.feat .modal-close { background: rgba(251, 250, 244, .16); color: var(--paper); }
+        .plan-modal-overlay .modal.feat .modal-close:hover { background: rgba(251, 250, 244, .28); }
+        .plan-modal-hd { padding: 40px 32px 0; flex: 0 0 auto; }
+        .plan-modal-hd .tag-base, .plan-modal-hd .tag3 { position: static; display: inline-flex; margin: 0 0 14px; }
+        .plan-modal-hd h3 { font-family: "Shippori Mincho", serif; font-weight: 700; font-size: 24px; margin: 0; }
+        .plan-modal-hd .h3en { font-family: Spectral, serif; font-style: italic; color: var(--emerald); font-size: 13px; display: block; margin-top: 3px; }
+        .plan-modal-overlay .modal.feat .h3en { color: var(--azure); }
+        .plan-modal-hd .plan-branch { margin: 12px 0 0; }
+        .plan-modal-overlay .modal.feat .plan-branch { color: var(--azure); }
+        .plan-modal-hd .price { font-family: "Shippori Mincho", serif; font-weight: 800; font-size: 32px; margin-top: 14px; color: var(--ink); line-height: 1; }
+        .plan-modal-overlay .modal.feat .price { color: var(--paper); }
+        .plan-modal-hd .price small { font-size: 13px; opacity: .6; font-weight: 400; }
+        .plan-modal-hd .line-note { font-size: 12.5px; line-height: 1.7; opacity: .72; margin: 10px 0 0; max-width: none; }
+        .plan-modal-track { height: 2px; background: var(--line); margin: 18px 32px 0; position: relative; flex: 0 0 auto; }
+        .plan-modal-overlay .modal.feat .plan-modal-track { background: rgba(251, 250, 244, .18); }
+        .plan-modal-fill { position: absolute; top: 0; left: 0; height: 100%; width: 0; background: var(--emerald-deep); transition: width .1s linear; }
+        .plan-modal-overlay .modal.feat .plan-modal-fill { background: var(--azure); }
+        .plan-modal-scroll { position: relative; flex: 1 1 auto; min-height: 0; }
+        .plan-modal-scroll:before, .plan-modal-scroll:after { content: ""; position: absolute; left: 0; right: 0; height: 26px; pointer-events: none; z-index: 1; }
+        .plan-modal-scroll:before { top: 0; background: linear-gradient(var(--cream), transparent); }
+        .plan-modal-scroll:after { bottom: 0; background: linear-gradient(transparent, var(--cream)); }
+        .plan-modal-overlay .modal.feat .plan-modal-scroll:before { background: linear-gradient(var(--ink), transparent); }
+        .plan-modal-overlay .modal.feat .plan-modal-scroll:after { background: linear-gradient(transparent, var(--ink)); }
+        .plan-modal-list { position: absolute; inset: 0; list-style: none; margin: 0; padding: 6px 32px 20px; overflow-y: auto; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
+        .plan-modal-list li { font-size: 14px; padding: 11px 0; border-top: 1px solid var(--line); display: flex; gap: 9px; align-items: flex-start; }
+        .plan-modal-overlay .modal.feat .plan-modal-list li { border-color: rgba(251, 250, 244, .18); }
+        .plan-modal-list li:first-child { border-top: none; }
+        .plan-modal-list li:before { content: "✓"; color: var(--emerald); font-weight: 700; flex: 0 0 auto; }
+        .plan-modal-overlay .modal.feat .plan-modal-list li:before { color: var(--azure); }
+        .plan-modal-list li.plan-group { border-top: none; padding: 18px 0 4px; font-family: "DM Mono", monospace; font-size: 10.5px; letter-spacing: .08em; font-weight: 700; color: var(--emerald-deep); opacity: .8; text-transform: uppercase; }
+        .plan-modal-overlay .modal.feat li.plan-group { color: var(--azure); opacity: .9; }
+        .plan-modal-list li.plan-group:first-child { padding-top: 0; }
+        .plan-modal-list li.plan-group:before { content: none; }
+        .plan-modal-ft { flex: 0 0 auto; padding: 18px 32px 28px; border-top: 1px solid var(--line); }
+        .plan-modal-overlay .modal.feat .plan-modal-ft { border-color: rgba(251, 250, 244, .18); }
+        @media (max-width:560px) {
+          .plan-modal-overlay .modal { height: min(660px, 92vh); height: min(660px, 92dvh); max-height: 92vh; max-height: 92dvh; }
+          .plan-modal-hd { padding: 34px 22px 0; }
+          .plan-modal-track { margin: 16px 22px 0; }
+          .plan-modal-list { padding: 6px 22px 18px; }
+          .plan-modal-ft { padding: 16px 22px 22px; }
+        }
+      </style>
       <div class="plans">
         <div class="plan reveal" data-d="1"><span class="tag-base"><span data-jp>土台</span><span
               data-en>FOUNDATION</span></span>
@@ -932,8 +980,8 @@
             <li><span data-jp>プライバシーポリシーの設置</span><span data-en>Privacy Policy page</span></li>
             <li><span data-jp>公開後1ヶ月間の無料サポート（軽微な不具合の修正）</span><span data-en>1 month of free post-launch support (minor bug fixes)</span></li>
           </ul>
-          <button type="button" class="plan-more-btn" aria-expanded="false" aria-controls="basic-plan-list"
-            onclick="var u=this.previousElementSibling,o=u.classList.toggle('expanded');u.style.maxHeight=o?(u.scrollHeight+'px'):'';this.classList.toggle('is-open',o);this.setAttribute('aria-expanded',o);this.querySelector('[data-jp]').textContent=o?'閉じる':'すべての項目を見る';this.querySelector('[data-en]').textContent=o?'Show less':'See everything included';">
+          <button type="button" class="plan-more-btn" aria-haspopup="dialog" aria-controls="planModal"
+            onclick="openPlanModal(this)">
             <span data-jp>すべての項目を見る</span><span data-en>See everything included</span>
             <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8">
               <path d="M2 4l4 4 4-4" />
@@ -979,8 +1027,8 @@
             <li><span data-jp>修正のご依頼ごとにお見積り</span><span data-en>Priced per individual update request</span></li>
             <li><span data-jp>通常3営業日以内に対応</span><span data-en>Typically completed within 3 business days</span></li>
           </ul>
-          <button type="button" class="plan-more-btn" aria-expanded="false" aria-controls="maintenance-plan-list"
-            onclick="var u=this.previousElementSibling,o=u.classList.toggle('expanded');u.style.maxHeight=o?(u.scrollHeight+'px'):'';this.classList.toggle('is-open',o);this.setAttribute('aria-expanded',o);this.querySelector('[data-jp]').textContent=o?'閉じる':'すべての項目を見る';this.querySelector('[data-en]').textContent=o?'Show less':'See everything included';">
+          <button type="button" class="plan-more-btn" aria-haspopup="dialog" aria-controls="planModal"
+            onclick="openPlanModal(this)">
             <span data-jp>すべての項目を見る</span><span data-en>See everything included</span>
             <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8">
               <path d="M2 4l4 4 4-4" />
@@ -1024,8 +1072,8 @@
             <li><span data-jp>表示速度・SEOの継続的な改善</span><span data-en>Ongoing speed &amp; SEO improvements</span></li>
             <li><span data-jp>チャット・メールでいつでもご相談可能</span><span data-en>Chat &amp; email support whenever you need it</span></li>
           </ul>
-          <button type="button" class="plan-more-btn" aria-expanded="false" aria-controls="annual-plan-list"
-            onclick="var u=this.previousElementSibling,o=u.classList.toggle('expanded');u.style.maxHeight=o?(u.scrollHeight+'px'):'';this.classList.toggle('is-open',o);this.setAttribute('aria-expanded',o);this.querySelector('[data-jp]').textContent=o?'閉じる':'すべての項目を見る';this.querySelector('[data-en]').textContent=o?'Show less':'See everything included';">
+          <button type="button" class="plan-more-btn" aria-haspopup="dialog" aria-controls="planModal"
+            onclick="openPlanModal(this)">
             <span data-jp>すべての項目を見る</span><span data-en>See everything included</span>
             <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8">
               <path d="M2 4l4 4 4-4" />
@@ -1034,6 +1082,29 @@
           <div style="text-align:center;margin-top:auto">
             <button type="button" class="btn btn-ghost" style="width:100%;justify-content:center"
               onclick="openOrderModal('annual')"><span data-jp>選ぶ</span><span data-en>Choose</span></button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-overlay plan-modal-overlay" id="planModal" role="dialog" aria-modal="true"
+        aria-labelledby="planModalTitle">
+        <div class="modal" id="planModalBox">
+          <button class="modal-close" id="planModalClose" aria-label="Close">×</button>
+          <div class="plan-modal-hd">
+            <span class="plan-modal-badge" id="planModalBadge" style="display:none"></span>
+            <h3 id="planModalTitle"></h3>
+            <span class="h3en" id="planModalSub"></span>
+            <p class="plan-branch" id="planModalBranch" style="display:none"></p>
+            <div class="price" id="planModalPrice"></div>
+            <p class="line-note" id="planModalNote" style="display:none"></p>
+          </div>
+          <div class="plan-modal-track">
+            <div class="plan-modal-fill" id="planModalFill"></div>
+          </div>
+          <div class="plan-modal-scroll">
+            <ul class="plan-modal-list" id="planModalList"></ul>
+          </div>
+          <div class="plan-modal-ft">
+            <button type="button" class="btn btn-primary" id="planModalCta" style="width:100%;justify-content:center"></button>
           </div>
         </div>
       </div>
@@ -2001,6 +2072,65 @@
     pModal.addEventListener('click', (e) => { if (e.target === pModal) closeP() });
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeP() });
     document.getElementById('privacyCta').addEventListener('click', closeP);
+    // plan details modal — opened from a pricing card's "see everything included" button;
+    // pulls its content straight from that card's own DOM so it can never drift out of sync
+    const planModal = document.getElementById('planModal');
+    const planModalList = document.getElementById('planModalList');
+    const planModalFill = document.getElementById('planModalFill');
+    window.openPlanModal = function (btn) {
+      const card = btn.closest('.plan');
+      if (!card) return;
+      const box = document.getElementById('planModalBox');
+      box.classList.toggle('feat', card.classList.contains('feat'));
+
+      const badge = card.querySelector('.tag-base, .tag3');
+      const badgeEl = document.getElementById('planModalBadge');
+      if (badge) {
+        badgeEl.innerHTML = badge.innerHTML;
+        badgeEl.className = 'plan-modal-badge ' + (badge.classList.contains('tag3') ? 'tag3' : 'tag-base');
+        badgeEl.style.display = '';
+      } else { badgeEl.style.display = 'none'; }
+
+      document.getElementById('planModalTitle').innerHTML = card.querySelector('h3').innerHTML;
+      const sub = card.querySelector('.h3en');
+      document.getElementById('planModalSub').innerHTML = sub ? sub.innerHTML : '';
+
+      const branch = card.querySelector('.plan-branch');
+      const branchEl = document.getElementById('planModalBranch');
+      if (branch) { branchEl.innerHTML = branch.innerHTML; branchEl.style.display = ''; }
+      else { branchEl.style.display = 'none'; }
+
+      document.getElementById('planModalPrice').innerHTML = card.querySelector('.price').innerHTML;
+
+      const note = card.querySelector('.line-note');
+      const noteEl = document.getElementById('planModalNote');
+      if (note) { noteEl.innerHTML = note.innerHTML; noteEl.style.display = ''; }
+      else { noteEl.style.display = 'none'; }
+
+      planModalList.innerHTML = card.querySelector('ul.collapsible').innerHTML;
+      planModalList.scrollTop = 0;
+      planModalFill.style.width = '0';
+
+      const cta = card.querySelector('.btn-primary, .btn-ghost');
+      const ctaEl = document.getElementById('planModalCta');
+      ctaEl.innerHTML = cta.innerHTML;
+      ctaEl.className = 'btn ' + (cta.classList.contains('btn-ghost') ? 'btn-ghost' : 'btn-primary');
+      ctaEl.onclick = function () { closePlanModal(); cta.click(); };
+
+      planModal.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    };
+    window.closePlanModal = function () {
+      planModal.classList.remove('open');
+      document.body.style.overflow = '';
+    };
+    planModalList.addEventListener('scroll', function () {
+      const max = planModalList.scrollHeight - planModalList.clientHeight;
+      planModalFill.style.width = (max > 0 ? (planModalList.scrollTop / max) * 100 : 100) + '%';
+    });
+    document.getElementById('planModalClose').addEventListener('click', closePlanModal);
+    planModal.addEventListener('click', (e) => { if (e.target === planModal) closePlanModal(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePlanModal(); });
     // contact form -> posts to /api/contact (Cloudflare Pages Function, relays via Resend)
     const send = document.getElementById('f-send');
     if (send) {
