@@ -1611,6 +1611,10 @@
     <div class="fin-card">
       <h3>Cloudflare Pages <span class="mono" style="font-size:11px;opacity:.5">今月のビルド数</span></h3>
       <div id="status-pages"><div class="loading-state">読み込み中…</div></div>
+      <div style="margin-top:14px;padding-top:14px;border-top:1px solid rgba(0,0,0,.08);display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <button type="button" class="btn btn-ghost" id="pages-retry-btn" onclick="retryPagesDeploy()">最新のデプロイをリトライ / Retry deployment</button>
+        <span id="pages-retry-status" class="mono" style="font-size:12px;opacity:.7"></span>
+      </div>
     </div>
   </div>
 
@@ -5248,6 +5252,39 @@
         btn.disabled = false;
         btn.textContent = '再試行 / Retry';
         console.error('retryZohoInvoice error:', err);
+      });
+  };
+
+  // ---- Cloudflare Pages: manual deployment retry (System Status tab) ----
+  window.retryPagesDeploy = function () {
+    if (!confirm('最新のデプロイをリトライしますか？（Cloudflareのビルド枠を1件消費します）')) return;
+
+    var btn = document.getElementById('pages-retry-btn');
+    var statusEl = document.getElementById('pages-retry-status');
+    btn.disabled = true;
+    btn.textContent = '処理中…';
+    statusEl.textContent = '';
+
+    fetch('/api/admin/pages-deploy-retry', { method: 'POST' })
+      .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+      .then(function (result) {
+        btn.disabled = false;
+        btn.textContent = '最新のデプロイをリトライ / Retry deployment';
+        if (result.ok && result.data.ok) {
+          statusEl.style.color = '';
+          statusEl.textContent = '✓ リトライを開始しました (ID: ' + result.data.deploymentId + ')';
+        } else {
+          var errMsg = (result.data && result.data.error) || 'request_failed';
+          statusEl.style.color = '#c0392b';
+          statusEl.textContent = '✗ 失敗: ' + errMsg;
+        }
+      })
+      .catch(function (err) {
+        btn.disabled = false;
+        btn.textContent = '最新のデプロイをリトライ / Retry deployment';
+        statusEl.style.color = '#c0392b';
+        statusEl.textContent = '✗ 通信エラー';
+        console.error('retryPagesDeploy error:', err);
       });
   };
 
